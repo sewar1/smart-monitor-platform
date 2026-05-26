@@ -3,8 +3,7 @@
 # ==============================
 
 from flask import Flask, render_template, jsonify
-import psutil                      # System metrics (CPU, RAM, Disk)
-import random                      # Used to simulate multiple machines
+from core.metrics import get_system_metrics 
 import requests                    # For sending Telegram alerts
 import smtplib                     # For sending email alerts
 from email.mime.text import MIMEText  # For building email messages
@@ -32,39 +31,6 @@ TO_EMAIL = "target_email@gmail.com"
 # ==============================
 # SYSTEM METRICS SIMULATION
 # ==============================
-
-def get_system_data():
-    """
-    Simulates a multi-machine monitoring environment.
-    In real DevOps systems, this would represent multiple servers
-    (e.g., AWS EC2 instances, Kubernetes nodes, etc.)
-    """
-
-    nodes = []
-
-    # Simulate 3 different servers
-    for i in range(1, 4):
-
-        # CPU usage (with small randomness to simulate real fluctuations)
-        cpu = psutil.cpu_percent() + random.uniform(-5, 5)
-
-        # RAM usage (also slightly randomized)
-        ram = psutil.virtual_memory().percent + random.uniform(-3, 3)
-
-        # Disk usage (real system value)
-        disk = psutil.disk_usage('/').percent
-
-        # Store node data
-        nodes.append({
-            "name": f"server-{i}",
-
-            # Ensure values stay within valid range (0–100%)
-            "cpu": max(0, min(cpu, 100)),
-            "ram": max(0, min(ram, 100)),
-            "disk": disk
-        })
-
-    return {"nodes": nodes}
 
 
 # ==============================
@@ -171,7 +137,7 @@ def metrics():
     """
 
     # Step 1: Collect system data
-    data = get_system_data()
+    data = get_system_metrics()
     nodes = data["nodes"]
 
     # Step 2: Analyze system state
