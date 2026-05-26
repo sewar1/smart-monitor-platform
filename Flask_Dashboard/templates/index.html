@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DevOps Monitor</title>
+
+    <!-- Bootstrap for responsive UI layout -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Chart.js library for real-time graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* ==============================
+           GLOBAL DARK THEME (DEVOPS STYLE)
+        ============================== */
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0b1220; /* dark dashboard background */
+            color: white;
+            font-family: Arial, sans-serif;
+            overflow: hidden; /* disable scroll for full-screen dashboard */
+        }
+
+        /* Top header bar */
+        .header {
+            text-align: center;
+            padding: 14px;
+            font-size: 22px;
+            font-weight: bold;
+            background: #111a2e;
+            border-bottom: 1px solid #1f2a44;
+        }
+
+        /* Alert box for system warnings */
+        .alert-box {
+            display: none;
+            background: #ff3b3b;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            margin: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        /* Metric cards (CPU / RAM / DISK) */
+        .card-box {
+            background: #111a2e;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        /* Label style (CPU, RAM, DISK text) */
+        .label {
+            color: #9aa4b2;
+            font-size: 14px;
+        }
+
+        /* Value style (live percentage numbers) */
+        .value {
+            font-size: 26px;
+            font-weight: bold;
+            color: #00ff99;
+        }
+
+        /* Chart container (full-screen height) */
+        .chart-container {
+            height: 70vh;
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- ================= HEADER SECTION ================= -->
+<div class="header">
+    📡 SYSTEM MONITOR DASHBOARD
+</div>
+
+<!-- ================= ALERT SECTION ================= -->
+<!-- Displays warnings when CPU/RAM exceeds threshold -->
+<div id="alertBox" class="alert-box"></div>
+
+<!-- ================= METRICS SECTION ================= -->
+<div class="container-fluid mt-3">
+    <div class="row">
+
+        <!-- CPU CARD -->
+        <div class="col-md-4">
+            <div class="card-box">
+                <div class="label">CPU</div>
+                <div class="value" id="cpu">0%</div>
+            </div>
+        </div>
+
+        <!-- RAM CARD -->
+        <div class="col-md-4">
+            <div class="card-box">
+                <div class="label">RAM</div>
+                <div class="value" id="ram">0%</div>
+            </div>
+        </div>
+
+        <!-- DISK CARD -->
+        <div class="col-md-4">
+            <div class="card-box">
+                <div class="label">DISK</div>
+                <div class="value" id="disk">0%</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ================= REAL-TIME CHART ================= -->
+<div class="chart-container">
+    <canvas id="chart"></canvas>
+</div>
+
+<!-- ================= JAVASCRIPT LOGIC ================= -->
+<script>
+
+    // ==============================
+    // TIME SERIES DATA STORAGE
+    // ==============================
+    // These arrays store historical metrics for chart visualization
+    let labels = [];   // timestamps
+    let cpuData = [];  // CPU usage history
+    let ramData = [];  // RAM usage history
+    let diskData = []; // Disk usage history
+
+    // ==============================
+    // INITIALIZE CHART.JS
+    // ==============================
+    const ctx = document.getElementById('chart').getContext('2d');
+
+    const chart = new Chart(ctx, {
+
+        type: 'line', // line chart for time series monitoring
+
+        data: {
+            labels: labels, // X-axis (time)
+
+            datasets: [
+                {
+                    label: 'CPU %',
+                    borderColor: '#ff4d4d', // red line
+                    data: cpuData,
+                    tension: 0.3 // smooth curve
+                },
+                {
+                    label: 'RAM %',
+                    borderColor: '#4da6ff', // blue line
+                    data: ramData,
+                    tension: 0.3
+                },
+                {
+                    label: 'DISK %',
+                    borderColor: '#2ee59d', // green line
+                    data: diskData,
+                    tension: 0.3
+                }
+            ]
+        },
+
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+
+            // disable animation for real-time performance
+            animation: false,
+
+            scales: {
+                y: {
+                    min: 0,
+                    max: 100 // system usage is always 0-100%
+                }
+            }
+        }
+    });
+
+    // ==============================
+    // FETCH DATA FROM FLASK API
+    // ==============================
+    async function fetchData() {
+
+        try {
+            // Call backend API endpoint
+            const res = await fetch('/api/metrics');
+            const json = await res.json();
+
+            // Extract first simulated server (server-1)
+            const node = json.nodes[0];
+
+            // ==============================
+            // UPDATE UI CARDS
+            // ==============================
+            document.getElementById("cpu").innerText = node.cpu.toFixed(1) + "%";
+            document.getElementById("ram").innerText = node.ram.toFixed(1) + "%";
+            document.getElementById("disk").innerText = node.disk.toFixed(1) + "%";
+
+            // ==============================
+            // ALERT SYSTEM (UI NOTIFICATION)
+            // ==============================
+            const alertBox = document.getElementById("alertBox");
+
+            // Show alert if system is under high load
+            if (node.cpu > 85 || node.ram > 85) {
+                alertBox.style.display = "block";
+                alertBox.innerText = "⚠ SYSTEM WARNING: High resource usage detected";
+            } else {
+                alertBox.style.display = "none";
+            }
+
+            // ==============================
+            // UPDATE TIME SERIES DATA
+            // ==============================
+            const time = new Date().toLocaleTimeString();
+
+            labels.push(time);      // X-axis label
+            cpuData.push(node.cpu); // CPU history
+            ramData.push(node.ram); // RAM history
+            diskData.push(node.disk); // Disk history
+
+            // Keep only last 25 data points for performance
+            if (labels.length > 25) {
+                labels.shift();
+                cpuData.shift();
+                ramData.shift();
+                diskData.shift();
+            }
+
+            // Update chart rendering
+            chart.update();
+
+        } catch (error) {
+            console.error("Failed to fetch metrics:", error);
+        }
+    }
+
+    // ==============================
+    // AUTO REFRESH LOOP
+    // ==============================
+    // Fetch new data every 2 seconds (real-time monitoring simulation)
+    setInterval(fetchData, 2000);
+
+    // Initial call on page load
+    fetchData();
+
+</script>
+
+</body>
+</html>
