@@ -1,75 +1,62 @@
-# ==============================
-# IMPORTS
-# ==============================
+# ==========================================
+# SMART MONITOR PLATFORM - APP
+# ==========================================
+# Real-time DevOps Monitoring Backend
+# ==========================================
 
 from flask import Flask, render_template, jsonify
-from core.metrics import get_system_metrics 
-import requests                    # For sending Telegram alerts
-import smtplib                     # For sending email alerts
-from email.mime.text import MIMEText  # For building email messages
 
-# ==============================
-# FLASK APP INITIALIZATION
-# ==============================
+# ==========================================
+# CORE MODULES
+# ==========================================
+
+from core.metrics import get_system_metrics
+from core.alerts import check_alerts
+from core.analyzer import (
+    calculate_health_score,
+    get_health_status,
+    get_top_processes
+)
+
+from core.logger import log_info, log_warning, log_error
+from core.database import init_db, save_alert, get_alert_history
+
+from collections import deque
+
+import requests
+import smtplib
+from email.mime.text import MIMEText
+
+# ==========================================
+# APP INITIALIZATION
+# ==========================================
 
 app = Flask(__name__)
 
-# ==============================
-# CONFIGURATION
-# ==============================
+init_db()  # <-- مهم: تشغيل SQLite عند البداية
 
-# Telegram configuration (Bot token + chat ID)
+log_info("Smart Monitor Platform initialized")
+
+
+# ==========================================
+# CONFIGURATION
+# ==========================================
+
 TELEGRAM_BOT_TOKEN = "YOUR_BOT_TOKEN"
 TELEGRAM_CHAT_ID = "YOUR_CHAT_ID"
 
-# Email configuration (SMTP - Gmail example)
 EMAIL = "your_email@gmail.com"
-PASSWORD = "your_app_password"   # MUST be App Password (not real password)
+PASSWORD = "your_app_password"
 TO_EMAIL = "target_email@gmail.com"
 
 
-# ==============================
-# SYSTEM METRICS SIMULATION
-# ==============================
+# ==========================================
+# TELEGRAM ALERT SYSTEM
+# ==========================================
 
-
-# ==============================
-# ALERT ENGINE (RULE-BASED SYSTEM)
-# ==============================
-
-def check_alerts(nodes):
+def send_telegram_alert(message: str):
     """
-    Evaluates system metrics against thresholds.
-    This mimics real-world alerting systems like Prometheus Alertmanager.
-    """
-
-    alerts = []
-
-    for node in nodes:
-
-        # CPU threshold check
-        if node["cpu"] > 85:
-            alerts.append(
-                f"{node['name']} - HIGH CPU USAGE: {node['cpu']:.1f}%"
-            )
-
-        # RAM threshold check
-        if node["ram"] > 85:
-            alerts.append(
-                f"{node['name']} - HIGH RAM USAGE: {node['ram']:.1f}%"
-            )
-
-    return alerts
-
-
-# ==============================
-# TELEGRAM NOTIFICATION SYSTEM
-# ==============================
-
-def send_telegram_alert(message):
-    """
-    Sends alert messages to a Telegram bot using Telegram API.
-    This is commonly used in DevOps for real-time incident notifications.
+    Send alerts to Telegram bot.
     """
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -80,101 +67,137 @@ def send_telegram_alert(message):
     }
 
     try:
-        requests.post(url, data=payload)
-    except Exception as e:
-        print("Telegram notification failed:", e)
+        requests.post(url, data=payload, timeout=5)
+    except Exception as error:
+        log_error(f"Telegram notification failed: {error}")
 
 
-# ==============================
-# EMAIL NOTIFICATION SYSTEM
-# ==============================
+# ==========================================
+# EMAIL ALERT SYSTEM
+# ==========================================
 
-def send_email_alert(message):
+def send_email_alert(message: str):
     """
-    Sends alert emails using SMTP (Gmail server in this case).
-    Used in enterprise systems for incident reporting and logging.
+    Send alerts via SMTP email.
     """
 
     msg = MIMEText(message)
-    msg["Subject"] = "DevOps Alert - System Monitoring"
+    msg["Subject"] = "Smart Monitor Alert"
     msg["From"] = EMAIL
     msg["To"] = TO_EMAIL
 
     try:
-        # Connect to Gmail SMTP server
         server = smtplib.SMTP("smtp.gmail.com", 587)
-
-        # Enable encryption
         server.starttls()
-
-        # Login to email account
         server.login(EMAIL, PASSWORD)
-
-        # Send email
         server.send_message(msg)
-
-        # Close connection
         server.quit()
 
-    except Exception as e:
-        print("Email notification failed:", e)
+    except Exception as error:
+        log_error(f"Email notification failed: {error}")
 
 
-# ==============================
-# API ENDPOINT (CORE MONITORING DATA)
-# ==============================
+# ==========================================
+# MAIN METRICS API
+# ==========================================
 
 @app.route("/api/metrics")
 def metrics():
-    """
-    Core monitoring endpoint.
 
-    Workflow:
-    1. Collect system metrics (multi-node simulation)
-    2. Analyze metrics for anomalies
-    3. Trigger alerts if necessary
-    4. Return data to frontend dashboard
-    """
+    log_info("Metrics endpoint called")
 
-    # Step 1: Collect system data
+    # STEP 1: COLLECT METRICS
     data = get_system_metrics()
     nodes = data["nodes"]
 
-    # Step 2: Analyze system state
+    # STEP 2: ALERTS
     alerts = check_alerts(nodes)
 
-    # Step 3: Trigger notifications if alerts exist
+    # STEP 3: PROCESS ANALYSIS
+    processes = get_top_processes()
+
+    # STEP 4: HEALTH ANALYSIS
+    node = nodes[0]
+
+    health_score = calculate_health_score(
+        node["cpu"],
+        node["ram"],
+        node["disk"]
+    )
+
+    health_status = get_health_status(health_score)
+
+    # attach to response
+    data["alerts"] = alerts
+    data["processes"] = processes
+    data["health"] = {
+        "score": health_score,
+        "status": health_status
+    }
+
+    # STEP 5: SAVE + NOTIFY
     if alerts:
+
+        for alert in alerts:
+
+            log_warning(alert)
+
+            # store in SQLite
+            try:
+                save_alert(
+                    server="system",
+                    message=alert,
+                    level="WARNING"
+                )
+            except Exception as e:
+                log_error(f"DB save failed: {e}")
+
         alert_message = "\n".join(alerts)
 
         send_telegram_alert(alert_message)
         send_email_alert(alert_message)
 
-    # Step 4: Return JSON response to frontend
     return jsonify(data)
 
 
-# ==============================
-# FRONTEND ROUTE
-# ==============================
+# ==========================================
+# FRONTEND
+# ==========================================
 
 @app.route("/")
 def index():
-    """
-    Renders the main dashboard UI.
-    """
     return render_template("index.html")
 
 
-# ==============================
-# APPLICATION ENTRY POINT
-# ==============================
+# ==========================================
+# ALERT HISTORY (SQLite-backed)
+# ==========================================
+
+@app.route("/api/alerts/history")
+def alert_history():
+
+    try:
+        rows = get_alert_history(limit=20)
+
+        history = [
+            f"{r[0]} | {r[1]} | {r[2]} | {r[3]}"
+            for r in rows
+        ]
+
+        return jsonify({"history": history})
+
+    except Exception as error:
+        log_error(f"History fetch failed: {error}")
+        return jsonify({"history": []})
+
+
+# ==========================================
+# START SERVER
+# ==========================================
 
 if __name__ == "__main__":
-    """
-    Starts Flask development server.
-    In production, this should be replaced with a WSGI server (e.g. Gunicorn).
-    """
+
+    log_info("Flask server starting")
 
     app.run(
         debug=True,
