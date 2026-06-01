@@ -33,22 +33,30 @@ It is designed for DevOps learning, Linux administration practice, and productio
 
 ### Clone repository
 
-
+``` bash
 - git clone git@github.com:sewar1/smart-monitor-platform.git
 - cd smart-monitor-platform
+```
 
 ### Create virtual environment
+``` bash
 python3 -m venv venv
 source venv/bin/activate
-### Install dependencies
-- pip install flask psutil requests gunicorn
+```
 
+### Install dependencies
+```bash
+- pip install flask psutil requests gunicorn
+```
 ### Running the Application
 ## Development mode
+```bash
 - python dashboard/app.py
+```
 ## Production mode (Gunicorn)
+```bash
 - gunicorn --bind 0.0.0.0:5000 dashboard.app:app
-
+```
 ---
 
 ## Production Deployment
@@ -70,11 +78,14 @@ Restart=always
 WantedBy=multi-user.target
 
 ## Enable and start service
+``` bash
 - sudo systemctl daemon-reload
 - sudo systemctl enable smart-monitor
 - sudo systemctl start smart-monitor
+```
 
 ### Nginx configuration
+```bash
 server {
     listen 80;
     server_name _;
@@ -88,11 +99,12 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
-
+```
 ## Reload Nginx:
+``` bash
 - sudo nginx -t
 - sudo systemctl reload nginx
-
+```
 ## API Endpoint
 ### GET /api/metrics
 
