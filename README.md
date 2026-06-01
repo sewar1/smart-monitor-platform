@@ -26,9 +26,6 @@ It is designed for DevOps learning, Linux administration practice, and productio
 
 ---
 
-
----
-
 ## Installation
 
 ### Clone repository
@@ -48,12 +45,12 @@ source venv/bin/activate
 ```bash
 pip install flask psutil requests gunicorn
 ```
-### Running the Application
-## Development mode
+## Running the Application
+### Development mode
 ```bash
 python dashboard/app.py
 ```
-## Production mode (Gunicorn)
+### Production mode (Gunicorn)
 ```bash
 gunicorn --bind 0.0.0.0:5000 dashboard.app:app
 ```
@@ -61,8 +58,8 @@ gunicorn --bind 0.0.0.0:5000 dashboard.app:app
 
 ## Production Deployment
 ### systemd service setup
+#### Create service file:
 
-### Create service file:
 ## Project Structure
 ```bash
 [Unit]
@@ -78,7 +75,7 @@ Restart=always
 [Install]
 WantedBy=multi-user.target
 ```
-## Enable and start service
+### Enable and start service
 ``` bash
 sudo systemctl daemon-reload
 sudo systemctl enable smart-monitor
@@ -101,7 +98,7 @@ server {
     }
 }
 ```
-## Reload Nginx:
+### Reload Nginx:
 ``` bash
 sudo nginx -t
 sudo systemctl reload nginx
@@ -129,7 +126,7 @@ Returns real-time system metrics:
 ```
 ---
 
-### Features
+## Features
 - Real-time system monitoring
 - CPU / RAM / Disk tracking
 - Process analytics
@@ -146,7 +143,7 @@ Returns real-time system metrics:
 
 ---
 
-### Future Improvements
+## Future Improvements
 - Docker containerization
 - CI/CD pipeline (GitHub Actions)
 - Prometheus & Grafana integration
@@ -156,6 +153,6 @@ Returns real-time system metrics:
 
 ---
 
-### Summary
+## Summary
 
 This project demonstrates a complete DevOps lifecycle from development to production deployment on a Linux server.
