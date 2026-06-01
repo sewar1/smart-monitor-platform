@@ -1,75 +1,73 @@
-🟦 Smart Monitor Platform
-🚀 Real-Time Linux Monitoring & DevOps Deployment System
+# Smart Monitor Platform
 
-A production-style Linux monitoring platform built with Flask, Gunicorn, Nginx, and systemd, demonstrating real-world DevOps deployment practices.
+Real-time Linux monitoring system built with Flask, Gunicorn, Nginx, and systemd.
+Designed to simulate a production DevOps environment.
 
-📌 Architecture Overview
-🧠 System Architecture
-┌──────────────────────────────┐
-│        Client Browser        │
-└──────────────┬───────────────┘
-               │ HTTP (port 80)
-               ▼
-┌──────────────────────────────┐
-│            Nginx             │  ← Reverse Proxy
-│  - Static routing            │
-│  - Proxy /api → backend      │
-└──────────────┬───────────────┘
-               │ localhost:5000
-               ▼
-┌──────────────────────────────┐
-│          Gunicorn            │  ← WSGI Server
-│  - Multiple workers          │
-│  - Process management        │
-└──────────────┬───────────────┘
-               │ WSGI
-               ▼
-┌──────────────────────────────┐
-│        Flask Application     │
-│  - Metrics API               │
-│  - Alerts Engine             │
-│  - Process Analyzer          │
-└──────────────┬───────────────┘
-               │
-               ▼
-┌──────────────────────────────┐
-│     Linux System Layer       │
-│  - CPU / RAM / Disk metrics  │
-│  - Process monitoring        │
-└──────────────────────────────┘
-⚙️ Tech Stack
-Backend: Python 3, Flask
-Monitoring: psutil
-WSGI Server: Gunicorn
-Reverse Proxy: Nginx
-Process Manager: systemd
-OS: Linux (Ubuntu / Debian-based)
-Version Control: Git + GitHub (SSH)
-🧩 Project Structure
+---
+
+## Architecture
+
+
+Client Browser
+|
+v
+Nginx (Reverse Proxy)
+|
+v
+Gunicorn (WSGI Server)
+|
+v
+Flask Application
+|
+v
+Linux System Metrics (CPU / RAM / Disk / Processes)
+
+
+---
+
+## Tech Stack
+
+- Python 3
+- Flask
+- psutil
+- Gunicorn
+- Nginx
+- systemd
+- Linux (Ubuntu/Debian)
+- Git + GitHub (SSH)
+
+---
+
+## Project Structure
+
+
 smart-monitor-platform/
 │
-├── cli/                 # CLI tools
-├── core/                # Core monitoring engine
-│   ├── metrics.py      # System metrics collector
-│   ├── alerts.py       # Alert engine
-│   ├── analyzer.py     # Process analysis
-│   ├── logger.py       # Logging system
-│   ├── database.py     # SQLite integration
-│   └── processes.py    # Process inspection
+├── cli/
+├── core/
+│ ├── metrics.py
+│ ├── alerts.py
+│ ├── analyzer.py
+│ ├── logger.py
+│ ├── database.py
+│ └── processes.py
 │
-├── dashboard/          # Web UI (Flask app)
-│   ├── app.py
-│   ├── templates/
-│   └── static/
+├── dashboard/
+│ ├── app.py
+│ ├── templates/
+│ └── static/
 │
-├── logs/               # Runtime logs & DB
-├── venv/               # Virtual environment (not committed)
-├── requirements.txt
+├── logs/
+├── venv/
 └── README.md
 
 
-🧪 Local Development Setup (Linux)
-1. Clone Repository
+---
+
+## Installation (Local Linux Setup)
+
+### 1. Clone Repository
+```bash
 git clone git@github.com:sewar1/smart-monitor-platform.git
 cd smart-monitor-platform
 2. Create Virtual Environment
@@ -77,21 +75,15 @@ python3 -m venv venv
 source venv/bin/activate
 3. Install Dependencies
 pip install flask psutil requests gunicorn
-4. Run Flask App (Development)
+Run Application
+Development Mode
 python dashboard/app.py
-
-OR production-style:
-
+Production Mode
 gunicorn --bind 0.0.0.0:5000 dashboard.app:app
-🌐 Production Deployment (Linux)
-Step 1 — Gunicorn Service
+Production Deployment
+systemd Service
 
-Run backend as a persistent service:
-
-gunicorn --bind 127.0.0.1:5000 dashboard.app:app
-Step 2 — systemd Service
-
-Service file:
+Create service file:
 
 [Unit]
 Description=Smart Monitor Platform
@@ -106,14 +98,14 @@ Restart=always
 [Install]
 WantedBy=multi-user.target
 
-Enable:
+Enable service:
 
 sudo systemctl daemon-reload
 sudo systemctl enable smart-monitor
 sudo systemctl start smart-monitor
-Step 3 — Nginx Reverse Proxy
+Nginx Reverse Proxy
 
-Config:
+Configuration:
 
 server {
     listen 80;
@@ -129,14 +121,15 @@ server {
     }
 }
 
-Reload:
+Reload Nginx:
 
 sudo nginx -t
 sudo systemctl reload nginx
-🔌 API Endpoints
-Metrics API
+API Endpoint
 GET /api/metrics
-Response:
+
+Example response:
+
 {
   "health": {
     "score": 73.0,
@@ -152,37 +145,23 @@ Response:
   ],
   "alerts": []
 }
-🧠 What I Built (Linux & DevOps Skills Demonstrated)
-
-✔ Linux system monitoring
-✔ Process inspection (psutil)
-✔ Logging & alert engine
-✔ Flask REST API
-✔ WSGI production server (Gunicorn)
-✔ Reverse proxy (Nginx)
-✔ systemd service management
-✔ Git workflow + SSH deployment
-
-📸 Proof of Deployment Flow
-Flask App → Gunicorn → systemd → Nginx → Linux Host
-🚀 Future Improvements (VERY IMPORTANT FOR JOBS)
-1. Containerization (Docker)
-Dockerfile
-docker-compose
-2. CI/CD Pipeline
-GitHub Actions:
-lint
-test
-auto deploy
-3. Observability Layer
-Prometheus metrics export
-Grafana dashboards
-4. Security Enhancements
-HTTPS (Let's Encrypt)
-API authentication (JWT)
-5. Scalability
+What This Project Demonstrates
+Linux system administration
+Process monitoring with psutil
+REST API development (Flask)
+Production WSGI deployment (Gunicorn)
+Reverse proxy setup (Nginx)
+systemd service management
+Git + SSH workflow
+Deployment Flow
+Flask → Gunicorn → systemd → Nginx → Client
+Future Improvements
+Docker containerization
+CI/CD pipeline (GitHub Actions)
+Prometheus + Grafana monitoring
+HTTPS with Let's Encrypt
+JWT authentication
 Multi-node monitoring
-Redis queue for alerts
-This project demonstrates a full DevOps lifecycle:
+Summary
 
-Code → Build → Run → Deploy → Proxy → Service Management → Monitoring
+This project demonstrates a complete DevOps lifecycle from development to production deployment on Linux.
