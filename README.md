@@ -18,12 +18,73 @@ It is designed for DevOps learning, Linux administration practice, and productio
 - Python 3
 - Flask (REST API)
 - psutil (system metrics collection)
+- SQLite
 - Gunicorn (WSGI server)
 - Nginx (reverse proxy)
 - systemd (service management)
 - Linux (Ubuntu/Debian)
 - Git & GitHub
 
+---
+## System Architecture
+```bash
+┌──────────────────────────────┐
+│        Client Browser        │
+└──────────────┬───────────────┘
+               │ HTTP (port 80)
+               ▼
+┌──────────────────────────────┐
+│            Nginx             │  ← Reverse Proxy
+│  - Static routing            │
+│  - Proxy /api → backend      │
+└──────────────┬───────────────┘
+               │ localhost:5000
+               ▼
+┌──────────────────────────────┐
+│          Gunicorn            │  ← WSGI Server
+│  - Multiple workers          │
+│  - Process management        │
+└──────────────┬───────────────┘
+               │ WSGI
+               ▼
+┌──────────────────────────────┐
+│        Flask Application     │
+│  - Metrics API               │
+│  - Alerts Engine             │
+│  - Process Analyzer          │
+└──────────────┬───────────────┘
+               │
+               ▼
+┌──────────────────────────────┐
+│     Linux System Layer       │
+│  - CPU / RAM / Disk metrics  │
+│  - Process monitoring        │
+└──────────────────────────────┘
+```
+---
+## Project Structure
+```bash
+smart-monitor-platform/
+│
+├── cli/                 # CLI tools
+├── core/                # Core monitoring engine
+│   ├── metrics.py      # System metrics collector
+│   ├── alerts.py       # Alert engine
+│   ├── analyzer.py     # Process analysis
+│   ├── logger.py       # Logging system
+│   ├── database.py     # SQLite integration
+│   └── processes.py    # Process inspection
+│
+├── dashboard/          # Web UI (Flask app)
+│   ├── app.py
+│   ├── templates/
+│   └── static/
+│
+├── logs/               # Runtime logs & DB
+├── venv/               # Virtual environment (not committed)
+├── requirements.txt
+└── README.md
+```
 ---
 
 ## Installation
@@ -125,7 +186,10 @@ Returns real-time system metrics:
 }
 ```
 ---
-
+## Proof of Deployment Flow
+```bash
+Flask App → Gunicorn → systemd → Nginx → Linux Host
+```
 ## Features
 - Real-time system monitoring
 - CPU / RAM / Disk tracking
