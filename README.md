@@ -34,8 +34,8 @@ It is designed for DevOps learning, Linux administration practice, and productio
 ### Clone repository
 
 ``` bash
-- git clone git@github.com:sewar1/smart-monitor-platform.git
-- cd smart-monitor-platform
+git clone git@github.com:sewar1/smart-monitor-platform.git
+cd smart-monitor-platform
 ```
 
 ### Create virtual environment
@@ -46,16 +46,16 @@ source venv/bin/activate
 
 ### Install dependencies
 ```bash
-- pip install flask psutil requests gunicorn
+pip install flask psutil requests gunicorn
 ```
 ### Running the Application
 ## Development mode
 ```bash
-- python dashboard/app.py
+python dashboard/app.py
 ```
 ## Production mode (Gunicorn)
 ```bash
-- gunicorn --bind 0.0.0.0:5000 dashboard.app:app
+gunicorn --bind 0.0.0.0:5000 dashboard.app:app
 ```
 ---
 
@@ -64,6 +64,7 @@ source venv/bin/activate
 
 ### Create service file:
 ## Project Structure
+```bash
 [Unit]
 Description=Smart Monitor Platform
 After=network.target
@@ -76,12 +77,12 @@ Restart=always
 
 [Install]
 WantedBy=multi-user.target
-
+```
 ## Enable and start service
 ``` bash
-- sudo systemctl daemon-reload
-- sudo systemctl enable smart-monitor
-- sudo systemctl start smart-monitor
+sudo systemctl daemon-reload
+sudo systemctl enable smart-monitor
+sudo systemctl start smart-monitor
 ```
 
 ### Nginx configuration
@@ -102,11 +103,12 @@ server {
 ```
 ## Reload Nginx:
 ``` bash
-- sudo nginx -t
-- sudo systemctl reload nginx
+sudo nginx -t
+sudo systemctl reload nginx
 ```
 ## API Endpoint
 ### GET /api/metrics
+```bash
 
 Returns real-time system metrics:
 {
@@ -124,7 +126,7 @@ Returns real-time system metrics:
   ],
   "alerts": []
 }
-
+```
 ---
 
 ### Features
