@@ -33,7 +33,7 @@ It is designed for DevOps learning, Linux administration practice, and productio
 
 ### Clone repository
 
-```bash
+
 - git clone git@github.com:sewar1/smart-monitor-platform.git
 - cd smart-monitor-platform
 
