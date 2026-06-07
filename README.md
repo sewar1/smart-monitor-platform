@@ -101,7 +101,19 @@ smart-monitor-platform/
 ---
 
 ## Installation
+---
 
+## Production Deployment & Infrastructure Status
+
+The application is integrated into the Linux service layers via systemd and Nginx. Below is the verified status of the services running in production.
+
+![Nginx and System Services Status](screenshots/nginx-status.png)
+*Figure 3: Active production verification for reverse proxy and backend services.*
+
+---
+
+### systemd service setup
+...
 ### Clone repository
 
 ``` bash
