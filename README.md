@@ -31,10 +31,10 @@ It is designed for DevOps learning, Linux administration practice, and productio
 
 Here is the running interface of the platform, capturing live performance metrics directly from the host system.
 
-![Web Dashboard Overview](screenshoots/dashboard-home_1.png)
+![Web Dashboard Overview](screenshots/dashboard-home_1.png)
 *Figure 1: Real-time system monitoring dashboard metrics overview.*
 
-![Web Dashboard Analytics](screenshoots/dashboard-home_2.png)
+![Web Dashboard Analytics](screenshots/dashboard-home_2.png)
 *Figure 2: Process monitoring and resource allocation view.*
 
 ---
@@ -101,7 +101,19 @@ smart-monitor-platform/
 ---
 
 ## Installation
+---
 
+## Production Deployment & Infrastructure Status
+
+The application is integrated into the Linux service layers via systemd and Nginx. Below is the verified status of the services running in production.
+
+![Nginx and System Services Status](screenshots/nginx-status.png)
+*Figure 3: Active production verification for reverse proxy and backend services.*
+
+---
+
+### systemd service setup
+...
 ### Clone repository
 
 ``` bash
