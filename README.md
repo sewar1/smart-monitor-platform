@@ -26,6 +26,19 @@ It is designed for DevOps learning, Linux administration practice, and productio
 - Git & GitHub
 
 ---
+
+## 📊 Live System Dashboard
+
+Here is the running interface of the platform, capturing live performance metrics directly from the host system.
+
+![Web Dashboard Overview](screenshoot/dashboard-home-1.png)
+*Figure 1: Real-time system monitoring dashboard metrics overview.*
+
+![Web Dashboard Analytics](screenshoot/dashboard-home-2.png)
+*Figure 2: Process monitoring and resource allocation view.*
+
+---
+
 ## System Architecture
 ```bash
 ┌──────────────────────────────┐
