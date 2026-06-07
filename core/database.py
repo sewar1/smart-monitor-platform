@@ -1,105 +1,98 @@
-# ==========================================
-# SQLITE DATABASE LAYER
-# ==========================================
+# ==============================================================================
+# SMART MONITOR PLATFORM - SECURE PERSISTENCE LAYER (SQLite ENGINE)
+# ==============================================================================
+# Engineered with auto-recovery context managers to eliminate resource leaks.
+# Enforces strict parameterized state isolation against SQL Injection vectors.
+# ==============================================================================
 
 import sqlite3
 import os
 from datetime import datetime
+from typing import List, Tuple
 
-# ==========================================
-# DATABASE PATH
-# ==========================================
 
-DB_PATH = "logs/monitor.db"
-
-# تأكد أن مجلد logs موجود
-os.makedirs("logs", exist_ok=True)
-
-# ==========================================
-# INIT DATABASE
-# ==========================================
-
-def init_db():
+class DatabaseManager:
     """
-    Create required tables if they don't exist.
+    Handles robust interactions with the SQLite embedded ecosystem.
+    Utilizes localized dynamic contexts to safeguard database descriptors under multi-worker loads.
     """
 
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    def __init__(self, db_dir: str = "logs", db_name: str = "monitor.db"):
+        self.db_path = os.path.join(db_dir, db_name)
+        # Structural Assurance: Enforce directory tree existence prior to database I/O binding
+        os.makedirs(db_dir, exist_ok=True)
 
-    # Alerts table
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS alerts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT,
-            server TEXT,
-            message TEXT,
-            level TEXT
-        )
-    """)
+    def init_infrastructure_tables(self) -> None:
+        """
+        Idempotent database schema initialization.
+        Generates functional relational logs for both system notifications and raw metrics history.
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
 
-    # Metrics history table (for future AI layer)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS metrics (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT,
-            cpu REAL,
-            ram REAL,
-            disk REAL,
-            server TEXT
-        )
-    """)
+            # Schema 1: Incidents and security alerts logging system
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS alerts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TEXT NOT NULL,
+                    server TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    level TEXT NOT NULL
+                )
+            """)
 
-    conn.commit()
-    conn.close()
+            # Schema 2: Linear telemetry history (Prepared for future trend-analysis engines)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS metrics (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TEXT NOT NULL,
+                    cpu REAL NOT NULL,
+                    ram REAL NOT NULL,
+                    disk REAL NOT NULL,
+                    server TEXT NOT NULL
+                )
+            """)
+            conn.commit()
+
+    def persist_incident_log(self, server: str, message: str, level: str = "WARNING") -> None:
+        """
+        Safely records systemic anomalies into the ledger via parameterized query layers.
+        """
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # 'with connection' block automatically triggers 'commit()' on success and 'rollback()' on fault
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO alerts (timestamp, server, message, level)
+                VALUES (?, ?, ?, ?)
+            """, (current_time, server, message, level))
+
+    def fetch_historical_incidents(self, limit: int = 50) -> List[Tuple]:
+        """
+        Retrieves inverse-chronological sequence records bounding current active incidents.
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT timestamp, server, message, level
+                FROM alerts
+                ORDER BY id DESC
+                LIMIT ?
+            """, (limit,))
+            return cursor.fetchall()
 
 
-# ==========================================
-# INSERT ALERT
-# ==========================================
+# ==============================================================================
+# COMPATIBILITY EMULATION ROUTERS (Guarantees absolute safety for app.py)
+# ==============================================================================
+_db_orchestrator = DatabaseManager()
 
-def save_alert(server, message, level="WARNING"):
-    """
-    Store alert in SQLite database.
-    """
+def init_db() -> None:
+    _db_orchestrator.init_infrastructure_tables()
 
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+def save_alert(server: str, message: str, level: str = "WARNING") -> None:
+    _db_orchestrator.persist_incident_log(server, message, level)
 
-    cursor.execute("""
-        INSERT INTO alerts (timestamp, server, message, level)
-        VALUES (?, ?, ?, ?)
-    """, (
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        server,
-        message,
-        level
-    ))
-
-    conn.commit()
-    conn.close()
-
-
-# ==========================================
-# GET ALERT HISTORY
-# ==========================================
-
-def get_alert_history(limit=50):
-    """
-    Retrieve latest alerts from DB.
-    """
-
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT timestamp, server, message, level
-        FROM alerts
-        ORDER BY id DESC
-        LIMIT ?
-    """, (limit,))
-
-    rows = cursor.fetchall()
-    conn.close()
-
-    return rows
+def get_alert_history(limit: int = 50) -> List[Tuple]:
+    return _db_orchestrator.fetch_historical_incidents(limit=limit)

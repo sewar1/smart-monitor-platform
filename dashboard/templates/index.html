@@ -1,772 +1,477 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
-    <!-- ==========================================
-         META CONFIGURATION
-    ========================================== -->
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Smart Monitor Platform</title>
-
-    <!-- ==========================================
-         BOOTSTRAP
-    ========================================== -->
-
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-    >
-
-    <!-- ==========================================
-         CHART.JS
-    ========================================== -->
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Monitor Platform | Production Dashboard</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- ==========================================
-         CUSTOM STYLES
-    ========================================== -->
-
     <style>
-
-        /* ==========================================
-           GLOBAL THEME
-        ========================================== */
+        /* Modern Dark Cyberpunk Theme Palette */
+        :root {
+            --bg-main: #080d1a;
+            --bg-card: #0f172a;
+            --border-color: #1e293b;
+            --text-muted: #94a3b8;
+            --color-healthy: #10b981;
+            --color-warning: #f59e0b;
+            --color-critical: #ef4444;
+            --color-info: #3b82f6;
+        }
 
         body {
-            background-color: #0b1220;
-            color: white;
-            font-family: Arial, sans-serif;
+            background-color: var(--bg-main);
+            color: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-x: hidden;
         }
 
-        /* ==========================================
-           HEADER
-        ========================================== */
-
-        .header {
-            text-align: center;
-            padding: 18px;
-            font-size: 26px;
-            font-weight: bold;
-            background: #111a2e;
-            border-bottom: 1px solid #1f2a44;
-            margin-bottom: 20px;
+        /* Animated Header */
+        .navbar-custom {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
 
-        /* ==========================================
-           CARDS
-        ========================================== */
+        .navbar-brand-custom {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
+        /* Glassmorphism Cards */
         .card-box {
-            background: #111a2e;
-            border-radius: 14px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.4);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, border-color 0.3s ease;
         }
 
-        /* ==========================================
-           METRIC LABELS
-        ========================================== */
+        .card-box:hover {
+            transform: translateY(-5px);
+            border-color: #334155;
+        }
+
+        .metric-icon {
+            font-size: 24px;
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            margin-bottom: 15px;
+            display: inline-block;
+        }
 
         .label {
-            color: #9aa4b2;
-            font-size: 14px;
-            margin-bottom: 10px;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .value {
-            font-size: 30px;
-            font-weight: bold;
-            color: #2ee59d;
+            font-size: 32px;
+            font-weight: 800;
+            margin-top: 5px;
         }
 
-        /* ==========================================
-           HEALTH STATUS COLORS
-        ========================================== */
-
-        .healthy {
-            color: #2ee59d;
+        /* Dynamic Progress Bars */
+        .progress-custom {
+            background-color: #1e293b;
+            height: 6px;
+            border-radius: 4px;
+            margin-top: 15px;
         }
 
-        .warning {
-            color: #ffc107;
+        /* Real-time Status Indicators */
+        .status-badge {
+            font-size: 14px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 8px;
         }
 
-        .critical {
-            color: #ff4d4d;
-        }
-
-        /* ==========================================
-           ALERT BOX
-        ========================================== */
-
-        .alert-box {
+        /* Global Status Alert Banner */
+        .alert-banner {
             display: none;
-            background: #ff3b3b;
+            background: linear-gradient(90deg, #ef4444, #b91c1c);
             color: white;
-            padding: 12px;
-            margin: 15px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: bold;
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+            animation: pulse 2s infinite;
         }
 
-        /* ==========================================
-           TABLES
-        ========================================== */
-
-        table {
-            margin-top: 10px;
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.85; }
+            100% { opacity: 1; }
         }
 
-        th {
-            color: #9aa4b2;
-        }
-
-        td {
-            vertical-align: middle;
-        }
-
-        /* ==========================================
-           CHART
-        ========================================== */
-
-        .chart-container {
-            height: 60vh;
-        }
-
-        /* ==========================================
-           ALERT HISTORY
-        ========================================== */
-
+        /* High Tech Logs & History Container */
         .history-container {
             max-height: 250px;
             overflow-y: auto;
-            text-align: left;
-            font-family: monospace;
+            font-family: 'Courier New', Courier, monospace;
+            padding-right: 5px;
+        }
+
+        .history-container::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .history-container::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
         }
 
         .history-item {
-            color: #ffb347;
+            font-size: 13px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 3px solid var(--color-warning);
             margin-bottom: 8px;
-            border-bottom: 1px solid #1f2a44;
-            padding-bottom: 6px;
+            border-radius: 0 8px 8px 0;
         }
 
+        /* Tables & Typography Overrides */
+        h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-custom th {
+            color: var(--text-muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table-custom td {
+            color: #e2e8f0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            padding: 8px 4px;
+        }
+
+        .chart-container {
+            height: 45vh;
+            position: relative;
+        }
     </style>
-
 </head>
-
 <body>
 
-<!-- ==========================================
-     HEADER
-========================================== -->
+<nav class="navbar navbar-custom mb-4">
+    <div class="container-fluid">
+        <span class="navbar-brand-custom">
+            <i class="fa-solid Nav-Icon fa-circle-nodes text-primary"></i> SMART MONITOR PLATFORM
+        </span>
+        <span class="text-muted small"><i class="fa-solid fa-clock"></i> Live Diagnostics Console</span>
+    </div>
+</nav>
 
-<div class="header">
-
-    📡 SMART MONITOR PLATFORM
-
-</div>
-
-<!-- ==========================================
-     ALERT BOX
-========================================== -->
-
-<div
-    id="alertBox"
-    class="alert-box"
-></div>
-
-<!-- ==========================================
-     METRIC CARDS
-========================================== -->
-
-<div class="container-fluid">
-
-    <div class="row">
-
-        <!-- CPU -->
-
-        <div class="col-md-3">
-
-            <div class="card-box text-center">
-
-                <div class="label">
-                    CPU USAGE
-                </div>
-
-                <div
-                    class="value"
-                    id="cpu"
-                >
-                    0%
-                </div>
-
-            </div>
-
-        </div>
-
-        <!-- RAM -->
-
-        <div class="col-md-3">
-
-            <div class="card-box text-center">
-
-                <div class="label">
-                    RAM USAGE
-                </div>
-
-                <div
-                    class="value"
-                    id="ram"
-                >
-                    0%
-                </div>
-
-            </div>
-
-        </div>
-
-        <!-- DISK -->
-
-        <div class="col-md-3">
-
-            <div class="card-box text-center">
-
-                <div class="label">
-                    DISK USAGE
-                </div>
-
-                <div
-                    class="value"
-                    id="disk"
-                >
-                    0%
-                </div>
-
-            </div>
-
-        </div>
-
-        <!-- HEALTH -->
-
-        <div class="col-md-3">
-
-            <div class="card-box text-center">
-
-                <div class="label">
-                    SYSTEM HEALTH
-                </div>
-
-                <div
-                    class="value"
-                    id="health-score"
-                >
-                    0
-                </div>
-
-                <div id="health-status">
-                    Unknown
-                </div>
-
-            </div>
-
-        </div>
-
+<div class="container-fluid px-4">
+    
+    <div id="alertBox" class="alert-banner">
+        <i class="fa-solid fa-triangle-exclamation"></i> CRITICAL INFRASTRUCTURE EVENT DETECTED
     </div>
 
-</div>
-
-<!-- ==========================================
-     ADVANCED ANALYTICS
-========================================== -->
-
-<div class="container-fluid">
-
     <div class="row">
-
-        <!-- ACTIVE ALERTS -->
-
-        <div class="col-lg-4">
-
+        <div class="col-xl-3 col-md-6">
             <div class="card-box">
-
-                <h4>🚨 Active Alerts</h4>
-
-                <div id="alerts-container">
-
-                    <p class="healthy">
-                        No active alerts
-                    </p>
-
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="label">Processor Load</span>
+                        <div class="value" id="cpu">0%</div>
+                    </div>
+                    <div class="metric-icon" style="color: var(--color-critical)"><i class="fa-solid fa-microchip"></i></div>
                 </div>
-
+                <div class="progress progress-custom">
+                    <div id="cpu-bar" class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
+                </div>
             </div>
-
         </div>
 
-        <!-- TOP CPU PROCESSES -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card-box">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="label">Memory Pools</span>
+                        <div class="value" id="ram">0%</div>
+                    </div>
+                    <div class="metric-icon" style="color: var(--color-info)"><i class="fa-solid fa-memory"></i></div>
+                </div>
+                <div class="progress progress-custom">
+                    <div id="ram-bar" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card-box">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="label">Storage Block</span>
+                        <div class="value" id="disk">0%</div>
+                    </div>
+                    <div class="metric-icon" style="color: var(--color-healthy)"><i class="fa-solid fa-hard-drive"></i></div>
+                </div>
+                <div class="progress progress-custom">
+                    <div id="disk-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card-box text-center">
+                <span class="label">Weighted Health Matrix</span>
+                <div class="value mt-2" id="health-score" style="font-size: 38px;">100</div>
+                <span id="health-status" class="status-badge">Analyzing Matrix</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card-box">
+                <h4><i class="fa-solid fa-bell-slash text-warning"></i> Active Incident Log</h4>
+                <div id="alerts-container" class="history-container">
+                    <p style="color: var(--color-healthy);"><i class="fa-solid fa-circle-check"></i> Node operational thresholds normal.</p>
+                </div>
+            </div>
+        </div>
 
         <div class="col-lg-4">
-
             <div class="card-box">
-
-                <h4>🔥 Top CPU Processes</h4>
-
-                <table
-                    class="table table-dark table-hover table-sm"
-                >
-
+                <h4><i class="fa-solid fa-fire text-danger"></i> Thread Profiling (Top CPU)</h4>
+                <table class="table table-dark table-hover table-custom table-sm m-0">
                     <thead>
-
                         <tr>
-                            <th>Process</th>
-                            <th>CPU%</th>
+                            <th>Process Descriptor</th>
+                            <th class="text-end">CPU Load</th>
                         </tr>
-
                     </thead>
-
                     <tbody id="cpu-processes"></tbody>
-
                 </table>
-
             </div>
-
         </div>
-
-        <!-- TOP RAM PROCESSES -->
 
         <div class="col-lg-4">
-
             <div class="card-box">
-
-                <h4>🧠 Top RAM Processes</h4>
-
-                <table
-                    class="table table-dark table-hover table-sm"
-                >
-
+                <h4><i class="fa-solid fa-brain text-info"></i> Page Descriptors (Top RAM)</h4>
+                <table class="table table-dark table-hover table-custom table-sm m-0">
                     <thead>
-
                         <tr>
-                            <th>Process</th>
-                            <th>RAM%</th>
+                            <th>Process Descriptor</th>
+                            <th class="text-end">Memory Base</th>
                         </tr>
-
                     </thead>
-
                     <tbody id="memory-processes"></tbody>
-
                 </table>
-
             </div>
-
         </div>
+    </div>
 
+    <div class="row">
+        <div class="col-12">
+            <div class="card-box">
+                <h4><i class="fa-solid fa-database text-muted"></i> SQLite Persistent Ledger Logs (Recent Alert History)</h4>
+                <div id="alert-history" class="history-container" style="max-height: 180px;">
+                    <p class="text-muted"><i class="fa-solid fa-circle-nodes"></i> Waiting for historical system traces...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card-box">
+                <h4><i class="fa-solid fa-chart-line text-primary"></i> Live Stream Telemetry Waveform Analyzer</h4>
+                <div class="chart-container">
+                    <canvas id="chart"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
 
 </div>
-
-<!-- ==========================================
-     ALERT HISTORY
-========================================== -->
-
-<div class="container-fluid mt-4">
-
-    <div class="card-box">
-
-        <h4>📜 Recent Alert History</h4>
-
-        <div
-            id="alert-history"
-            class="history-container"
-        >
-
-            <p class="healthy">
-                No alert history available
-            </p>
-
-        </div>
-
-    </div>
-
-</div>
-
-<!-- ==========================================
-     REAL-TIME CHART
-========================================== -->
-
-<div class="container-fluid">
-
-    <div class="card-box">
-
-        <div class="chart-container">
-
-            <canvas id="chart"></canvas>
-
-        </div>
-
-    </div>
-
-</div>
-
-<!-- ==========================================
-     JAVASCRIPT
-========================================== -->
 
 <script>
-
-    // ==========================================
-    // CHART DATA STORAGE
-    // ==========================================
-
     let labels = [];
-
     let cpuData = [];
-
     let ramData = [];
-
     let diskData = [];
 
-    // ==========================================
-    // CHART INITIALIZATION
-    // ==========================================
-
-    const ctx =
-        document
-            .getElementById("chart")
-            .getContext("2d");
-
+    const ctx = document.getElementById("chart").getContext("2d");
+    
+    // Custom Styled Elegant Lines Chart Config
     const chart = new Chart(ctx, {
-
         type: "line",
-
         data: {
-
             labels: labels,
-
             datasets: [
-
                 {
-                    label: "CPU %",
-                    borderColor: "#ff4d4d",
+                    label: "CPU Matrix %",
+                    borderColor: "#ef4444",
+                    backgroundColor: "rgba(239, 68, 68, 0.05)",
                     data: cpuData,
                     tension: 0.3,
-                    fill: false,
-                    pointRadius: 2
+                    fill: true,
+                    pointRadius: 0
                 },
-
                 {
-                    label: "RAM %",
-                    borderColor: "#4da6ff",
+                    label: "RAM Allocation %",
+                    borderColor: "#3b82f6",
+                    backgroundColor: "rgba(59, 130, 246, 0.05)",
                     data: ramData,
                     tension: 0.3,
-                    fill: false,
-                    pointRadius: 2
+                    fill: true,
+                    pointRadius: 0
                 },
-
                 {
-                    label: "DISK %",
-                    borderColor: "#2ee59d",
+                    label: "Block Disk Storage %",
+                    borderColor: "#10b981",
+                    backgroundColor: "rgba(16, 185, 129, 0.05)",
                     data: diskData,
                     tension: 0.3,
-                    fill: false,
-                    pointRadius: 2
+                    fill: true,
+                    pointRadius: 0
                 }
-
             ]
         },
-
         options: {
-
             responsive: true,
-
             maintainAspectRatio: false,
-
             animation: false,
-
+            plugins: {
+                legend: { labels: { color: '#94a3b8', font: { weight: '600' } } }
+            },
             scales: {
-
-                y: {
-                    min: 0,
-                    max: 100
-                }
-
+                x: { grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#64748b' } },
+                y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#64748b' } }
             }
-
         }
-
     });
 
-    // ==========================================
-    // FETCH METRICS
-    // ==========================================
-
     async function fetchData() {
-
         try {
+            const response = await fetch("/api/metrics");
+            const json = await response.json();
+            const node = json.nodes[0];
 
-            const response =
-                await fetch("/api/metrics");
+            // Render Core Metrics & Progress Bars
+            document.getElementById("cpu").innerText = node.cpu.toFixed(1) + "%";
+            document.getElementById("cpu-bar").style.width = node.cpu + "%";
 
-            const json =
-                await response.json();
+            document.getElementById("ram").innerText = node.ram.toFixed(1) + "%";
+            document.getElementById("ram-bar").style.width = node.ram + "%";
 
-            const node =
-                json.nodes[0];
+            document.getElementById("disk").innerText = node.disk.toFixed(1) + "%";
+            document.getElementById("disk-bar").style.width = node.disk + "%";
 
-            // ==========================================
-            // UPDATE METRIC CARDS
-            // ==========================================
-
-            document.getElementById("cpu").innerText =
-                node.cpu.toFixed(1) + "%";
-
-            document.getElementById("ram").innerText =
-                node.ram.toFixed(1) + "%";
-
-            document.getElementById("disk").innerText =
-                node.disk.toFixed(1) + "%";
-
-            // ==========================================
-            // HEALTH SCORE
-            // ==========================================
-
-            document.getElementById("health-score").innerText =
-                json.health.score;
-
-            const healthStatus =
-                document.getElementById("health-status");
-
-            healthStatus.innerText =
-                json.health.status;
-
-            healthStatus.className = "";
-
-            if (json.health.status === "Healthy") {
-
-                healthStatus.classList.add("healthy");
-
+            // Dynamic Weighted Health Matrix Score Representation
+            document.getElementById("health-score").innerText = json.health.score;
+            const healthStatus = document.getElementById("health-status");
+            healthStatus.innerText = json.health.status;
+            
+            // Re-apply Contextual Background Styles to Badges
+            healthStatus.style.background = "rgba(16, 185, 129, 0.1)";
+            healthStatus.style.color = "var(--color-healthy)";
+            
+            if (json.health.status === "Warning") {
+                healthStatus.style.background = "rgba(245, 158, 11, 0.1)";
+                healthStatus.style.color = "var(--color-warning)";
+            } else if (json.health.status === "Critical") {
+                healthStatus.style.background = "rgba(239, 68, 68, 0.1)";
+                healthStatus.style.color = "var(--color-critical)";
             }
 
-            else if (json.health.status === "Warning") {
+            // Central Alarm Banner Interception Block
+            const alertBox = document.getElementById("alertBox");
+            alertBox.style.display = json.alerts.length > 0 ? "block" : "none";
 
-                healthStatus.classList.add("warning");
-
-            }
-
-            else {
-
-                healthStatus.classList.add("critical");
-
-            }
-
-            // ==========================================
-            // ALERT BOX
-            // ==========================================
-
-            const alertBox =
-                document.getElementById("alertBox");
-
-            if (json.alerts.length > 0) {
-
-                alertBox.style.display = "block";
-
-                alertBox.innerText =
-                    "⚠ HIGH RESOURCE USAGE DETECTED";
-
-            }
-
-            else {
-
-                alertBox.style.display = "none";
-
-            }
-
-            // ==========================================
-            // ACTIVE ALERTS
-            // ==========================================
-
-            const alertsContainer =
-                document.getElementById("alerts-container");
-
+            // Sync Dynamic Node Event Logs
+            const alertsContainer = document.getElementById("alerts-container");
             if (json.alerts.length === 0) {
-
-                alertsContainer.innerHTML =
-                    `<p class="healthy">No active alerts</p>`;
-
+                alertsContainer.innerHTML = `<p style="color: var(--color-healthy); font-size:13px;"><i class="fa-solid fa-circle-check"></i> Node operational thresholds normal.</p>`;
+            } else {
+                alertsContainer.innerHTML = json.alerts.map(alert => `<div class="history-item" style="border-color: var(--color-critical); color: #fca5a5;">${alert}</div>`).join("");
             }
 
-            else {
+            // Sync Dynamic OS Active Tasks Process Descriptors
+            document.getElementById("cpu-processes").innerHTML = json.processes.top_cpu.map(p => `
+                <tr>
+                    <td><i class="fa-solid fa-terminal text-muted small me-2"></i>${p.name || "Unknown"} <span class="text-muted small">(${p.pid})</span></td>
+                    <td class="text-end fw-bold text-danger">${p.cpu.toFixed(1)}%</td>
+                </tr>`).join("");
 
-                alertsContainer.innerHTML =
-                    json.alerts
-                        .map(alert => `
-                            <p class="critical">
-                                ${alert}
-                            </p>
-                        `)
-                        .join("");
+            document.getElementById("memory-processes").innerHTML = json.processes.top_memory.map(p => `
+                <tr>
+                    <td><i class="fa-solid fa-terminal text-muted small me-2"></i>${p.name || "Unknown"} <span class="text-muted small">(${p.pid})</span></td>
+                    <td class="text-end fw-bold text-info">${p.memory.toFixed(1)}%</td>
+                </tr>`).join("");
 
-            }
-
-            // ==========================================
-            // TOP CPU PROCESSES
-            // ==========================================
-
-            const cpuTable =
-                document.getElementById("cpu-processes");
-
-            cpuTable.innerHTML =
-                json.processes.top_cpu
-                    .map(process => `
-                        <tr>
-                            <td>${process.name || "Unknown"}</td>
-                            <td>${process.cpu.toFixed(1)}%</td>
-                        </tr>
-                    `)
-                    .join("");
-
-            // ==========================================
-            // TOP RAM PROCESSES
-            // ==========================================
-
-            const memoryTable =
-                document.getElementById("memory-processes");
-
-            memoryTable.innerHTML =
-                json.processes.top_memory
-                    .map(process => `
-                        <tr>
-                            <td>${process.name || "Unknown"}</td>
-                            <td>${process.memory.toFixed(1)}%</td>
-                        </tr>
-                    `)
-                    .join("");
-
-            // ==========================================
-            // UPDATE CHART
-            // ==========================================
-
-            const time =
-                new Date().toLocaleTimeString();
-
+            // Re-render Dynamic Vector Waveform Charts Timeline Array
+            const time = new Date().toLocaleTimeString();
             labels.push(time);
-
             cpuData.push(node.cpu);
-
             ramData.push(node.ram);
-
             diskData.push(node.disk);
 
-            // Keep last 25 points only
-
-            if (labels.length > 25) {
-
-                labels.shift();
-
-                cpuData.shift();
-
-                ramData.shift();
-
-                diskData.shift();
-
+            if (labels.length > 30) {
+                labels.shift(); cpuData.shift(); ramData.shift(); diskData.shift();
             }
-
             chart.update();
-
+        } catch (error) {
+            console.error("Failed to map dynamic telemetry metrics context:", error);
         }
-
-        catch (error) {
-
-            console.error(
-                "Failed to fetch metrics:",
-                error
-            );
-
-        }
-
     }
-
-    // ==========================================
-    // FETCH ALERT HISTORY
-    // ==========================================
 
     async function fetchAlertHistory() {
-
         try {
-
-            const response =
-                await fetch("/api/alerts/history");
-
-            const json =
-                await response.json();
-
-            const historyContainer =
-                document.getElementById("alert-history");
+            const response = await fetch("/api/alerts/history");
+            const json = await response.json();
+            const historyContainer = document.getElementById("alert-history");
 
             if (json.history.length === 0) {
-
-                historyContainer.innerHTML = `
-                    <p class="healthy">
-                        No alert history available
-                    </p>
-                `;
-
+                historyContainer.innerHTML = `<p class="text-muted small"><i class="fa-solid fa-database"></i> Ledger sequence sync completed. Persistent table empty.</p>`;
                 return;
-
             }
 
-            const reversedHistory =
-                json.history.reverse();
-
-            historyContainer.innerHTML =
-                reversedHistory
-                    .map(log => `
-                        <p class="history-item">
-                            ${log}
-                        </p>
-                    `)
-                    .join("");
-
+            historyContainer.innerHTML = json.history.reverse().map(log => `
+                <div class="history-item" style="border-color: #475569; color: var(--text-muted);">
+                    <i class="fa-solid fa-clock-rotate-left me-2"></i>${log}
+                </div>`).join("");
+        } catch (error) {
+            console.error("Failed to sync structural ledger data sequences:", error);
         }
-
-        catch (error) {
-
-            console.error(
-                "Failed to fetch alert history:",
-                error
-            );
-
-        }
-
     }
 
-    // ==========================================
-    // AUTO REFRESH
-    // ==========================================
-
+    // Initialize Infinite Monitoring Loop Hooks
     fetchData();
-
     fetchAlertHistory();
-
     setInterval(fetchData, 2000);
-
     setInterval(fetchAlertHistory, 5000);
-
 </script>
-
 </body>
-
 </html>
