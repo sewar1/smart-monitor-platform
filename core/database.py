@@ -1,86 +1,110 @@
 # ==============================================================================
-# SMART MONITOR PLATFORM - SECURE PERSISTENCE LAYER (SQLite ENGINE)
+# SMART MONITOR PLATFORM - ENTERPRISE PERSISTENCE LAYER (POSTGRESQL ENGINE)
 # ==============================================================================
-# Engineered with auto-recovery context managers to eliminate resource leaks.
-# Enforces strict parameterized state isolation against SQL Injection vectors.
+# Re-engineered for distributed Docker environments utilizing state isolation.
+# Uses dynamic kernel space environment variables for infrastructure binding.
 # ==============================================================================
 
-import sqlite3
 import os
+import psycopg2
 from datetime import datetime
 from typing import List, Tuple
-
+from core.logger import log_info, log_error
 
 class DatabaseManager:
     """
-    Handles robust interactions with the SQLite embedded ecosystem.
-    Utilizes localized dynamic contexts to safeguard database descriptors under multi-worker loads.
+    Handles robust interactions with the PostgreSQL Enterprise Server.
+    Dynamically injects connection parameters from local environment variables.
     """
 
-    def __init__(self, db_dir: str = "logs", db_name: str = "monitor.db"):
-        self.db_path = os.path.join(db_dir, db_name)
-        # Structural Assurance: Enforce directory tree existence prior to database I/O binding
-        os.makedirs(db_dir, exist_ok=True)
+    def __init__(self):
+        # Fetching dynamic connection boundaries from Host OS Env
+        self.host = os.getenv("POSTGRES_HOST", "db") # 'db' is the Docker service name
+        self.database = os.getenv("POSTGRES_DB", "monitor_db")
+        self.user = os.getenv("POSTGRES_USER", "postgres_admin")
+        self.password = os.getenv("POSTGRES_PASSWORD", "secure_devops_pass")
+        self.port = os.getenv("POSTGRES_PORT", "5432")
+
+    def _get_connection(self):
+        """Creates a fresh runtime socket connection to the PostgreSQL Cluster."""
+        return psycopg2.connect(
+            host=self.host,
+            database=self.database,
+            user=self.user,
+            password=self.password,
+            port=self.port
+        )
 
     def init_infrastructure_tables(self) -> None:
         """
-        Idempotent database schema initialization.
-        Generates functional relational logs for both system notifications and raw metrics history.
+        Idempotent database schema initialization for PostgreSQL syntax.
+        Generates production-ready tables for system logs and telemetry.
         """
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cursor:
+                    # Schema 1: Incidents and security alerts logging system
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS alerts (
+                            id SERIAL PRIMARY KEY,
+                            timestamp TIMESTAMP NOT NULL,
+                            server VARCHAR(100) NOT NULL,
+                            message TEXT NOT NULL,
+                            level VARCHAR(20) NOT NULL
+                        )
+                    """)
 
-            # Schema 1: Incidents and security alerts logging system
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS alerts (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp TEXT NOT NULL,
-                    server TEXT NOT NULL,
-                    message TEXT NOT NULL,
-                    level TEXT NOT NULL
-                )
-            """)
-
-            # Schema 2: Linear telemetry history (Prepared for future trend-analysis engines)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS metrics (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp TEXT NOT NULL,
-                    cpu REAL NOT NULL,
-                    ram REAL NOT NULL,
-                    disk REAL NOT NULL,
-                    server TEXT NOT NULL
-                )
-            """)
-            conn.commit()
+                    # Schema 2: Linear telemetry history
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS metrics (
+                            id SERIAL PRIMARY KEY,
+                            timestamp TIMESTAMP NOT NULL,
+                            cpu REAL NOT NULL,
+                            ram REAL NOT NULL,
+                            disk REAL NOT NULL,
+                            server VARCHAR(100) NOT NULL
+                        )
+                    """)
+                    conn.commit()
+            log_info("PostgreSQL storage infrastructure schemas verified/initialized successfully.")
+        except Exception as db_fault:
+            log_error(f"Critical Database Infrastructure Fault during init: {db_fault}")
 
     def persist_incident_log(self, server: str, message: str, level: str = "WARNING") -> None:
         """
-        Safely records systemic anomalies into the ledger via parameterized query layers.
+        Safely records systemic anomalies into the Postgres server via parameterized query layers.
         """
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        current_time = datetime.now()
         
-        # 'with connection' block automatically triggers 'commit()' on success and 'rollback()' on fault
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO alerts (timestamp, server, message, level)
-                VALUES (?, ?, ?, ?)
-            """, (current_time, server, message, level))
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cursor:
+                    # Note: PostgreSQL uses %s placeholder instead of SQLite's ?
+                    cursor.execute("""
+                        INSERT INTO alerts (timestamp, server, message, level)
+                        VALUES (%s, %s, %s, %s)
+                    """, (current_time, server, message, level))
+                    conn.commit()
+        except Exception as io_fault:
+            log_error(f"Failed to persist incident to PostgreSQL cluster: {io_fault}")
 
     def fetch_historical_incidents(self, limit: int = 50) -> List[Tuple]:
         """
         Retrieves inverse-chronological sequence records bounding current active incidents.
         """
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT timestamp, server, message, level
-                FROM alerts
-                ORDER BY id DESC
-                LIMIT ?
-            """, (limit,))
-            return cursor.fetchall()
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("""
+                        SELECT timestamp, server, message, level
+                        FROM alerts
+                        ORDER BY id DESC
+                        LIMIT %s
+                    """, (limit,))
+                    return cursor.fetchall()
+        except Exception as read_fault:
+            log_error(f"Failed to fetch incident logs from PostgreSQL cluster: {read_fault}")
+            return []
 
 
 # ==============================================================================

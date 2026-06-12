@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # Container 1: Production-Grade Database Engine
+  db:
+    image: postgres:15-alpine
+    container_name: smart_monitor_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres_admin
+      POSTGRES_PASSWORD: secure_devops_pass
+      POSTGRES_DB: monitor_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - monitor_network
+
+  # Container 2: Python Telemetry Web Dashboard
+  backend:
+    build:
+      context: .
+      dockerfile: ./dashboard/Dockerfile
+    container_name: smart_monitor_backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_USER=postgres_admin
+      - POSTGRES_PASSWORD=secure_devops_pass
+      - POSTGRES_DB=monitor_db
+      - POSTGRES_PORT=5432
+      # Optional: Leave empty or placeholder values during initial bootstrap staging
+      - TELEGRAM_BOT_TOKEN=your_bot_token
+      - TELEGRAM_CHAT_ID=your_chat_id
+      - EMAIL_USER=your_email
+      - EMAIL_PASSWORD=your_password
+      - EMAIL_TO=your_admin_email
+    depends_on:
+      - db
+    networks:
+      - monitor_network
+
+volumes:
+  postgres_data: # Persistent Volume Storage: Safeguards operational metrics data on host disk
+
+networks:
+  monitor_network: # Isolated Internal Network Bridge: Secures communication between Python and Postgres
+    driver: bridge
