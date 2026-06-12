@@ -232,29 +232,29 @@ Process Automation: Managing underlying platform services with systemd daemons.
 
 ---
 
-## Next Architectural Roadmap
+##  Next Architectural Roadmap
 
--  **Phase 1: Agent/Server Architecture Consolidation**
+- [ ] **Phase 1: Agent/Server Architecture Consolidation**
   - Refactor the core telemetry collector into a standalone, lightweight daemon script (`Agent`).
   - Implement dynamic HTTP/HTTPS POST streaming to forward centralized host metrics to the main controller (`Server`).
   
--  **Phase 2: Test-Driven Stability Framework**
+- [ ] **Phase 2: Test-Driven Stability Framework**
   - Write comprehensive **Unit Tests** and Integration Tests for core telemetry ingestion pipelines.
   - Establish a solid testing baseline to guarantee system stability during subsequent feature staging.
 
--  **Phase 3: Enterprise Security & Authentication Ring**
+- [ ] **Phase 3: Enterprise Security & Authentication Ring**
   - Implement a secure user access management system with isolated administrative roles.
   - Integrate **JWT (JSON Web Tokens)** for stateless backend API session security.
   - Enforce cryptographic password hashing using the **bcrypt** algorithm.
 
--  **Phase 4: Automated Disaster Recovery Subsystem**
+- [ ] **Phase 4: Automated Disaster Recovery Subsystem**
   - Build an automated backup utility engine for PostgreSQL transaction logs and configuration data layers.
   - Implement cron-driven scheduled snapshots to preserve historical metric states.
 
--  **Phase 5: PostgreSQL Core Analytics Pipeline**
+- [ ] **Phase 5: PostgreSQL Core Analytics Pipeline**
   - Build advanced analytical backend queries inside PostgreSQL to process and analyze long-term performance trends and historical server logs.
 
--  **Phase 6: Continuous Integration / Continuous Deployment (CI/CD)**
+- [ ] **Phase 6: Continuous Integration / Continuous Deployment (CI/CD)**
   - Construct a robust CI/CD workflow pipeline via **GitHub Actions** to automate codebase auditing, test suite execution, and live container deployment.
 ---
 
