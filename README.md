@@ -6,7 +6,7 @@ The project simulates a highly scalable, production-grade DevOps deployment envi
 
 ---
 
-## 🚀 Recent Architecture Update: Multi-Container Dockerization
+## Recent Architecture Update: Multi-Container Dockerization
 The platform has been fully containerized using a microservices architecture managed via **Docker Compose**. This ensures environment isolation, persistent storage data layers, and seamless dependency staging.
 
 ---
@@ -23,7 +23,7 @@ The platform has been fully containerized using a microservices architecture man
 - 
 ---
 
-## 📊 Live System Dashboard
+## Live System Dashboard
 
 Here is the running interface of the platform, capturing live performance metrics directly from the host system.
 
@@ -117,7 +117,7 @@ This handles database initialization, automated network bridging, Python image b
 
 The dashboard will be immediately accessible on: http://localhost:5000
 
-## 🖥️ Legacy Native Linux Deployment (Alternative Setup)
+## Legacy Native Linux Deployment (Alternative Setup)
 If you wish to deploy directly to bare-metal systemd layers without containers (Simulated on VMware Bare-Metal):
 1. Create virtual environment & dependencies
 ``` bash
