@@ -20,7 +20,20 @@ The platform has been fully containerized using a microservices architecture man
 - **WSGI Production Server:** Gunicorn
 - **Reverse Proxy / Edge Routing:** Nginx
 - **Target Environment:** Linux (Ubuntu/Debian), WSL2 Staging Environment
+- 
+---
 
+## 📊 Live System Dashboard
+
+Here is the running interface of the platform, capturing live performance metrics directly from the host system.
+
+![Web Dashboard Overview](screenshots/dashboard-home_1.png)
+*Figure 1: Real-time system monitoring dashboard metrics overview.*
+
+![Web Dashboard Analytics](screenshots/dashboard-home_2.png)
+*Figure 2: Process monitoring and resource allocation view.*
+
+---
 
 
 ## System Architecture
@@ -105,54 +118,24 @@ This handles database initialization, automated network bridging, Python image b
 The dashboard will be immediately accessible on: http://localhost:5000
 
 ## 🖥️ Legacy Native Linux Deployment (Alternative Setup)
-If you wish to deploy directly to bare-metal systemd layers without containers:
-### Create virtual environment & dependencies
+If you wish to deploy directly to bare-metal systemd layers without containers (Simulated on VMware Bare-Metal):
+1. Create virtual environment & dependencies
 ``` bash
 python3 -m venv venv
 source venv/bin/activate
 pip install flask psutil requests gunicorn psycopg2-binary
 ```
-### Production execution via Gunicorn
-```bash
-gunicorn --bind 0.0.0.0:5000 dashboard.app:app
-```
+2. Running the Application
+   Development mode:
+   ``` bash
+   python dashboard/app.py
+    ```
+    Production execution via Gunicorn
+    ```bash
+    gunicorn --bind 0.0.0.0:5000 dashboard.app:app
+    ```
 ---
-### Install dependencies
-```bash
-pip install flask psutil requests gunicorn
-```
-## Running the Application
-
-### Development mode
-```bash
-python dashboard/app.py
-```
-
-#### 📊 Live System Dashboard
-
-Here is the running interface of the platform, capturing live performance metrics directly from the host system.
-
-![Web Dashboard Overview](screenshots/dashboard-home_1.png)
-*Figure 1: Real-time system monitoring dashboard metrics overview.*
-
-![Web Dashboard Analytics](screenshots/dashboard-home_2.png)
-*Figure 2: Process monitoring and resource allocation view.*
-
----
-#### Production Deployment & Infrastructure Status
-
-The application is integrated into the Linux service layers via systemd and Nginx. Below is the verified status of the services running in production.
-
-![Nginx and System Services Status](screenshots/nginx-status.png)
-*Figure 3: Active production verification for reverse proxy and backend services.*
-
----
-
-
-
-
-
-### systemd Service Setup (/etc/systemd/system/smart-monitor.service)
+3. systemd Service Setup (/etc/systemd/system/smart-monitor.service)
 ```bash
 [Unit]
 Description=Smart Monitor Platform
@@ -173,8 +156,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable smart-monitor
 sudo systemctl start smart-monitor
 ```
-
-### Nginx configuration
+4. Nginx configuration
 ```bash
 server {
     listen 80;
@@ -190,11 +172,28 @@ server {
     }
 }
 ```
-### Reload Nginx:
+Reload Nginx:
 ``` bash
 sudo nginx -t
 sudo systemctl reload nginx
 ```
+---
+
+#### Production Deployment & Infrastructure Status
+
+The application is integrated into the Linux service layers via systemd and Nginx. Below is the verified status of the services running in production.
+
+![Nginx and System Services Status](screenshots/nginx-status.png)
+*Figure 3: Active production verification for reverse proxy and backend services.*
+
+---
+
+## Production Verification (VMware Infrastructure Status)
+Below is the verified operational status of the core infrastructure daemons running natively on the Linux server.
+
+Figure 3: Active production verification for reverse proxy and systemd backend services.
+
+
 ## API Endpoint
 ### GET /api/metrics
 Returns uniform real-time infrastructure data matrix payloads:
@@ -218,9 +217,9 @@ Returns real-time system metrics:
 }
 ```
 ---
-## Proof of Deployment Flow
+### Proof of Deployment Flow
 ```bash
-Flask App → Gunicorn → systemd → Nginx → Linux Host
+Flask App ──► Gunicorn (WSGI) ──► systemd Daemon ──► Nginx Reverse Proxy ──► Linux Host Engine
 ```
 ## Core Capabilities Demonstrated
 Microservices Orchestration: Managing interconnected isolated infrastructure networks.
@@ -234,13 +233,13 @@ Process Automation: Managing underlying platform services with systemd daemons.
 ---
 
 ## Next Architectural Roadmap
-[ ] Agent/Server Architecture: Refactoring the telemetry engine into a lightweight distributed client script (Agent) feeding centralized metric collectors (Server) across remote networks.
+Agent/Server Architecture: Refactoring the telemetry engine into a lightweight distributed client script (Agent) feeding centralized metric collectors (Server) across remote networks.
 
-[ ] CI/CD pipeline deployment via GitHub Actions.
+CI/CD pipeline deployment via GitHub Actions.
 
-[ ] Prometheus & Grafana analytics dashboards parsing core endpoints.
+Prometheus & Grafana analytics dashboards parsing core endpoints.
 ---
 
 ## Summary
 
-This project demonstrates a complete DevOps lifecycle from development to production deployment on a Linux server.
+This project demonstrates a complete DevOps lifecycle from development to containerized orchestration and bare-metal production deployment on an enterprise virtualized Linux server.
