@@ -317,108 +317,144 @@
 </div>
 
 <script>
-    let labels = [];
-    let cpuData = [];
-    let ramData = [];
-    let diskData = [];
+// ==============================================================================
+// 1. LOCAL SECURITY FIREWALL GATING
+// ==============================================================================
+// Intercept unauthorized requests immediately if execution context lacks valid cryptographic token
+if (!localStorage.getItem('monitor_jwt_token')) {
+    window.location.href = '/login';
+}
 
-    const ctx = document.getElementById("chart").getContext("2d");
-    
-    // Custom Styled Elegant Lines Chart Config
-    const chart = new Chart(ctx, {
-        type: "line",
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: "CPU Matrix %",
-                    borderColor: "#ef4444",
-                    backgroundColor: "rgba(239, 68, 68, 0.05)",
-                    data: cpuData,
-                    tension: 0.3,
-                    fill: true,
-                    pointRadius: 0
-                },
-                {
-                    label: "RAM Allocation %",
-                    borderColor: "#3b82f6",
-                    backgroundColor: "rgba(59, 130, 246, 0.05)",
-                    data: ramData,
-                    tension: 0.3,
-                    fill: true,
-                    pointRadius: 0
-                },
-                {
-                    label: "Block Disk Storage %",
-                    borderColor: "#10b981",
-                    backgroundColor: "rgba(16, 185, 129, 0.05)",
-                    data: diskData,
-                    tension: 0.3,
-                    fill: true,
-                    pointRadius: 0
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            plugins: {
-                legend: { labels: { color: '#94a3b8', font: { weight: '600' } } }
+// Global helper to inject synchronization bearer authorization headers
+function getAuthHeaders() {
+    return {
+        'Authorization': 'Bearer ' + localStorage.getItem('monitor_jwt_token'),
+        'Content-Type': 'application/json'
+    };
+}
+
+// ==============================================================================
+// 2. CHART.JS LIFECYCLE INITIALIZATION
+// ==============================================================================
+let labels = [];
+let cpuData = [];
+let ramData = [];
+let diskData = [];
+
+const ctx = document.getElementById("chart").getContext("2d");
+
+const chart = new Chart(ctx, {
+    type: "line",
+    data: {
+        labels: labels,
+        datasets: [
+            {
+                label: "CPU Matrix %",
+                borderColor: "#ef4444",
+                backgroundColor: "rgba(239, 68, 68, 0.05)",
+                data: cpuData,
+                tension: 0.3,
+                fill: true,
+                pointRadius: 0
             },
-            scales: {
-                x: { grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#64748b' } },
-                y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#64748b' } }
+            {
+                label: "RAM Allocation %",
+                borderColor: "#3b82f6",
+                backgroundColor: "rgba(59, 130, 246, 0.05)",
+                data: ramData,
+                tension: 0.3,
+                fill: true,
+                pointRadius: 0
+            },
+            {
+                label: "Block Disk Storage %",
+                borderColor: "#10b981",
+                backgroundColor: "rgba(16, 185, 129, 0.05)",
+                data: diskData,
+                tension: 0.3,
+                fill: true,
+                pointRadius: 0
             }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+            legend: { labels: { color: '#94a3b8', font: { weight: '600' } } }
+        },
+        scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#64748b' } },
+            y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#64748b' } }
         }
-    });
+    }
+});
 
-    async function fetchData() {
-        try {
-            const response = await fetch("/api/metrics");
-            const json = await response.json();
-            const node = json.nodes[0];
 
-            // Render Core Metrics & Progress Bars
-            document.getElementById("cpu").innerText = node.cpu.toFixed(1) + "%";
-            document.getElementById("cpu-bar").style.width = node.cpu + "%";
+// ==============================================================================
+// 3. SECURED CORE TELEMETRY METRICS INGESTION LOOP
+// ==============================================================================
+async function fetchData() {
+    try {
+        const response = await fetch("/api/metrics", {
+            method: "GET",
+            headers: getAuthHeaders()
+        });
 
-            document.getElementById("ram").innerText = node.ram.toFixed(1) + "%";
-            document.getElementById("ram-bar").style.width = node.ram + "%";
+        // Forced logout tracking if token mutation or expiration triggers 401 Unauthorized
+        if (response.status === 401) {
+            localStorage.removeItem('monitor_jwt_token');
+            window.location.href = '/login';
+            return;
+        }
 
-            document.getElementById("disk").innerText = node.disk.toFixed(1) + "%";
-            document.getElementById("disk-bar").style.width = node.disk + "%";
+        const json = await response.json();
+        if (!json.nodes || json.nodes.length === 0) return;
+        const node = json.nodes[0];
 
-            // Dynamic Weighted Health Matrix Score Representation
-            document.getElementById("health-score").innerText = json.health.score;
-            const healthStatus = document.getElementById("health-status");
-            healthStatus.innerText = json.health.status;
-            
-            // Re-apply Contextual Background Styles to Badges
-            healthStatus.style.background = "rgba(16, 185, 129, 0.1)";
-            healthStatus.style.color = "var(--color-healthy)";
-            
-            if (json.health.status === "Warning") {
-                healthStatus.style.background = "rgba(245, 158, 11, 0.1)";
-                healthStatus.style.color = "var(--color-warning)";
-            } else if (json.health.status === "Critical") {
-                healthStatus.style.background = "rgba(239, 68, 68, 0.1)";
-                healthStatus.style.color = "var(--color-critical)";
-            }
+        // Render Core Metrics & Progress Bars
+        document.getElementById("cpu").innerText = node.cpu.toFixed(1) + "%";
+        document.getElementById("cpu-bar").style.width = node.cpu + "%";
 
-            // Central Alarm Banner Interception Block
-            const alertBox = document.getElementById("alertBox");
+        document.getElementById("ram").innerText = node.ram.toFixed(1) + "%";
+        document.getElementById("ram-bar").style.width = node.ram + "%";
+
+        document.getElementById("disk").innerText = node.disk.toFixed(1) + "%";
+        document.getElementById("disk-bar").style.width = node.disk + "%";
+
+        // Dynamic Weighted Health Matrix Score Representation
+        document.getElementById("health-score").innerText = json.health.score;
+        const healthStatus = document.getElementById("health-status");
+        healthStatus.innerText = json.health.status;
+        
+        healthStatus.style.background = "rgba(16, 185, 129, 0.1)";
+        healthStatus.style.color = "var(--color-healthy)";
+        
+        if (json.health.status === "Warning") {
+            healthStatus.style.background = "rgba(245, 158, 11, 0.1)";
+            healthStatus.style.color = "var(--color-warning)";
+        } else if (json.health.status === "Critical") {
+            healthStatus.style.background = "rgba(239, 68, 68, 0.1)";
+            healthStatus.style.color = "var(--color-critical)";
+        }
+
+        // Central Alarm Banner Interception Block
+        const alertBox = document.getElementById("alertBox");
+        if(alertBox) {
             alertBox.style.display = json.alerts.length > 0 ? "block" : "none";
+        }
 
-            // Sync Dynamic Node Event Logs
-            const alertsContainer = document.getElementById("alerts-container");
-            if (json.alerts.length === 0) {
-                alertsContainer.innerHTML = `<p style="color: var(--color-healthy); font-size:13px;"><i class="fa-solid fa-circle-check"></i> Node operational thresholds normal.</p>`;
-            } else {
-                alertsContainer.innerHTML = json.alerts.map(alert => `<div class="history-item" style="border-color: var(--color-critical); color: #fca5a5;">${alert}</div>`).join("");
-            }
+        // Sync Dynamic Node Event Logs
+        const alertsContainer = document.getElementById("alerts-container");
+        if (json.alerts.length === 0) {
+            alertsContainer.innerHTML = `<p style="color: var(--color-healthy); font-size:13px;"><i class="fa-solid fa-circle-check"></i> Node operational thresholds normal.</p>`;
+        } else {
+            alertsContainer.innerHTML = json.alerts.map(alert => `<div class="history-item" style="border-color: var(--color-critical); color: #fca5a5;">${alert.message || alert}</div>`).join("");
+        }
 
-            // Sync Dynamic OS Active Tasks Process Descriptors
+        // Sync Dynamic OS Active Tasks Process Descriptors
+        if (json.processes && json.processes.top_cpu) {
             document.getElementById("cpu-processes").innerHTML = json.processes.top_cpu.map(p => `
                 <tr>
                     <td><i class="fa-solid fa-terminal text-muted small me-2"></i>${p.name || "Unknown"} <span class="text-muted small">(${p.pid})</span></td>
@@ -430,48 +466,65 @@
                     <td><i class="fa-solid fa-terminal text-muted small me-2"></i>${p.name || "Unknown"} <span class="text-muted small">(${p.pid})</span></td>
                     <td class="text-end fw-bold text-info">${p.memory.toFixed(1)}%</td>
                 </tr>`).join("");
-
-            // Re-render Dynamic Vector Waveform Charts Timeline Array
-            const time = new Date().toLocaleTimeString();
-            labels.push(time);
-            cpuData.push(node.cpu);
-            ramData.push(node.ram);
-            diskData.push(node.disk);
-
-            if (labels.length > 30) {
-                labels.shift(); cpuData.shift(); ramData.shift(); diskData.shift();
-            }
-            chart.update();
-        } catch (error) {
-            console.error("Failed to map dynamic telemetry metrics context:", error);
         }
-    }
 
-    async function fetchAlertHistory() {
-        try {
-            const response = await fetch("/api/alerts/history");
-            const json = await response.json();
-            const historyContainer = document.getElementById("alert-history");
+        // Re-render Dynamic Vector Waveform Charts Timeline Array
+        const time = new Date().toLocaleTimeString();
+        labels.push(time);
+        cpuData.push(node.cpu);
+        ramData.push(node.ram);
+        diskData.push(node.disk);
 
-            if (json.history.length === 0) {
-                historyContainer.innerHTML = `<p class="text-muted small"><i class="fa-solid fa-database"></i> Ledger sequence sync completed. Persistent table empty.</p>`;
-                return;
-            }
-
-            historyContainer.innerHTML = json.history.reverse().map(log => `
-                <div class="history-item" style="border-color: #475569; color: var(--text-muted);">
-                    <i class="fa-solid fa-clock-rotate-left me-2"></i>${log}
-                </div>`).join("");
-        } catch (error) {
-            console.error("Failed to sync structural ledger data sequences:", error);
+        if (labels.length > 30) {
+            labels.shift(); cpuData.shift(); ramData.shift(); diskData.shift();
         }
+        chart.update();
+    } catch (error) {
+        console.error("Failed to map dynamic telemetry metrics context:", error);
     }
+}
 
-    // Initialize Infinite Monitoring Loop Hooks
-    fetchData();
-    fetchAlertHistory();
-    setInterval(fetchData, 2000);
-    setInterval(fetchAlertHistory, 5000);
+
+// ==============================================================================
+// 4. SECURED LEDGER ALERT HISTORY FETCH
+// ==============================================================================
+async function fetchAlertHistory() {
+    try {
+        const response = await fetch("/api/alerts/history", {
+            method: "GET",
+            headers: getAuthHeaders()
+        });
+
+        if (response.status === 401) {
+            localStorage.removeItem('monitor_jwt_token');
+            window.location.href = '/login';
+            return;
+        }
+
+        const json = await response.json();
+        const historyContainer = document.getElementById("alert-history");
+
+        if (!json.history || json.history.length === 0) {
+            historyContainer.innerHTML = `<p class="text-muted small"><i class="fa-solid fa-database"></i> Ledger sequence sync completed. Persistent table empty.</p>`;
+            return;
+        }
+
+        historyContainer.innerHTML = json.history.reverse().map(log => `
+            <div class="history-item" style="border-color: #475569; color: var(--text-muted);">
+                <i class="fa-solid fa-clock-rotate-left me-2"></i>${log}
+            </div>`).join("");
+    } catch (error) {
+        console.error("Failed to sync structural ledger data sequences:", error);
+    }
+}
+
+// ==============================================================================
+// 5. INITIALIZE MONITORED INFINITE POLLING HOOKS
+// ==============================================================================
+fetchData();
+fetchAlertHistory();
+setInterval(fetchData, 2000);
+setInterval(fetchAlertHistory, 5000);
 </script>
 </body>
 </html>
