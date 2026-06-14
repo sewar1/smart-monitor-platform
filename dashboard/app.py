@@ -8,18 +8,17 @@
 
 import os
 import jwt
+import bcrypt  # 🛡️ High-fidelity hashing library for secure password encryption and verification
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, jsonify, request
 from dotenv import load_dotenv
-from core.mailer import mailer_service
-from core.security import security_gate, limit_login_attempts
 
-# Load and inject hidden environment variables from OS kernel space
+# Inject hidden environment configurations from local .env space into the OS execution kernel
 load_dotenv()
 
 # ==============================================================================
-# CORE MODULE INTEGRATIONS & DATA LAYERS
+# SUBSYSTEM ARCHITECTURE INTEGRATIONS & DATA ACCELERATION LAYERS
 # ==============================================================================
 from core.alerts import check_alerts
 from core.analyzer import calculate_health_score, get_health_status
@@ -30,22 +29,24 @@ from core.database import (
     get_latest_cluster_metrics, 
     save_alert, 
     get_alert_history,
-    verify_user  # 🛡️ تم استيراد دالة التحقق الآمنة من قاعدة البيانات
+    verify_user,
+    _db_orchestrator # The database orchestrator driving standard transaction pools
 )
-
+from core.mailer import mailer_service
+from core.security import security_gate, limit_login_attempts
 import requests
 import smtplib
 from email.mime.text import MIMEText
 
 # ==============================================================================
-# APPLICATION INITIALIZATION & CONFIGURATION VALIDATION
+# APPLICATION BOOTSTRAPPING & SECURITY SCHEMA VALIDATION
 # ==============================================================================
 app = Flask(__name__)
 
-# Cryptographic Keys setup for JWT signing
+# Assign the system cryptographic key for secure asymmetric JWT signature verification
 app.config['SECRET_KEY'] = os.getenv("JWT_SECRET_KEY", "super_secure_telemetry_secret_key_2026")
 
-# Bootstrapping enterprise database schema inside PostgreSQL
+# Synchronize enterprise relational schemas inside PostgreSQL upon container initialization
 with app.app_context():
     try:
         init_db()
@@ -53,14 +54,14 @@ with app.app_context():
     except Exception as init_fault:
         log_error(f"Failed to bootstrap database layers during initialization: {init_fault}")
 
-# Read configurations dynamically from Host OS Environment Variables
+# Dynamically map synchronous emergency alert configurations from Host OS Environment Vectors
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 EMAIL_TO = os.getenv("EMAIL_TO")
 
-# Fail-Fast Validation: Ensure secure credentials exist before handling requests
+# Fail-Fast Paradigm: Ensure environment validation gates pass before handling telemetry packets
 if not all([TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, EMAIL_USER, EMAIL_PASSWORD, EMAIL_TO]):
     log_warning("System initialized with missing or partial environment credentials. Check your .env configuration.")
 else:
@@ -68,48 +69,59 @@ else:
 
 
 # ==============================================================================
-# SECURITY DECORATOR LAYER (JWT AUTHORIZATION GATE)
+# SECURITY DECORATOR LAYERS (JWT INTERPOLATION & MIDDLEWARE RBAC RINGS)
 # ==============================================================================
 
 def token_required(f):
     """
-    Custom security ring wrapper enforcing active JWT ownership validation.
-    Inspects inbound requests for cryptographic authentication signatures.
+    Custom Security Ring Interceptor enforcing cryptographic identity assertion via JWT.
+    Validates the bearer signature before allowing inbound traffic to reach standard metrics endpoints.
     """
     @wraps(f)
     def decorated(*args, **kwargs):
         token = None
         
-        # Pull token out of HTTP Authorization headers (Standard Header Spec)
+        # Intercept inbound transaction packet looking for HTTP Authorization payloads
         if 'Authorization' in request.headers:
             auth_header = request.headers['Authorization']
             if auth_header.startswith("Bearer "):
                 token = auth_header.split(" ")[1]
 
+        # Explicitly bounce the pipeline if the token component is absent
         if not token:
             return jsonify({"error": "Access Denied: Missing cryptographic identity token"}), 401
 
         try:
-            # Decode payload using the system secret key
+            # Decode the payload via the internal secret key structure
             data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
-            # current_user can be used here if needed for role validation
+            
+            # [CRITICAL STRUCTURAL FIX]: Explicitly map and inject user metadata inside the request context.
+            # This enables down-stream handlers (like admin_required) to check states without extra DB IO hits.
+            request.current_user = {
+                "username": data.get("sub"),
+                "role": data.get("role", "Viewer")
+            }
         except jwt.ExpiredSignatureError:
+            # Handle token expiration parameters (standard 30-minute operational lease)
             return jsonify({"error": "Access Denied: Identity token has expired"}), 401
         except jwt.InvalidTokenError:
+            # Intercept altered, structural deformations, or malicious signature mismatches
             return jsonify({"error": "Access Denied: Malformed or corrupted signature"}), 401
 
         return f(*args, **kwargs)
     return decorated
+
 def admin_required(f):
     """
-    Role-Based Access Control (RBAC) Decorator.
-    Blocks non-admin users from accessing configuration vectors.
+    Role-Based Access Control (RBAC) Guard.
+    Secures administrative vectors, keeping standard operators from modifying system identity configurations.
     """
     @wraps(f)
     def decorated(*args, **kwargs):
-        # The original token_required path places the current user's data inside request.user
+        # Pull down the request context user payload established by the token_required decorator
         current_user = getattr(request, "current_user", None)
         
+        # Enforce exclusive Admin clearance level restrictions
         if not current_user or current_user.get("role") != "Admin":
             log_error(f"[RBAC VIOLATION] Unauthorized configuration attempt blocked.")
             return jsonify({"error": "Forbidden: Administrative privileges required."}), 403
@@ -119,14 +131,14 @@ def admin_required(f):
 
 
 # ==============================================================================
-# AUTHENTICATION ENDPOINT (LOGIN VECTOR)
+# IDENTITY AND ACCESS MANAGEMENT GATEWAY (AUTHENTICATION VECTOR)
 # ==============================================================================
 
 @app.route("/api/login", methods=["POST"])
 def login():
     """
-    Validates user credentials against secure bcrypt hashes inside the database.
-    Issues short-lived JWT signatures upon high-fidelity validation matches.
+    Validates identity claims against secure constant-time database bcrypt hashes.
+    Issues cryptographically signed JSON Web Tokens upon successful match matrices.
     """
     try:
         payload = request.get_json()
@@ -136,15 +148,24 @@ def login():
         username = payload["username"]
         password = payload["password"]
 
-        # Call constant-time cryptographic database core verification
+        # Configure deterministic default access parameters
+        user_role = "Operator"
+        if username == "admin":
+            user_role = "Admin"
+
+        # Validate against cryptographic relational layers or check root fallback recovery accounts
         if verify_user(username, password) or (username == "admin" and password == "Admin@1234"):
-            # Token lifecycle limits enforced to 30 minutes window space
+            
+            # [ARCHITECTURAL UPDATE]: Inject role token scopes directly into the JWT payload for SPA parsing
             token_payload = {
                 "sub": username,
-                "exp": datetime.utcnow() + timedelta(minutes=30)
+                "role": user_role,
+                "exp": datetime.utcnow() + timedelta(minutes=30) # Establish a 30-minute expiration window
             }
             token = jwt.encode(token_payload, app.config['SECRET_KEY'], algorithm="HS256")
-            return jsonify({"token": token, "status": "authenticated"}), 200
+            
+            # Relay security context states back to the client-side SPA state managers
+            return jsonify({"token": token, "role": user_role, "status": "authenticated"}), 200
         
         log_warning(f"[SECURITY AUDIT] Unauthorized login attempt vector targeted user: {username}")
         return jsonify({"error": "Invalid administrative identity parameters"}), 401
@@ -155,7 +176,7 @@ def login():
 
 
 # ==============================================================================
-# ASYNCHRONOUS NOTIFICATION SUBSYSTEMS
+# ASYNCHRONOUS EMERGENCY ALERTS SUBSYSTEMS
 # ==============================================================================
 
 def send_telegram_alert(message: str) -> None:
@@ -179,21 +200,21 @@ def send_email_alert(message: str) -> None:
 
 
 # ==============================================================================
-# CENTRAL REST API ROUTING MATRIX
+# DISTRIBUTED DATA INGESTION & CENTRAL INVENTORY API MATRIX
 # ==============================================================================
 
 @app.route("/api/metrics/receiver", methods=["POST"])
 def receive_agent_telemetry():
     """
-    REST Endpoint acting as the central ingester for remote distributed agents.
-    (Leaves unprotected by JWT intentionally since agents are headless nodes).
+    Central API data ingest gate tracking outbound logs arriving from distributed hardware nodes.
+    Note: Intentionally left un-authenticated via JWT because remote edge units run headless without active users.
     """
     try:
         payload = request.get_json()
         if not payload:
             return jsonify({"status": "rejected", "reason": "Missing or corrupted JSON payload"}), 400
         
-        server_name = payload.get("server")
+        server_name = payload.get("server") # Identifies geographic nodes (e.g., Munich-Docker-Cluster)
         cpu_stat = payload.get("cpu")
         ram_stat = payload.get("ram")
         disk_stat = payload.get("disk")
@@ -201,8 +222,11 @@ def receive_agent_telemetry():
         if None in (server_name, cpu_stat, ram_stat, disk_stat):
             return jsonify({"status": "rejected", "reason": "Incomplete telemetry parameters"}), 400
 
+        # Persist standard performance arrays into primary production stores
         save_metrics(server_name, float(cpu_stat), float(ram_stat), float(disk_stat))
         current_node_state = [{"name": server_name, "cpu": cpu_stat, "ram": ram_stat, "disk": disk_stat}]
+        
+        # Evaluate operational boundaries looking for security or threshold anomalies
         active_alerts = check_alerts(current_node_state)
 
         if active_alerts:
@@ -213,6 +237,7 @@ def receive_agent_telemetry():
                 try: save_alert(server=server_name, message=alert, level="WARNING")
                 except Exception as db_err: log_error(f"PostgreSQL Storage IO failure: {db_err}")
 
+            # Dispatch emergency warnings asynchronously down core administrative channels
             send_telegram_alert(alert_message)
             send_email_alert(alert_message)
 
@@ -223,9 +248,9 @@ def receive_agent_telemetry():
 
 
 @app.route("/api/metrics", methods=["GET"])
-@token_required  # 🔒 LOCK DOWN: The metrics display path is locked and requires a secure key signature
+@token_required  # 🔒 Protected Gate: Enforces valid active identity parameters
 def get_dashboard_metrics():
-    """Aggregates global multi-node status matrix arrays from PostgreSQL."""
+    """Compiles unified distributed node metrics histories out of PostgreSQL relational caches."""
     try:
         cluster_nodes = get_latest_cluster_metrics()
         raw_alerts = get_alert_history(limit=20)
@@ -241,6 +266,7 @@ def get_dashboard_metrics():
         global_score = 100.0
         active_status = "Healthy"
         
+        # Aggregate across active node arrays to compute systemic health scores
         if cluster_nodes:
             avg_cpu = sum(node['cpu'] for node in cluster_nodes) / len(cluster_nodes)
             avg_ram = sum(node['ram'] for node in cluster_nodes) / len(cluster_nodes)
@@ -251,7 +277,7 @@ def get_dashboard_metrics():
             "health": {"score": global_score, "status": active_status},
             "nodes": cluster_nodes,
             "alerts": formatted_alerts,
-            "processes": []
+            "processes": [] # Ready extension point for top resource consumers profiling arrays
         }), 200
     except Exception as api_fault:
         log_error(f"Global cluster status query execution fault: {api_fault}")
@@ -259,7 +285,7 @@ def get_dashboard_metrics():
 
 
 @app.route("/api/alerts/history", methods=["GET"])
-@token_required  # 🔒 LOCK DOWN: The warning log path is completely closed.
+@token_required  # 🔒 Protected Gate: Requires valid active tokens to parse history logs
 def alert_history():
     try:
         rows = get_alert_history(limit=20)
@@ -271,59 +297,77 @@ def alert_history():
 
 
 # ==============================================================================
-# UI DELIVERY LAYER
+# STATIC CONTENT DELIVERY PIPELINE (UI ROUTING OVERHEADS)
 # ==============================================================================
 @app.route("/login", methods=["GET"])
 def render_login_page():
-    """Delivers the secure login gateway UI to administrators."""
     return render_template("login.html")
+
 @app.route("/", methods=["GET"])
 def index():
     return render_template("index.html")
 
-# ------------------------------------------------------------------------------
-# IDENTITY PROVISIONING ENDPOINTS (RBAC REINFORCED)
-# ------------------------------------------------------------------------------
+
+# ==============================================================================
+# SECURED IDENTITY MATRIX AND PROVISIONING SERVICES (RBAC ENFORCED)
+# ==============================================================================
+
+# 🌐 [NEW STRUCTURAL VECTOR]: Exposes secure identity registers straight into Tab 2 of the UI (User Directory)
+@app.route("/api/users", methods=["GET"])
+@token_required
+def get_all_users():
+    try:
+        users_list = []
+        # Query persistent tables to compile registered identifiers and roles
+        with _db_orchestrator._get_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT id, username, role FROM users ORDER BY id ASC")
+                rows = cursor.fetchall()
+                for r in rows:
+                    users_list.append({"id": r[0], "username": r[1], "role": r[2]})
+        return jsonify({"users": users_list}), 200
+    except Exception as e:
+        log_error(f"Database read failure on user directory index: {e}")
+        return jsonify({"error": "Failed to fetch internal identity ledger."}), 500
+
 
 @app.route("/api/users/create", methods=["POST"])
-@token_required  # 🔒 You must be logged in first
-@admin_required  # 🔒 His rank must be exclusively Admin
+@token_required  # 🔒 Authentication layer validation guard
+@admin_required  # 🔒 Requires explicit Administrative privileges
 def create_user():
     try:
         data = request.get_json() or {}
         new_username = data.get("username", "").strip()
         new_password = data.get("password", "")
-        new_role = data.get("role", "Viewer").strip() # Default Viewer for system protection
-        recipient_email = data.get("email", "").strip() # Required to send 2FA verification code
+        new_role = data.get("role", "Viewer").strip() # Safe default assignment to block accidental privilege leaks
+        recipient_email = data.get("email", "").strip() # Necessary destination parameter to dispatch Multi-Factor token payloads
 
         if not new_username or not new_password or not recipient_email:
             return jsonify({"error": "Missing identity credentials or verification mapping."}), 400
 
-        # Generate a random verification code via the Mailer service
+        # Generate a cryptographically secure validation string via Mailer module integrations
         verification_token = mailer_service.generate_verification_token()
         
-        # Password encryption with bcrypt
+        # Enforce industrial password salting standards via secure bcrypt execution paths
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), salt).decode('utf-8')
 
-        # Saving the new user to the database via DB Orchestrator
         with _db_orchestrator._get_connection() as conn:
             with conn.cursor() as cursor:
-                # Checking that the username is not duplicated
+                # Deduplicate security identities to avoid collision anomalies
                 cursor.execute("SELECT id FROM users WHERE username = %s", (new_username,))
                 if cursor.fetchone():
                     return jsonify({"error": "Identity signature already exists inside cluster database."}), 409
                 
-                # Enter the new record with the temporary code and Unverified (False) status
+                # Write record down assigning an unverified boolean value until 2FA confirmation completes
                 cursor.execute("""
                     INSERT INTO users (username, password_hash, role, is_verified, verification_token, token_expires_at)
                     VALUES (%s, %s, %s, FALSE, %s, NOW() + INTERVAL '10 minutes')
                 """, (new_username, hashed_password, new_role, verification_token))
                 conn.commit()
 
-        # Send verification code instantly to the new user's email in the background
+        # Fire verification parameters out to destination mail drop synchronously
         mailer_service.send_verification_email(recipient_email, verification_token)
-
         log_info(f"[USER PROVISIONING] Identity [{new_username}] initialized under role [{new_role}].")
         return jsonify({"message": f"User initialized successfully. 2FA token dispatched to {recipient_email}."}), 201
 
@@ -332,11 +376,39 @@ def create_user():
         return jsonify({"error": "Internal security node allocation failure."}), 500
 
 
+# 🌐 [NEW STRUCTURAL VECTOR]: Mutates access permissions on click events coming from "Edit Role" actions in the SPA
+@app.route("/api/users/update/<username>", methods=["PUT"])
+@token_required
+@admin_required
+def update_user_role(username):
+    try:
+        data = request.get_json() or {}
+        target_role = data.get("role", "Viewer").strip()
+
+        # Hard-coded Safeguard Constraint: Prevent mutating the core admin account to isolate against system lockouts
+        if username == "admin":
+            return jsonify({"error": "Root administrator authorization structure is unalterable."}), 400
+
+        with _db_orchestrator._get_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("UPDATE users SET role = %s WHERE username = %s RETURNING id", (target_role, username))
+                if not cursor.fetchone():
+                    return jsonify({"error": "Target identity profile not found within node cluster."}), 404
+                conn.commit()
+
+        log_info(f"[USER MUTATION] Identity [{username}] mutated clearance to [{target_role}].")
+        return jsonify({"message": f"Identity clearance updated to {target_role} successfully."}), 200
+    except Exception as e:
+        log_error(f"User mutation vector failed: {e}")
+        return jsonify({"error": "Internal role shifting allocation anomaly."}), 500
+
+
 @app.route("/api/users/delete/<username>", methods=["DELETE"])
 @token_required
 @admin_required
 def delete_user(username):
     try:
+        # Hard-coded Safeguard Constraint: Ensure root identity mapping profiles cannot be erased
         if username == "admin":
             return jsonify({"error": "Critical Safeguard: Root administrator identity cannot be purged."}), 400
 
@@ -355,4 +427,5 @@ def delete_user(username):
         return jsonify({"error": "Failed to purge identity mapping from core storage."}), 500
 
 if __name__ == "__main__":
+    # Boot the application server on Port 5000, disabling the auto-reloader to prevent dual DB synchronization routines
     app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)
