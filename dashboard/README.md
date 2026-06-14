@@ -15,6 +15,28 @@ This subsystem governs the user interface layer and JWT session verification rin
 - **`templates/index.html`**: Main workspace template loading multi-series Chart.js waves and structural user tables.
 - **`test_app.py`**: High-coverage integration tests evaluating API routing security, user tokens, and layout access barriers.
 
+## API Endpoint
+### GET /api/metrics
+Returns uniform real-time infrastructure data matrix payloads:
+```bash
+
+Returns real-time system metrics:
+{
+  "health": {
+    "score": 73.0,
+    "status": "Warning"
+  },
+  "nodes": [
+    {
+      "name": "server-1",
+      "cpu": 5.6,
+      "ram": 44.7,
+      "disk": 33.6
+    }
+  ],
+  "alerts": []
+}
+
 ## Target API Specifications
 - `POST /api/auth/login` -> Authenticates operator credentials, returning cryptographic token rings.
 - `GET /api/metrics` -> Delivers high-frequency system telemetry vectors to the active frontend graph interfaces.
