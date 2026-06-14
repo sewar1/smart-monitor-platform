@@ -3,155 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Monitor Platform | Production Dashboard</title>
+    <title>Smart Monitor Platform | Production Enterprise Dashboard</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <style>
-        /* Modern Dark Cyberpunk Theme Palette */
+        /* ==============================================================================
+           THEME DEFINITIONS & DESIGN SYSTEM VARIABLES (Glassmorphic Neo-Dark Mode)
+           ============================================================================== */
         :root {
-            --bg-main: #080d1a;
-            --bg-card: #0f172a;
-            --border-color: #1e293b;
+            --bg-main: #070a13;
+            --bg-card: rgba(15, 23, 42, 0.75);
+            --border-color: rgba(255, 255, 255, 0.08);
             --text-muted: #94a3b8;
             --color-healthy: #10b981;
             --color-warning: #f59e0b;
             --color-critical: #ef4444;
             --color-info: #3b82f6;
+            --glow-color: rgba(59, 130, 246, 0.15);
         }
 
         body {
-            background-color: var(--bg-main);
+            background: radial-gradient(circle at top, #111827 0%, #070a13 100%);
             color: #f8fafc;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             overflow-x: hidden;
+            min-height: 100vh;
         }
 
-        /* Animated Header */
+        /* Premium Top Navigation Cluster Configuration */
         .navbar-custom {
-            background-color: var(--bg-card);
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px); /* Webkit support for Safari rendering engines */
             border-bottom: 1px solid var(--border-color);
-            padding: 15px 25px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            padding: 16px 32px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
         }
 
         .navbar-brand-custom {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 800;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             color: #fff;
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
-        /* Glassmorphism Cards */
+        /* Glassmorphic Responsive Card Containment Blocks */
         .card-box {
             background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
             border-radius: 16px;
             padding: 24px;
             margin-bottom: 24px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease, border-color 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 0 30px var(--glow-color);
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
+        /* Visual affordance micro-interactions on hover */
         .card-box:hover {
-            transform: translateY(-5px);
-            border-color: #334155;
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35), 0 0 40px var(--glow-color);
+        }
+
+        /* Navigational Control Tab Overrides */
+        .nav-tabs-custom {
+            border: none;
+            gap: 8px;
+        }
+
+        .nav-tabs-custom .nav-link {
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.25s ease;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .nav-tabs-custom .nav-link:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.06);
+            border-color: var(--border-color);
+        }
+
+        .nav-tabs-custom .nav-link.active {
+            color: #ffffff;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.2) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
         }
 
         .metric-icon {
-            font-size: 24px;
+            font-size: 22px;
             padding: 12px;
             border-radius: 12px;
-            background: rgba(255, 255, 255, 0.03);
-            margin-bottom: 15px;
-            display: inline-block;
+            background: rgba(255, 255, 255, 0.04);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .label {
             color: var(--text-muted);
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         .value {
-            font-size: 32px;
+            font-size: 30px;
             font-weight: 800;
-            margin-top: 5px;
+            margin-top: 4px;
         }
 
-        /* Dynamic Progress Bars */
         .progress-custom {
             background-color: #1e293b;
             height: 6px;
-            border-radius: 4px;
-            margin-top: 15px;
+            border-radius: 10px;
+            margin-top: 16px;
         }
 
-        /* Real-time Status Indicators */
         .status-badge {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
-            padding: 4px 12px;
+            padding: 6px 16px;
             border-radius: 20px;
             display: inline-block;
             margin-top: 8px;
         }
 
-        /* Global Status Alert Banner */
+        /* Incident Broadcast Banner (Hidden by default, triggered on systemic fault) */
         .alert-banner {
             display: none;
-            background: linear-gradient(90deg, #ef4444, #b91c1c);
+            background: linear-gradient(90deg, #ef4444, #991b1b);
             color: white;
-            padding: 14px;
+            padding: 16px;
             border-radius: 12px;
             margin-bottom: 24px;
             font-weight: 700;
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
-            animation: pulse 2s infinite;
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35);
+            animation: corePulse 2s infinite ease-in-out;
         }
 
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.85; }
-            100% { opacity: 1; }
+        @keyframes corePulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.9; transform: scale(0.998); }
         }
 
-        /* High Tech Logs & History Container */
+        /* Real-Time Log Layout Optimization and Custom Scrollbar Rules */
         .history-container {
             max-height: 250px;
             overflow-y: auto;
             font-family: 'Courier New', Courier, monospace;
-            padding-right: 5px;
         }
 
         .history-container::-webkit-scrollbar {
-            width: 5px;
+            width: 6px;
         }
 
         .history-container::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
         }
 
         .history-item {
             font-size: 13px;
-            padding: 8px 12px;
+            padding: 10px 14px;
             background: rgba(255, 255, 255, 0.02);
             border-left: 3px solid var(--color-warning);
             margin-bottom: 8px;
             border-radius: 0 8px 8px 0;
         }
 
-        /* Tables & Typography Overrides */
         h4 {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
             color: #fff;
             margin-bottom: 20px;
@@ -160,22 +200,65 @@
             gap: 10px;
         }
 
+        /* High-Density Data Table Layout Modifications */
+        .table-custom {
+            margin: 0;
+        }
+
         .table-custom th {
             color: var(--text-muted);
-            font-size: 12px;
+            font-size: 11px;
             text-transform: uppercase;
-            border-bottom: 1px solid var(--border-color);
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 12px 8px;
         }
 
         .table-custom td {
             color: #e2e8f0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-            padding: 8px 4px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            padding: 12px 8px;
+            vertical-align: middle;
+            font-size: 14px;
+        }
+
+        .table-custom tbody tr:hover {
+            background: rgba(255, 255, 255, 0.02);
         }
 
         .chart-container {
-            height: 45vh;
+            height: 40vh;
             position: relative;
+        }
+
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .lang-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        .badge-role {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .modal-content {
+            background-color: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-radius: 16px;
         }
     </style>
 </head>
@@ -184,148 +267,233 @@
 <nav class="navbar navbar-custom mb-4">
     <div class="container-fluid">
         <span class="navbar-brand-custom">
-            <i class="fa-solid Nav-Icon fa-circle-nodes text-primary"></i> SMART MONITOR PLATFORM
+            <i class="fa-solid fa-circle-nodes text-primary"></i> 
+            <span id="nav-title">SMART MONITOR PLATFORM</span>
         </span>
-        <span class="text-muted small"><i class="fa-solid fa-clock"></i> Live Diagnostics Console</span>
+        <div class="d-flex align-items-center gap-3">
+            <ul class="nav nav-tabs nav-tabs-custom" id="dashboardTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link active" id="telemetry-tab" data-bs-toggle="tab" data-bs-target="#telemetry-pane" type="button" role="tab" aria-controls="telemetry-pane" aria-selected="true">
+                     <i class="fa-solid fa-chart-line me-2"></i><span id="tab-telemetry">Telemetry Metrics</span>
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="directory-tab" data-bs-toggle="tab" data-bs-target="#directory-pane" type="button" role="tab" aria-controls="directory-pane" aria-selected="false">
+                     <i class="fa-solid fa-users-gear me-2"></i><span id="tab-directory">User Directory</span>
+                  </button>
+                </li>
+            </ul>
+            <button class="lang-btn" id="lang-btn" onclick="toggleDashboardLanguage()">DE</button>
+            <button class="btn btn-sm btn-outline-danger" onclick="executeSecureLogout()" style="border-radius: 8px;"><i class="fa-solid fa-power-off"></i></button>
+        </div>
     </div>
 </nav>
 
 <div class="container-fluid px-4">
     
     <div id="alertBox" class="alert-banner">
-        <i class="fa-solid fa-triangle-exclamation"></i> CRITICAL INFRASTRUCTURE EVENT DETECTED
+        <i class="fa-solid fa-triangle-exclamation me-2"></i> <span id="banner-alert-text">CRITICAL INFRASTRUCTURE EVENT DETECTED</span>
     </div>
 
-    <div class="row">
-        <div class="col-xl-3 col-md-6">
-            <div class="card-box">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <span class="label">Processor Load</span>
-                        <div class="value" id="cpu">0%</div>
+    <div class="tab-content" id="dashboardTabsContent">
+        
+        <div class="tab-pane fade show active" id="telemetry-pane" role="tabpanel" aria-labelledby="telemetry-tab">
+            <div class="row">
+                <div class="col-xl-3 col-md-6">
+                    <div class="card-box">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="label" id="lbl-cpu">Processor Load</span>
+                                <div class="value" id="cpu">0%</div>
+                            </div>
+                            <div class="metric-icon" style="color: var(--color-critical)"><i class="fa-solid fa-microchip"></i></div>
+                        </div>
+                        <div class="progress progress-custom">
+                            <div id="cpu-bar" class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
+                        </div>
                     </div>
-                    <div class="metric-icon" style="color: var(--color-critical)"><i class="fa-solid fa-microchip"></i></div>
                 </div>
-                <div class="progress progress-custom">
-                    <div id="cpu-bar" class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
-                </div>
-            </div>
-        </div>
 
-        <div class="col-xl-3 col-md-6">
-            <div class="card-box">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <span class="label">Memory Pools</span>
-                        <div class="value" id="ram">0%</div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card-box">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="label" id="lbl-ram">Memory Pools</span>
+                                <div class="value" id="ram">0%</div>
+                            </div>
+                            <div class="metric-icon" style="color: var(--color-info)"><i class="fa-solid fa-memory"></i></div>
+                        </div>
+                        <div class="progress progress-custom">
+                            <div id="ram-bar" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
+                        </div>
                     </div>
-                    <div class="metric-icon" style="color: var(--color-info)"><i class="fa-solid fa-memory"></i></div>
                 </div>
-                <div class="progress progress-custom">
-                    <div id="ram-bar" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
-                </div>
-            </div>
-        </div>
 
-        <div class="col-xl-3 col-md-6">
-            <div class="card-box">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <span class="label">Storage Block</span>
-                        <div class="value" id="disk">0%</div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card-box">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="label" id="lbl-disk">Storage Block</span>
+                                <div class="value" id="disk">0%</div>
+                            </div>
+                            <div class="metric-icon" style="color: var(--color-healthy)"><i class="fa-solid fa-hard-drive"></i></div>
+                        </div>
+                        <div class="progress progress-custom">
+                            <div id="disk-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                        </div>
                     </div>
-                    <div class="metric-icon" style="color: var(--color-healthy)"><i class="fa-solid fa-hard-drive"></i></div>
                 </div>
-                <div class="progress progress-custom">
-                    <div id="disk-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+
+                <div class="col-xl-3 col-md-6">
+                    <div class="card-box text-center">
+                        <span class="label" id="lbl-matrix">Weighted Health Matrix</span>
+                        <div class="value mt-2" id="health-score" style="font-size: 38px;">100</div>
+                        <span id="health-status" class="status-badge">Analyzing Matrix</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-4">
+                    <div class="card-box">
+                        <h4 id="hdr-incidents"><i class="fa-solid fa-bell-slash text-warning"></i> Active Incident Log</h4>
+                        <div id="alerts-container" class="history-container">
+                            <p style="color: var(--color-healthy); font-size:13px;"><i class="fa-solid fa-circle-check"></i> Node operational thresholds normal.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card-box">
+                        <h4 id="hdr-cpu-threads"><i class="fa-solid fa-fire text-danger"></i> Thread Profiling (Top CPU)</h4>
+                        <table class="table table-dark table-hover table-custom table-sm m-0">
+                            <thead>
+                                <tr>
+                                    <th id="th-cpu-desc">Process Descriptor</th>
+                                    <th class="text-end" id="th-cpu-load">CPU Load</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cpu-processes"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card-box">
+                        <h4 id="hdr-ram-pages"><i class="fa-solid fa-brain text-info"></i> Page Descriptors (Top RAM)</h4>
+                        <table class="table table-dark table-hover table-custom table-sm m-0">
+                            <thead>
+                                <tr>
+                                    <th id="th-ram-desc">Process Descriptor</th>
+                                    <th class="text-end" id="th-ram-base">Memory Base</th>
+                                </tr>
+                            </thead>
+                            <tbody id="memory-processes"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="card-box">
+                        <h4 id="hdr-ledger"><i class="fa-solid fa-database text-muted"></i> SQLite Persistent Ledger Logs (Recent Alert History)</h4>
+                        <div id="alert-history" class="history-container" style="max-height: 150px;">
+                            <p class="text-muted"><i class="fa-solid fa-circle-nodes"></i> Waiting for historical system traces...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="card-box">
+                        <h4 id="hdr-chart"><i class="fa-solid fa-chart-line text-primary"></i> Live Stream Telemetry Waveform Analyzer</h4>
+                        <div class="chart-container">
+                            <canvas id="chart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-3 col-md-6">
-            <div class="card-box text-center">
-                <span class="label">Weighted Health Matrix</span>
-                <div class="value mt-2" id="health-score" style="font-size: 38px;">100</div>
-                <span id="health-status" class="status-badge">Analyzing Matrix</span>
+        <div class="tab-pane fade" id="directory-pane" role="tabpanel" aria-labelledby="directory-tab">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card-box">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4 class="m-0" id="hdr-directory-title"><i class="fa-solid fa-users-gear text-info"></i> Authorized System Operator Directory</h4>
+                            <div class="badge bg-secondary px-3 py-2" style="border-radius: 8px; font-size: 12px;">
+                                <span id="lbl-total-users">Active Node Operators</span>: <span id="user-count" class="fw-bold">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover table-custom">
+                                <thead>
+                                    <tr>
+                                        <th id="th-dir-id">Operator Identifier</th>
+                                        <th id="th-dir-identity">Identity Node String</th>
+                                        <th id="th-dir-role">Access Authorization Role</th>
+                                        <th id="th-dir-status">Status</th>
+                                        <th class="text-end" id="th-dir-actions">Operational Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="directory-table-body">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="actionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="modal-action-title">Modify Operator Context</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-action-body" class="text-muted small">Confirm administrative structural mutation vector on target identity stream node.</p>
+                <div id="role-select-wrapper" class="d-none">
+                    <label class="form-label small text-muted">Select Target Security clearance Level</label>
+                    <select class="form-select bg-dark text-white border-secondary" id="modal-role-select">
+                        <option value="Admin">Admin</option>
+                        <option value="DevSecOps">DevSecOps</option>
+                        <option value="Operator">Operator</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal" id="btn-modal-cancel">Abort</button>
+                <button type="button" class="btn btn-sm btn-primary" id="btn-modal-confirm">Execute Vector</button>
             </div>
         </div>
     </div>
-
-    <div class="row">
-        <div class="col-lg-4">
-            <div class="card-box">
-                <h4><i class="fa-solid fa-bell-slash text-warning"></i> Active Incident Log</h4>
-                <div id="alerts-container" class="history-container">
-                    <p style="color: var(--color-healthy);"><i class="fa-solid fa-circle-check"></i> Node operational thresholds normal.</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card-box">
-                <h4><i class="fa-solid fa-fire text-danger"></i> Thread Profiling (Top CPU)</h4>
-                <table class="table table-dark table-hover table-custom table-sm m-0">
-                    <thead>
-                        <tr>
-                            <th>Process Descriptor</th>
-                            <th class="text-end">CPU Load</th>
-                        </tr>
-                    </thead>
-                    <tbody id="cpu-processes"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card-box">
-                <h4><i class="fa-solid fa-brain text-info"></i> Page Descriptors (Top RAM)</h4>
-                <table class="table table-dark table-hover table-custom table-sm m-0">
-                    <thead>
-                        <tr>
-                            <th>Process Descriptor</th>
-                            <th class="text-end">Memory Base</th>
-                        </tr>
-                    </thead>
-                    <tbody id="memory-processes"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-12">
-            <div class="card-box">
-                <h4><i class="fa-solid fa-database text-muted"></i> SQLite Persistent Ledger Logs (Recent Alert History)</h4>
-                <div id="alert-history" class="history-container" style="max-height: 180px;">
-                    <p class="text-muted"><i class="fa-solid fa-circle-nodes"></i> Waiting for historical system traces...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-12">
-            <div class="card-box">
-                <h4><i class="fa-solid fa-chart-line text-primary"></i> Live Stream Telemetry Waveform Analyzer</h4>
-                <div class="chart-container">
-                    <canvas id="chart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
 </div>
 
 <script>
 // ==============================================================================
-// 1. LOCAL SECURITY FIREWALL GATING
+// 1. LOCAL SECURITY FIREWALL GATING & SESSION MANAGEMENT
 // ==============================================================================
-// Intercept unauthorized requests immediately if execution context lacks valid cryptographic token
+
+/**
+ * Validates the presence of an active authentication token.
+ * Instantly intercepts the pipeline and forces redirection if unauthorized.
+ */
 if (!localStorage.getItem('monitor_jwt_token')) {
     window.location.href = '/login';
 }
 
-// Global helper to inject synchronization bearer authorization headers
+/**
+ * Generates uniform JSON and Authorization bearer headers for external fetch requests.
+ * @returns {Object} Request headers schema
+ */
 function getAuthHeaders() {
     return {
         'Authorization': 'Bearer ' + localStorage.getItem('monitor_jwt_token'),
@@ -333,8 +501,115 @@ function getAuthHeaders() {
     };
 }
 
+/**
+ * Clears volatile session cache signatures and triggers an auth state exit routine.
+ */
+function executeSecureLogout() {
+    localStorage.removeItem('monitor_jwt_token');
+    window.location.href = '/login';
+}
+
 // ==============================================================================
-// 2. CHART.JS LIFECYCLE INITIALIZATION
+// 2. DICTIONARY TRANSLATION MAPPING MODULE (I18N MATRIX)
+// ==============================================================================
+const dashboardTranslations = {
+    en: {
+        navTitle: "SMART MONITOR PLATFORM",
+        tabTelemetry: "Telemetry Metrics",
+        tabDirectory: "User Directory",
+        bannerAlert: "CRITICAL INFRASTRUCTURE EVENT DETECTED",
+        lblCpu: "Processor Load",
+        lblRam: "Memory Pools",
+        lblDisk: "Storage Block",
+        lblMatrix: "Weighted Health Matrix",
+        hdrIncidents: "Active Incident Log",
+        hdrCpuThreads: "Thread Profiling (Top CPU)",
+        hdrRamPages: "Page Descriptors (Top RAM)",
+        hdrLedger: "SQLite Persistent Ledger Logs (Recent Alert History)",
+        hdrChart: "Live Stream Telemetry Waveform Analyzer",
+        hdrDirectoryTitle: "Authorized System Operator Directory",
+        lblTotalUsers: "Active Node Operators",
+        thCpuDesc: "Process Descriptor",
+        thCpuLoad: "CPU Load",
+        thRamDesc: "Process Descriptor",
+        thRamBase: "Memory Base",
+        thDirId: "Operator Identifier",
+        thDirIdentity: "Identity Node String",
+        thDirRole: "Access Authorization Role",
+        thDirStatus: "Status",
+        thDirActions: "Operational Actions",
+        langBtn: "DE"
+    },
+    de: {
+        navTitle: "INTELLIGENTE MONITOR-PLATTFORM",
+        tabTelemetry: "Telemetrie-Metriken",
+        tabDirectory: "Benutzerverzeichnis",
+        bannerAlert: "KRITISCHES INFRASTRUKTUR-EREIGNIS ERKANNT",
+        lblCpu: "Prozessorlast",
+        lblRam: "Speicher-Pools",
+        lblDisk: "Speicherblock",
+        lblMatrix: "Gewichtete Gesundheitsmatrix",
+        hdrIncidents: "Aktives Ereignisprotokoll",
+        hdrCpuThreads: "Thread-Profilierung (Top CPU)",
+        hdrRamPages: "Seiten-Deskriptoren (Top RAM)",
+        hdrLedger: "Persistente SQLite-Ledger-Protokolle (Letzte Alarme)",
+        hdrChart: "Live-Stream Telemetrie Wellenformanalysator",
+        hdrDirectoryTitle: "Autorisiertes Systemoperator-Verzeichnis",
+        lblTotalUsers: "Aktive Knoten-Operatoren",
+        thCpuDesc: "Prozess-Deskriptor",
+        thCpuLoad: "CPU-Last",
+        thRamDesc: "Prozess-Deskriptor",
+        thRamBase: "Speicherbasis",
+        thDirId: "Operator-Bezeichner",
+        thDirIdentity: "Identitätsknoten-String",
+        thDirRole: "Zugriffsautorisierungsrolle",
+        thDirStatus: "Status",
+        thDirActions: "Operationelle Aktionen",
+        langBtn: "EN"
+    }
+};
+
+let currentDashboardLang = 'en';
+
+/**
+ * Loops through registered UI identifiers and switches string mappings contextually.
+ */
+function toggleDashboardLanguage() {
+    currentDashboardLang = currentDashboardLang === 'en' ? 'de' : 'en';
+    const t = dashboardTranslations[currentDashboardLang];
+    
+    document.getElementById('nav-title').textContent = t.navTitle;
+    document.getElementById('tab-telemetry').textContent = t.tabTelemetry;
+    document.getElementById('tab-directory').textContent = t.tabDirectory;
+    document.getElementById('banner-alert-text').textContent = t.bannerAlert;
+    document.getElementById('lbl-cpu').textContent = t.lblCpu;
+    document.getElementById('lbl-ram').textContent = t.lblRam;
+    document.getElementById('lbl-disk').textContent = t.lblDisk;
+    document.getElementById('lbl-matrix').textContent = t.lblMatrix;
+    document.getElementById('hdr-incidents').childNodes[1].textContent = " " + t.hdrIncidents;
+    document.getElementById('hdr-cpu-threads').childNodes[1].textContent = " " + t.hdrCpuThreads;
+    document.getElementById('hdr-ram-pages').childNodes[1].textContent = " " + t.hdrRamPages;
+    document.getElementById('hdr-ledger').childNodes[1].textContent = " " + t.hdrLedger;
+    document.getElementById('hdr-chart').childNodes[1].textContent = " " + t.hdrChart;
+    document.getElementById('hdr-directory-title').childNodes[1].textContent = " " + t.hdrDirectoryTitle;
+    document.getElementById('lbl-total-users').textContent = t.lblTotalUsers;
+    
+    document.getElementById('th-cpu-desc').textContent = t.thCpuDesc;
+    document.getElementById('th-cpu-load').textContent = t.thCpuLoad;
+    document.getElementById('th-ram-desc').textContent = t.thRamDesc;
+    document.getElementById('th-ram-base').textContent = t.thRamBase;
+    
+    document.getElementById('th-dir-id').textContent = t.thDirId;
+    document.getElementById('th-dir-identity').textContent = t.thDirIdentity;
+    document.getElementById('th-dir-role').textContent = t.thDirRole;
+    document.getElementById('th-dir-status').textContent = t.thDirStatus;
+    document.getElementById('th-dir-actions').textContent = t.thDirActions;
+    
+    document.getElementById('lang-btn').textContent = t.langBtn;
+}
+
+// ==============================================================================
+// 3. CHART.JS LIFECYCLE INITIALIZATION (TIME-SERIES GRAPH ENGINE)
 // ==============================================================================
 let labels = [];
 let cpuData = [];
@@ -342,110 +617,74 @@ let ramData = [];
 let diskData = [];
 
 const ctx = document.getElementById("chart").getContext("2d");
-
 const chart = new Chart(ctx, {
     type: "line",
     data: {
         labels: labels,
         datasets: [
-            {
-                label: "CPU Matrix %",
-                borderColor: "#ef4444",
-                backgroundColor: "rgba(239, 68, 68, 0.05)",
-                data: cpuData,
-                tension: 0.3,
-                fill: true,
-                pointRadius: 0
-            },
-            {
-                label: "RAM Allocation %",
-                borderColor: "#3b82f6",
-                backgroundColor: "rgba(59, 130, 246, 0.05)",
-                data: ramData,
-                tension: 0.3,
-                fill: true,
-                pointRadius: 0
-            },
-            {
-                label: "Block Disk Storage %",
-                borderColor: "#10b981",
-                backgroundColor: "rgba(16, 185, 129, 0.05)",
-                data: diskData,
-                tension: 0.3,
-                fill: true,
-                pointRadius: 0
-            }
+            { label: "CPU Matrix %", borderColor: "#ef4444", backgroundColor: "rgba(239, 68, 68, 0.04)", data: cpuData, tension: 0.25, fill: true, pointRadius: 0 },
+            { label: "RAM Allocation %", borderColor: "#3b82f6", backgroundColor: "rgba(59, 130, 246, 0.04)", data: ramData, tension: 0.25, fill: true, pointRadius: 0 },
+            { label: "Block Disk Storage %", borderColor: "#10b981", backgroundColor: "rgba(16, 185, 129, 0.04)", data: diskData, tension: 0.25, fill: true, pointRadius: 0 }
         ]
     },
     options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: false,
-        plugins: {
-            legend: { labels: { color: '#94a3b8', font: { weight: '600' } } }
-        },
+        animation: false, // Performance tracking optimization for persistent live feeds
+        plugins: { legend: { labels: { color: '#94a3b8', font: { weight: '600' } } } },
         scales: {
-            x: { grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#64748b' } },
-            y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#64748b' } }
+            x: { grid: { color: 'rgba(255,255,255,0.01)' }, ticks: { color: '#64748b' } },
+            y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.01)' }, ticks: { color: '#64748b' } }
         }
     }
 });
 
+// ==============================================================================
+// 4. SECURED CORE TELEMETRY METRICS INGESTION LOOP
+// ==============================================================================
 
-// ==============================================================================
-// 3. SECURED CORE TELEMETRY METRICS INGESTION LOOP
-// ==============================================================================
+/**
+ * Requests operational real-time node statistics from infrastructure cluster.
+ */
 async function fetchData() {
+    // Only query metrics if telemetry tab panel is active to optimize network requests
+    if (!document.getElementById('telemetry-pane').classList.contains('show')) return;
+    
     try {
-        const response = await fetch("/api/metrics", {
-            method: "GET",
-            headers: getAuthHeaders()
-        });
+        const response = await fetch("/api/metrics", { method: "GET", headers: getAuthHeaders() });
 
-        // Forced logout tracking if token mutation or expiration triggers 401 Unauthorized
-        if (response.status === 401) {
-            localStorage.removeItem('monitor_jwt_token');
-            window.location.href = '/login';
-            return;
-        }
+        if (response.status === 401) executeSecureLogout();
 
         const json = await response.json();
         if (!json.nodes || json.nodes.length === 0) return;
         const node = json.nodes[0];
 
-        // Render Core Metrics & Progress Bars
+        // Hydrate Node Visual Progress Indicators
         document.getElementById("cpu").innerText = node.cpu.toFixed(1) + "%";
         document.getElementById("cpu-bar").style.width = node.cpu + "%";
-
         document.getElementById("ram").innerText = node.ram.toFixed(1) + "%";
         document.getElementById("ram-bar").style.width = node.ram + "%";
-
         document.getElementById("disk").innerText = node.disk.toFixed(1) + "%";
         document.getElementById("disk-bar").style.width = node.disk + "%";
 
-        // Dynamic Weighted Health Matrix Score Representation
+        // Dynamic State Changes for Health Matrix Score
         document.getElementById("health-score").innerText = json.health.score;
         const healthStatus = document.getElementById("health-status");
         healthStatus.innerText = json.health.status;
         
-        healthStatus.style.background = "rgba(16, 185, 129, 0.1)";
-        healthStatus.style.color = "var(--color-healthy)";
-        
         if (json.health.status === "Warning") {
-            healthStatus.style.background = "rgba(245, 158, 11, 0.1)";
-            healthStatus.style.color = "var(--color-warning)";
+            healthStatus.style.background = "rgba(245, 158, 11, 0.1)"; healthStatus.style.color = "var(--color-warning)";
         } else if (json.health.status === "Critical") {
-            healthStatus.style.background = "rgba(239, 68, 68, 0.1)";
-            healthStatus.style.color = "var(--color-critical)";
+            healthStatus.style.background = "rgba(239, 68, 68, 0.1)"; healthStatus.style.color = "var(--color-critical)";
+        } else {
+            healthStatus.style.background = "rgba(16, 185, 129, 0.1)"; healthStatus.style.color = "var(--color-healthy)";
         }
 
-        // Central Alarm Banner Interception Block
+        // Emergency Broadcasting Banner Visibility Toggle
         const alertBox = document.getElementById("alertBox");
-        if(alertBox) {
-            alertBox.style.display = json.alerts.length > 0 ? "block" : "none";
-        }
+        if(alertBox) alertBox.style.display = json.alerts.length > 0 ? "block" : "none";
 
-        // Sync Dynamic Node Event Logs
+        // Append Ingestion Alert Arrays
         const alertsContainer = document.getElementById("alerts-container");
         if (json.alerts.length === 0) {
             alertsContainer.innerHTML = `<p style="color: var(--color-healthy); font-size:13px;"><i class="fa-solid fa-circle-check"></i> Node operational thresholds normal.</p>`;
@@ -453,7 +692,7 @@ async function fetchData() {
             alertsContainer.innerHTML = json.alerts.map(alert => `<div class="history-item" style="border-color: var(--color-critical); color: #fca5a5;">${alert.message || alert}</div>`).join("");
         }
 
-        // Sync Dynamic OS Active Tasks Process Descriptors
+        // Thread Allocation Profiler Hydration (CPU/RAM Processes)
         if (json.processes && json.processes.top_cpu) {
             document.getElementById("cpu-processes").innerHTML = json.processes.top_cpu.map(p => `
                 <tr>
@@ -468,61 +707,172 @@ async function fetchData() {
                 </tr>`).join("");
         }
 
-        // Re-render Dynamic Vector Waveform Charts Timeline Array
+        // Keep rolling chart localized to a maximum viewport length of 30 steps
         const time = new Date().toLocaleTimeString();
-        labels.push(time);
-        cpuData.push(node.cpu);
-        ramData.push(node.ram);
-        diskData.push(node.disk);
-
-        if (labels.length > 30) {
-            labels.shift(); cpuData.shift(); ramData.shift(); diskData.shift();
-        }
+        labels.push(time); cpuData.push(node.cpu); ramData.push(node.ram); diskData.push(node.disk);
+        if (labels.length > 30) { labels.shift(); cpuData.shift(); ramData.shift(); diskData.shift(); }
         chart.update();
     } catch (error) {
-        console.error("Failed to map dynamic telemetry metrics context:", error);
+        console.error("Telemetry ingest interface crash:", error);
     }
 }
 
-
-// ==============================================================================
-// 4. SECURED LEDGER ALERT HISTORY FETCH
-// ==============================================================================
+/**
+ * Syncs the system alert history metrics from the SQLite persistent trace log database.
+ */
 async function fetchAlertHistory() {
+    if (!document.getElementById('telemetry-pane').classList.contains('show')) return;
     try {
-        const response = await fetch("/api/alerts/history", {
-            method: "GET",
-            headers: getAuthHeaders()
-        });
-
-        if (response.status === 401) {
-            localStorage.removeItem('monitor_jwt_token');
-            window.location.href = '/login';
-            return;
-        }
+        const response = await fetch("/api/alerts/history", { method: "GET", headers: getAuthHeaders() });
+        if (response.status === 401) executeSecureLogout();
 
         const json = await response.json();
         const historyContainer = document.getElementById("alert-history");
 
         if (!json.history || json.history.length === 0) {
-            historyContainer.innerHTML = `<p class="text-muted small"><i class="fa-solid fa-database"></i> Ledger sequence sync completed. Persistent table empty.</p>`;
+            historyContainer.innerHTML = `<p class="text-muted small"><i class="fa-solid fa-database"></i> Table persistent trace ledger empty.</p>`;
             return;
         }
-
         historyContainer.innerHTML = json.history.reverse().map(log => `
             <div class="history-item" style="border-color: #475569; color: var(--text-muted);">
                 <i class="fa-solid fa-clock-rotate-left me-2"></i>${log}
             </div>`).join("");
     } catch (error) {
-        console.error("Failed to sync structural ledger data sequences:", error);
+        console.error("Ledger sync matrix error:", error);
     }
 }
 
 // ==============================================================================
-// 5. INITIALIZE MONITORED INFINITE POLLING HOOKS
+// 5. CORPORATE DIRECTORY PIPELINE CONTROLLERS (RBAC MATRIX)
+// ==============================================================================
+
+/**
+ * Pulls security clearing registry from backend to map active operators.
+ * Includes defensive structural safety triggers for out-of-order execution states.
+ */
+async function fetchUserDirectory() {
+    // Dynamic transition modifier for glow system cards
+    document.getElementById('main-login-card')?.style.setProperty('--glow-color', 'rgba(6, 182, 212, 0.15)');
+    
+    try {
+        const response = await fetch("/api/users", { method: "GET", headers: getAuthHeaders() });
+        if (response.status === 401) executeSecureLogout();
+
+        const data = await response.json();
+        const userCountEl = document.getElementById("user-count");
+        if(userCountEl) userCountEl.innerText = data.users ? data.users.length : 0;
+        
+        const tableBody = document.getElementById("directory-table-body");
+        if (!tableBody) return; // Fail-safe return parameter if current DOM node state isn't appended
+
+        if (!data.users || data.users.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted small py-4">No enterprise users found within active node cluster context.</td></tr>`;
+            return;
+        }
+
+        tableBody.innerHTML = data.users.map(user => {
+            let roleBadge = 'bg-primary';
+            if (user.role === 'Admin') roleBadge = 'bg-danger';
+            if (user.role === 'DevSecOps') roleBadge = 'bg-warning text-dark';
+
+            return `
+                <tr>
+                    <td class="text-muted font-monospace" style="font-size: 13px;">USR-${user.id || '99'}</td>
+                    <td><span class="fw-bold text-white">${user.username}</span></td>
+                    <td><span class="badge badge-role ${roleBadge}">${user.role || 'Operator'}</span></td>
+                    <td><span class="small text-success"><i class="fa-solid fa-circle-check me-1"></i> Active</span></td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-info me-2" onclick="triggerRoleMutation('${user.id}', '${user.username}', '${user.role}')" style="border-radius:6px; font-size:12px;"><i class="fa-solid fa-user-shield me-1"></i> Edit Role</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="triggerAccessRevocation('${user.id}', '${user.username}')" style="border-radius:6px; font-size:12px;"><i class="fa-solid fa-user-minus me-1"></i> Revoke</button>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+    } catch (error) {
+        console.error("Failed to map target directory streams safely:", error);
+    }
+}
+
+// Global modal state mutation holders
+let selectedUserId = null;
+let activeActionType = null; 
+
+/**
+ * Instantiates structural updates on RBAC security authorization tokens.
+ */
+function triggerRoleMutation(userId, username, currentRole) {
+    selectedUserId = userId;
+    activeActionType = "UPDATE_ROLE";
+    
+    document.getElementById("modal-action-title").innerText = "Modify Operator Clearance";
+    document.getElementById("modal-action-body").innerHTML = `Update access credentials structural token permissions for node operator: <strong class="text-info">${username}</strong>.`;
+    document.getElementById("modal-role-select").value = currentRole || "Operator";
+    document.getElementById("role-select-wrapper").classList.remove("d-none");
+    
+    new bootstrap.Modal(document.getElementById('actionModal')).show();
+}
+
+/**
+ * Triggers modal execution pipeline for structural profile purging.
+ */
+function triggerAccessRevocation(userId, username) {
+    selectedUserId = userId;
+    activeActionType = "REVOKE_ACCESS";
+    
+    document.getElementById("modal-action-title").innerText = "Revoke Administrative Clearance";
+    document.getElementById("modal-action-body").innerHTML = `Are you absolutely sure you want to terminate security clearing certificates and delete operator <strong class="text-danger">${username}</strong>? This action cannot be unmade.`;
+    document.getElementById("role-select-wrapper").classList.add("d-none");
+    
+    new bootstrap.Modal(document.getElementById('actionModal')).show();
+}
+
+// Modal Execution Wire Interceptor Event Listener
+document.getElementById("btn-modal-confirm").addEventListener("click", async () => {
+    if (!selectedUserId || !activeActionType) return;
+    
+    let url = `/api/users/${selectedUserId}`;
+    let method = "DELETE";
+    let payload = {};
+
+    if (activeActionType === "UPDATE_ROLE") {
+        method = "PUT";
+        payload = { role: document.getElementById("modal-role-select").value };
+    }
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: getAuthHeaders(),
+            body: activeActionType === "UPDATE_ROLE" ? JSON.stringify(payload) : null
+        });
+
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('actionModal')).hide();
+            fetchUserDirectory(); // Execute reactive reload sequence
+        } else {
+            alert("Administrative execution vector failed. Check structural logs.");
+        }
+    } catch (error) {
+        console.error("Vector routing tracking collapse:", error);
+    }
+});
+
+/**
+ * Bootstrap Tab Switching Event Listener Framework.
+ * Ensures data streams only run once the tab partition is completely drawn.
+ */
+document.getElementById('directory-tab').addEventListener('shown.bs.tab', function (e) {
+    fetchUserDirectory();
+});
+
+// ==============================================================================
+// 6. ASYNCHRONOUS POLLING CORE LIFECYCLE CONTROLLERS
 // ==============================================================================
 fetchData();
 fetchAlertHistory();
+
+// Initialize time loops for background metric consolidation updates
 setInterval(fetchData, 2000);
 setInterval(fetchAlertHistory, 5000);
 </script>
