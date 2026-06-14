@@ -15,6 +15,18 @@ This subsystem governs the user interface layer and JWT session verification rin
 - **`templates/index.html`**: Main workspace template loading multi-series Chart.js waves and structural user tables.
 - **`test_app.py`**: High-coverage integration tests evaluating API routing security, user tokens, and layout access barriers.
 
+## Live System Dashboard
+
+Here is the running interface of the platform, capturing live performance metrics directly from the host system.
+
+![Web Dashboard Overview](screenshots/dashboard-home_1.png)
+*Figure 1: Real-time system monitoring dashboard metrics overview.*
+
+![Web Dashboard Analytics](screenshots/dashboard-home_2.png)
+*Figure 2: Process monitoring and resource allocation view.*
+
+---
+
 ## API Endpoint
 ### GET /api/metrics
 Returns uniform real-time infrastructure data matrix payloads:
