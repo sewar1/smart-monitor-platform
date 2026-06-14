@@ -12,6 +12,8 @@ from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, jsonify, request
 from dotenv import load_dotenv
+from core.mailer import mailer_service
+from core.security import security_gate, limit_login_attempts
 
 # Load and inject hidden environment variables from OS kernel space
 load_dotenv()
@@ -96,6 +98,22 @@ def token_required(f):
         except jwt.InvalidTokenError:
             return jsonify({"error": "Access Denied: Malformed or corrupted signature"}), 401
 
+        return f(*args, **kwargs)
+    return decorated
+def admin_required(f):
+    """
+    Role-Based Access Control (RBAC) Decorator.
+    Blocks non-admin users from accessing configuration vectors.
+    """
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        # The original token_required path places the current user's data inside request.user
+        current_user = getattr(request, "current_user", None)
+        
+        if not current_user or current_user.get("role") != "Admin":
+            log_error(f"[RBAC VIOLATION] Unauthorized configuration attempt blocked.")
+            return jsonify({"error": "Forbidden: Administrative privileges required."}), 403
+            
         return f(*args, **kwargs)
     return decorated
 
@@ -205,7 +223,7 @@ def receive_agent_telemetry():
 
 
 @app.route("/api/metrics", methods=["GET"])
-@token_required  # 🔒 LOCK DOWN: مسار عرض المقاييس أصبح مغلقاً ويتطلب توقيع مفتاح آمن
+@token_required  # 🔒 LOCK DOWN: The metrics display path is locked and requires a secure key signature
 def get_dashboard_metrics():
     """Aggregates global multi-node status matrix arrays from PostgreSQL."""
     try:
@@ -241,7 +259,7 @@ def get_dashboard_metrics():
 
 
 @app.route("/api/alerts/history", methods=["GET"])
-@token_required  # 🔒 LOCK DOWN: مسار سجل التحذيرات مغلق بالكامل
+@token_required  # 🔒 LOCK DOWN: The warning log path is completely closed.
 def alert_history():
     try:
         rows = get_alert_history(limit=20)
@@ -262,6 +280,79 @@ def render_login_page():
 @app.route("/", methods=["GET"])
 def index():
     return render_template("index.html")
+
+# ------------------------------------------------------------------------------
+# IDENTITY PROVISIONING ENDPOINTS (RBAC REINFORCED)
+# ------------------------------------------------------------------------------
+
+@app.route("/api/users/create", methods=["POST"])
+@token_required  # 🔒 You must be logged in first
+@admin_required  # 🔒 His rank must be exclusively Admin
+def create_user():
+    try:
+        data = request.get_json() or {}
+        new_username = data.get("username", "").strip()
+        new_password = data.get("password", "")
+        new_role = data.get("role", "Viewer").strip() # Default Viewer for system protection
+        recipient_email = data.get("email", "").strip() # Required to send 2FA verification code
+
+        if not new_username or not new_password or not recipient_email:
+            return jsonify({"error": "Missing identity credentials or verification mapping."}), 400
+
+        # Generate a random verification code via the Mailer service
+        verification_token = mailer_service.generate_verification_token()
+        
+        # Password encryption with bcrypt
+        salt = bcrypt.gensalt()
+        hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), salt).decode('utf-8')
+
+        # Saving the new user to the database via DB Orchestrator
+        with _db_orchestrator._get_connection() as conn:
+            with conn.cursor() as cursor:
+                # Checking that the username is not duplicated
+                cursor.execute("SELECT id FROM users WHERE username = %s", (new_username,))
+                if cursor.fetchone():
+                    return jsonify({"error": "Identity signature already exists inside cluster database."}), 409
+                
+                # Enter the new record with the temporary code and Unverified (False) status
+                cursor.execute("""
+                    INSERT INTO users (username, password_hash, role, is_verified, verification_token, token_expires_at)
+                    VALUES (%s, %s, %s, FALSE, %s, NOW() + INTERVAL '10 minutes')
+                """, (new_username, hashed_password, new_role, verification_token))
+                conn.commit()
+
+        # Send verification code instantly to the new user's email in the background
+        mailer_service.send_verification_email(recipient_email, verification_token)
+
+        log_info(f"[USER PROVISIONING] Identity [{new_username}] initialized under role [{new_role}].")
+        return jsonify({"message": f"User initialized successfully. 2FA token dispatched to {recipient_email}."}), 201
+
+    except Exception as e:
+        log_error(f"User provisioning fault: {e}")
+        return jsonify({"error": "Internal security node allocation failure."}), 500
+
+
+@app.route("/api/users/delete/<username>", methods=["DELETE"])
+@token_required
+@admin_required
+def delete_user(username):
+    try:
+        if username == "admin":
+            return jsonify({"error": "Critical Safeguard: Root administrator identity cannot be purged."}), 400
+
+        with _db_orchestrator._get_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("DELETE FROM users WHERE username = %s RETURNING id", (username,))
+                if not cursor.fetchone():
+                    return jsonify({"error": "Target identity profile not found."}), 404
+                conn.commit()
+
+        log_info(f"[USER PURGED] Identity [{username}] successfully decommissioned from system database.")
+        return jsonify({"message": f"Identity [{username}] decoupled from security rings successfully."}), 200
+
+    except Exception as e:
+        log_error(f"User deletion execution fault: {e}")
+        return jsonify({"error": "Failed to purge identity mapping from core storage."}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)
