@@ -1,110 +1,125 @@
 # Smart Monitor Platform
 
-
-A Linux-based real-time monitoring system engineered for cloud environments, featuring containerized orchestration using **Docker**, **Flask**, **PostgreSQL**, **Gunicorn**, and **Nginx**.  
-The project simulates a highly scalable, production-grade DevOps deployment environment.
+A production-grade, distributed real-time infrastructure monitoring platform engineered for high-availability cloud environments. The system features cross-platform host telemetry extraction, containerized microservices orchestration, stateless API token authentication, and enterprise-tier reverse-proxy edge routing.
 
 ---
 
-## Recent Architecture Update: Multi-Container Dockerization
-The platform has been fully containerized using a microservices architecture managed via **Docker Compose**. This ensures environment isolation, persistent storage data layers, and seamless dependency staging.
+## 🏗️ Architectural Overview
+
+The platform features a modern microservices architecture managed entirely via **Docker Compose**. Edge traffic is intercepted by an **Nginx Reverse Proxy**, which serves static visual assets as a Single Page Application (SPA) while securely bridging underlying asynchronous telemetry streams directly to an isolated **Flask API Engine** backed by a persistent **PostgreSQL 15** data warehouse.
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-- **Containerization & Orchestration:** Docker, Docker Compose
-- **Backend Framework:** Python 3, Flask (REST API)
-- **Database Layer:** PostgreSQL 15 (Enterprise Persistent Storage)
-- **Metrics Engine:** psutil (Host telemetry extraction)
-- **WSGI Production Server:** Gunicorn
-- **Reverse Proxy / Edge Routing:** Nginx
-- **Target Environment:** Linux (Ubuntu/Debian), WSL2 Staging Environment
-- 
----
-
-## Live System Dashboard
-
-Here is the running interface of the platform, capturing live performance metrics directly from the host system.
-
-![Web Dashboard Overview](screenshots/dashboard-home_1.png)
-*Figure 1: Real-time system monitoring dashboard metrics overview.*
-
-![Web Dashboard Analytics](screenshots/dashboard-home_2.png)
-*Figure 2: Process monitoring and resource allocation view.*
-
+- **Containerization & Orchestration:** Docker, Docker Compose (Isolated Bridge Topology)
+- **Edge Routing & Proxy:** Nginx (Static Content Caching, Port 80 Gateway)
+- **Backend Framework:** Python 3, Flask RESTful API Engine
+- **Database Architecture:** PostgreSQL 15 (Persistent Named Volume Block Storage)
+- **WSGI Application Server:** Gunicorn (Production-grade worker process management)
+- **Telemetry Hardware Daemon:** Standalone Python Daemon backed by `psutil`
+- **Target Environments:** Linux (Ubuntu/Debian Enterprise Server), WSL2 Staging Core, VMware Virtualized Clusters
 ---
 
 
-## System Architecture
+
+
+## System Network Topology
 ```bash
 ┌──────────────────────────────┐
-│        Client Browser        │
+│       Client Browser         │
 └──────────────┬───────────────┘
-               │ HTTP (port 80)
+               │ HTTP (Port 80 Access Gate)
                ▼
 ┌──────────────────────────────┐
-│            Nginx             │  ← Reverse Proxy / Edge Router
-│  - Static asset caching      │
+│        Nginx Container       │  ← Microservices Edge Gateway & Asset Cache
+│  - Static Asset Delivery     │
 │  - Port 80 Proxy Routing     │
 └──────────────┬───────────────┘
-               │ Internal Forward
+               │ Internal Docker Bridge Forwarding
                ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│                        DOCKER COMPOSE NETWORK                          │
+│                        DOCKER COMPOSE NETWORK MATRIX                   │
 │                                                                        │
 │   ┌──────────────────────────┐            ┌────────────────────────┐   │
-│   │  Flask Backend Container │            │  PostgreSQL Container  │   │
-│   │                          ├───────────►│                        │   │
-│   │  - Gunicorn Server       │  Isolated  │  - Port 5432           │   │
-│   │  - Metrics Aggregator    │  Bridge    │  - Volume Persistence  │   │
-│   │  - Telemetry API         │  Network   │  - Production DB Engine│   │
+│   │ Flask Dashboard Container│            │  PostgreSQL Container  │   │
+│   │       (dashboard)        ├───────────►│          (db)          │   │
+│   │ - Gunicorn Worker Stack  │  Internal  │ - Port 5432            │   │
+│   │ - Telemetry REST API     │  Bridge    │ - Named Database Volume│   │
+│   │ - RBAC Access Controller │  Network   │ - Operational Ledger   │   │
 │   └──────────────────────────┘            └────────────────────────┘   │
 └────────────────────────────────────────────────────────────────────────┘
-                               │
-                               ▼
+               ▲
+               │ Secure Stream Connection (HTTP/POST Metrics Push)
+               │
 ┌────────────────────────────────────────────────────────────────────────┐
-│                    LINUX SYSTEM TELEMETRY LAYER                        │
-│  - Host CPU / RAM / Disk Metrics Data Stream                           │
-│  - Kernel Process Inspection Pipeline                                  │
+│                     DISTRIBUTED HARDWARE AGENT LAYER                   │
+│  - Standalone OS Resource Extraction Pipeline (`agent.py`)             │
+│  - Distributed Multi-City Node Tracking (Ludwigshafen, Mannheim, etc.) │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 ---
 ## Project Structure
 ```bash
 smart-monitor-platform/
+│   .gitignore
+│   docker-compose.yml     # Microservices cluster blueprint (Nginx + Flask Server + Postgres DB)
+│   nginx.conf             # Unified reverse-proxy configurations and edge routing rules
+│   README.md              # Main high-level system documentation root
 │
-├── docker-compose.yml   # Multi-container orchestration (Postgres + Flask Engine)
-├── .gitignore
-├── README.md
+├───agent                  # Distributed telemetry collector daemon
+│   │   agent.py           # Cross-platform sensor extraction script
+│   │   README.md          # Agent environment deployment manual
+│   │   test_agent.py      # Automated computational validation suite
+│   │
+│   ├───.pytest_cache      # Test automation cache registries
+│   │   │   .gitignore
+│   │   │   CACHEDIR.TAG
+│   │   │   README.md
+│   │   │
+│   │   └───v
+│   │       └───cache
+│   │               lastfailed
+│   │               nodeids
+│   │
+│   └───__pycache__
+│           agent.cpython-310.pyc
+│           test_agent.cpython-310-pytest-9.0.3.pyc
 │
-├── core/                # Core telemetry engine
-│   ├── metrics.py       # Host resource analytics collector
-│   ├── alerts.py        # Subsystem notification alerting trigger
-│   ├── analyzer.py      # Micro-process structural analysis
-│   ├── logger.py        # System log tracing matrix
-│   ├── database.py      # PostgreSQL abstraction mapping Layer
-│   └── processes.py     # Task manager analytics tracker
+├───core                   # Core logical framework & systemic utilities
+│       alerts.py          # Automated threshold alerts and Telegram piping
+│       analyzer.py        # Micro-process structural analysis mapping
+│       database.py        # Relational storage pooling interface
+│       logger.py          # System logging, diagnostics, and metrics tracing
+│       mailer.py          # SMTP engine transmitting transactional alert emails
+│       metrics.py         # OS hardware sensor metrics parsing layer
+│       processes.py       # Detailed active task manager analytics tracking
+│       security.py        # Cryptographic password hashing (bcrypt) and token validations
+│       __init__.py
 │
-├── dashboard/           # UI Web Engine Application Container
-│   ├── Dockerfile       # Custom isolated container build configuration
-│   ├── app.py           # Flask entry-point deployment script
-│   ├── requirements.txt # Production python dependencies
-│   ├── templates/       # Jinja2 frontend components
-│   └── static/          # Native style and assets
+├───dashboard              # Visual management application engine
+│   │   app.py             # Main Flask routing server entrypoint
+│   │   Dockerfile         # Production Gunicorn worker container builder
+│   │   README.md          # Visual components and API specs documentation
+│   │   requirements.txt   # Pinned application Python dependencies
+│   │   test_app.py        # Integration test maps evaluating authorization walls
+│   │   __init__.py
+│   │
+│   ├───static             # Application styles, themes, and native assets
+│   └───templates          # Client-side UI markup frameworks
+│           index.html     # Main asynchronous performance monitoring panel
+│           login.html     # Overhauled state-aware corporate check-in portal
 │
-└── screenshots/         # Infrastructure runtime logs & DB
-└── README.md
-```
+└───screenshots            # Infrastructure deployment verification captures
+        dashboard-home_1.png
+        dashboard-home_2.png
+        nginx-status.png
 ---
 
-## Installation & Rapid Deployment (Docker Way)
-The preferred, modern way to spin up the entire ecosystem with zero manual database or runtime configuration:
+## Installation & Automated Deployment (Docker Way)
+Spin up the entire interconnected ecosystem (Reverse Proxy, API Gateway, and Relational Database) with one single orchestration command:
 
-### systemd service setup
-...
 1. Clone repository
-
 ``` bash
 git clone git@github.com:sewar1/smart-monitor-platform.git
 cd smart-monitor-platform
@@ -113,148 +128,45 @@ cd smart-monitor-platform
 ``` bash
 docker-compose up --build
 ```
-This handles database initialization, automated network bridging, Python image building, and production server spawning.
+This handles automated database pool synchronization, internal bridge network creation, Python image isolation staging, and production-grade reverse-proxy reverse caching mapping
 
-The dashboard will be immediately accessible on: http://localhost:5000
+3. Access the Web Dashboard Portal:
+Open your preferred modern browser and navigate to: http://localhost (Port 80 Edge Gate)
 
-## Legacy Native Linux Deployment (Alternative Setup)
-If you wish to deploy directly to bare-metal systemd layers without containers (Simulated on VMware Bare-Metal):
-1. Create virtual environment & dependencies
-``` bash
-python3 -m venv venv
-source venv/bin/activate
-pip install flask psutil requests gunicorn psycopg2-binary
-```
-2. Running the Application
-   Development mode:
-   ``` bash
-   python dashboard/app.py
-    ```
-    Production execution via Gunicorn
-    ```bash
-    gunicorn --bind 0.0.0.0:5000 dashboard.app:app
-    ```
----
-3. systemd Service Setup (/etc/systemd/system/smart-monitor.service)
+
+## Proof of Deployment Traffic Flow
 ```bash
-[Unit]
-Description=Smart Monitor Platform
-After=network.target
-
-[Service]
-User=seka
-WorkingDirectory=/home/seka/smart-monitor-platform
-ExecStart=/home/seka/smart-monitor-platform/venv/bin/gunicorn --bind 127.0.0.1:5000 dashboard.app:app
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
+Distributed Agent ──► HTTP POST ──► Nginx Proxy (Port 80) ──► Gunicorn WSGI ──► Flask App ──► PostgreSQL 15 Volume
 ```
-### Enable and start service
-``` bash
-sudo systemctl daemon-reload
-sudo systemctl enable smart-monitor
-sudo systemctl start smart-monitor
-```
-4. Nginx configuration
-```bash
-server {
-    listen 80;
-    server_name _;
 
-    location / {
-        proxy_pass http://127.0.0.1:5000;
+##  Engineering Roadmap Achievements & Milestones
 
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-Reload Nginx:
-``` bash
-sudo nginx -t
-sudo systemctl reload nginx
-```
----
-
-#### Production Deployment & Infrastructure Status
-
-The application is integrated into the Linux service layers via systemd and Nginx. Below is the verified status of the services running in production.
-
-![Nginx and System Services Status](screenshots/nginx-status.png)
-*Figure 3: Active production verification for reverse proxy and backend services.*
-
----
-
-## Production Verification (VMware Infrastructure Status)
-Below is the verified operational status of the core infrastructure daemons running natively on the Linux server.
-
-Figure 3: Active production verification for reverse proxy and systemd backend services.
-
-
-## API Endpoint
-### GET /api/metrics
-Returns uniform real-time infrastructure data matrix payloads:
-```bash
-
-Returns real-time system metrics:
-{
-  "health": {
-    "score": 73.0,
-    "status": "Warning"
-  },
-  "nodes": [
-    {
-      "name": "server-1",
-      "cpu": 5.6,
-      "ram": 44.7,
-      "disk": 33.6
-    }
-  ],
-  "alerts": []
-}
-```
----
-### Proof of Deployment Flow
-```bash
-Flask App ──► Gunicorn (WSGI) ──► systemd Daemon ──► Nginx Reverse Proxy ──► Linux Host Engine
-```
-## Core Capabilities Demonstrated
-Microservices Orchestration: Managing interconnected isolated infrastructure networks.
-
-Enterprise DB Management: Integrating persistent container storage with PostgreSQL volumes.
-
-Reverse Proxy Routing: Multi-tiered network gateway configuration via Nginx.
-
-Process Automation: Managing underlying platform services with systemd daemons.
-
----
-
-##  Next Architectural Roadmap
-
-- [ ] **Phase 1: Agent/Server Architecture Consolidation**
-  - Refactor the core telemetry collector into a standalone, lightweight daemon script (`Agent`).
-  - Implement dynamic HTTP/HTTPS POST streaming to forward centralized host metrics to the main controller (`Server`).
+- [x] **Phase 1: Multi-Container Orchestration Core**
+  - Segmented platform workloads into isolated microservice networks using Docker Compose.
   
-- [ ] **Phase 2: Test-Driven Stability Framework**
-  - Write comprehensive **Unit Tests** and Integration Tests for core telemetry ingestion pipelines.
-  - Establish a solid testing baseline to guarantee system stability during subsequent feature staging.
+- [x] **Phase 2: Visual Telemetry Web Engine**
+  - Built multi-tab asynchronous dashboard UI mapping Chart.js telemetry waveforms cleanly
 
-- [ ] **Phase 3: Enterprise Security & Authentication Ring**
-  - Implement a secure user access management system with isolated administrative roles.
-  - Integrate **JWT (JSON Web Tokens)** for stateless backend API session security.
-  - Enforce cryptographic password hashing using the **bcrypt** algorithm.
+- [x] **Phase 3: Secure Operator Access Control Ring**
+  - Overhauled login templates with professional responsive styles, flash alert banners, and stateless session verification driven by cryptographically signed JWT (JSON Web Tokens).
 
 - [ ] **Phase 4: Automated Disaster Recovery Subsystem**
   - Build an automated backup utility engine for PostgreSQL transaction logs and configuration data layers.
   - Implement cron-driven scheduled snapshots to preserve historical metric states.
 
-- [ ] **Phase 5: PostgreSQL Core Analytics Pipeline**
+- [ ] **Phase 5: Multi-City Distributed Node Scalability**
+
+  - Expand telemetry parsers to consume separate host streams across individual targeted nodes representing geographical deployments (Ludwigshafen, Mannheim, Heidelberg, Stuttgart).
+
+- [ ] **Phase 6: Automated Testing Baseline**
+
+  - Enhance test_app.py and test_agent.py suites to shield data ingest loops against code regression.
+
+
+- [ ] **Phase 7: PostgreSQL Core Analytics Pipeline**
   - Build advanced analytical backend queries inside PostgreSQL to process and analyze long-term performance trends and historical server logs.
 
-- [ ] **Phase 6: Continuous Integration / Continuous Deployment (CI/CD)**
+- [ ] **Phase 8: Continuous Integration / Continuous Deployment (CI/CD)**
   - Construct a robust CI/CD workflow pipeline via **GitHub Actions** to automate codebase auditing, test suite execution, and live container deployment.
 ---
 
