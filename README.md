@@ -4,13 +4,13 @@ A production-grade, distributed real-time infrastructure monitoring platform eng
 
 ---
 
-## 🏗️ Architectural Overview
+## Architectural Overview
 
 The platform features a modern microservices architecture managed entirely via **Docker Compose**. Edge traffic is intercepted by an **Nginx Reverse Proxy**, which serves static visual assets as a Single Page Application (SPA) while securely bridging underlying asynchronous telemetry streams directly to an isolated **Flask API Engine** backed by a persistent **PostgreSQL 15** data warehouse.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Containerization & Orchestration:** Docker, Docker Compose (Isolated Bridge Topology)
 - **Edge Routing & Proxy:** Nginx (Static Content Caching, Port 80 Gateway)
@@ -114,6 +114,7 @@ smart-monitor-platform/
         dashboard-home_1.png
         dashboard-home_2.png
         nginx-status.png
+```
 ---
 
 ## Installation & Automated Deployment (Docker Way)
