@@ -1,6 +1,4 @@
-
-# Standalone Hardware Telemetry Agent Component
-﻿# Distributed Hardware Telemetry Agent
+# Distributed Hardware Telemetry Agent
 This directory contains the lightweight background monitoring daemon (`agent.py`).
 This subsystem operates as an isolated, lightweight background daemon deployed directly on client host machines. Its core responsibility is extracting granular OS sensor telemetry and securely shipping it to the central server via asynchronous streams.
 
