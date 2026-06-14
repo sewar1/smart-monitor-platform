@@ -101,17 +101,17 @@ class DatabaseManager:
                     if cursor.fetchone()[0] == 0:
                         # Record injection when identity sequence is empty
                         cursor.execute("""
-                            INSERT INTO users (username, password_hash)
-                            VALUES (%s, %s)
-                        """, ("admin", hashed_password))
+                            INSERT INTO users (username, password_hash, role, is_verified))
+                            VALUES (%s, %s, %s, %s)
+                        """, ("admin", hashed_password, "Admin", True))
                         log_info("[SECURITY SEED] Default administrative user registered successfully.")
                     else:
                         # Enforce live runtime mutation mapping for credential synchronizations
                         cursor.execute("""
                             UPDATE users 
-                            SET password_hash = %s 
+                            SET password_hash = %s, role = %s, is_verified = %s, created_at = CURRENT_TIMESTAMP
                             WHERE username = %s
-                        """, (hashed_password, "admin"))
+                        """, (hashed_password, "Admin", True, "admin"))
                         log_info("[SECURITY SEED] Administrative credential matrix forced synchronization.")
                         
                     conn.commit()
