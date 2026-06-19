@@ -41,7 +41,7 @@
         .navbar-custom {
             background-color: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px); /* Webkit support for Safari rendering engines */
+            -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border-color);
             padding: 16px 32px;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
@@ -70,14 +70,12 @@
             transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        /* Visual affordance micro-interactions on hover */
         .card-box:hover {
             transform: translateY(-4px);
             border-color: rgba(255, 255, 255, 0.15);
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35), 0 0 40px var(--glow-color);
         }
 
-        /* Navigational Control Tab Overrides */
         .nav-tabs-custom {
             border: none;
             gap: 8px;
@@ -147,7 +145,6 @@
             margin-top: 8px;
         }
 
-        /* Incident Broadcast Banner (Hidden by default, triggered on systemic fault) */
         .alert-banner {
             display: none;
             background: linear-gradient(90deg, #ef4444, #991b1b);
@@ -165,7 +162,6 @@
             50% { opacity: 0.9; transform: scale(0.998); }
         }
 
-        /* Real-Time Log Layout Optimization and Custom Scrollbar Rules */
         .history-container {
             max-height: 250px;
             overflow-y: auto;
@@ -200,7 +196,6 @@
             gap: 10px;
         }
 
-        /* High-Density Data Table Layout Modifications */
         .table-custom {
             margin: 0;
         }
@@ -231,7 +226,7 @@
             position: relative;
         }
 
-        .lang-btn {
+        .lang-btn, .agent-select {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #94a3b8;
@@ -242,9 +237,19 @@
             transition: all 0.2s;
         }
 
-        .lang-btn:hover {
+        .lang-btn:hover, .agent-select:hover {
             background: rgba(255, 255, 255, 0.1);
             color: #ffffff;
+        }
+
+        .agent-select {
+            outline: none;
+            cursor: pointer;
+        }
+
+        .agent-select option {
+            background-color: #0f172a;
+            color: #fff;
         }
 
         .badge-role {
@@ -271,6 +276,17 @@
             <span id="nav-title">SMART MONITOR PLATFORM</span>
         </span>
         <div class="d-flex align-items-center gap-3">
+            
+            <div class="d-flex align-items-center gap-2">
+                <label for="agentSelector" class="small text-muted fw-bold d-none d-md-inline" id="lbl-select-agent">TARGET:</label>
+                <select id="agentSelector" class="agent-select" onchange="onAgentChange()">
+                    <option value="all">📊 ALL CLUSTER (Combined)</option>
+                    <option value="windows">🪟 Windows Node</option>
+                    <option value="docker">🐳 Docker Container</option>
+                    <option value="vmware">🐧 Linux VMware</option>
+                </select>
+            </div>
+
             <ul class="nav nav-tabs nav-tabs-custom" id="dashboardTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                   <button class="nav-link active" id="telemetry-tab" data-bs-toggle="tab" data-bs-target="#telemetry-pane" type="button" role="tab" aria-controls="telemetry-pane" aria-selected="true">
@@ -440,7 +456,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="directory-table-body">
-                                    </tbody>
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -470,30 +486,25 @@
                 </div>
             </div>
             <div class="modal-footer border-0">
-                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal" id="btn-modal-cancel">Abort</button>
-                <button type="button" class="btn btn-sm btn-primary" id="btn-modal-confirm">Execute Vector</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" id="btn-modal-cancel">Abort</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-modal-confirm">Execute Vector</button>
             </div>
         </div>
     </div>
 </div>
+
+</body>
+</html>
 
 <script>
 // ==============================================================================
 // 1. LOCAL SECURITY FIREWALL GATING & SESSION MANAGEMENT
 // ==============================================================================
 
-/**
- * Validates the presence of an active authentication token.
- * Instantly intercepts the pipeline and forces redirection if unauthorized.
- */
 if (!localStorage.getItem('monitor_jwt_token')) {
     window.location.href = '/login';
 }
 
-/**
- * Generates uniform JSON and Authorization bearer headers for external fetch requests.
- * @returns {Object} Request headers schema
- */
 function getAuthHeaders() {
     return {
         'Authorization': 'Bearer ' + localStorage.getItem('monitor_jwt_token'),
@@ -501,9 +512,6 @@ function getAuthHeaders() {
     };
 }
 
-/**
- * Clears volatile session cache signatures and triggers an auth state exit routine.
- */
 function executeSecureLogout() {
     localStorage.removeItem('monitor_jwt_token');
     window.location.href = '/login';
@@ -571,9 +579,6 @@ const dashboardTranslations = {
 
 let currentDashboardLang = 'en';
 
-/**
- * Loops through registered UI identifiers and switches string mappings contextually.
- */
 function toggleDashboardLanguage() {
     currentDashboardLang = currentDashboardLang === 'en' ? 'de' : 'en';
     const t = dashboardTranslations[currentDashboardLang];
@@ -630,7 +635,7 @@ const chart = new Chart(ctx, {
     options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: false, // Performance tracking optimization for persistent live feeds
+        animation: false,
         plugins: { legend: { labels: { color: '#94a3b8', font: { weight: '600' } } } },
         scales: {
             x: { grid: { color: 'rgba(255,255,255,0.01)' }, ticks: { color: '#64748b' } },
@@ -640,26 +645,60 @@ const chart = new Chart(ctx, {
 });
 
 // ==============================================================================
-// 4. SECURED CORE TELEMETRY METRICS INGESTION LOOP
+// 4. SECURED CORE TELEMETRY METRICS INGESTION LOOP (UPDATED FOR INDEPENDENT AGENTS)
 // ==============================================================================
 
-/**
- * Requests operational real-time node statistics from infrastructure cluster.
- */
+// دالة تفريغ التخطيط البياني عند التبديل بين الأجهزة لتجنب تداخل الرسوم
+function resetChartData() {
+    labels.length = 0;
+    cpuData.length = 0;
+    ramData.length = 0;
+    diskData.length = 0;
+    chart.update();
+}
+
+// مستمع حدث تغيير الجهاز المختار من القائمة المنسدلة
+function onAgentChange() {
+    resetChartData();
+    fetchData();
+    fetchAlertHistory();
+}
+
 async function fetchData() {
-    // Only query metrics if telemetry tab panel is active to optimize network requests
     if (!document.getElementById('telemetry-pane').classList.contains('show')) return;
     
     try {
-        const response = await fetch("/api/metrics", { method: "GET", headers: getAuthHeaders() });
+        // قراءة قيمة الـ Agent المختار حالياً (all, windows, docker, vmware)
+        const selectedAgent = document.getElementById("agentSelector").value;
+        
+        // إرسال طلب مخصص للباكيند يحتوي على اسم العميل المطلوب لفلترته مستقلًا
+        const response = await fetch(`/api/metrics?agent=${selectedAgent}`, { 
+            method: "GET", 
+            headers: getAuthHeaders() 
+        });
 
         if (response.status === 401) executeSecureLogout();
 
         const json = await response.json();
-        if (!json.nodes || json.nodes.length === 0) return;
-        const node = json.nodes[0];
+        
+        const nodesArray = json.nodes || json; 
+        if (!nodesArray || nodesArray.length === 0) {
+            // تفريغ البيانات من الواجهة إذا لم تتوفر بيانات للعميل المحدد
+            document.getElementById("cpu").innerText = "0%";
+            document.getElementById("cpu-bar").style.width = "0%";
+            document.getElementById("ram").innerText = "0%";
+            document.getElementById("ram-bar").style.width = "0%";
+            document.getElementById("disk").innerText = "0%";
+            document.getElementById("disk-bar").style.width = "0%";
+            document.getElementById("health-score").innerText = "--";
+            document.getElementById("health-status").innerText = "Node Offline";
+            return;
+        }
+        
+        // عرض بيانات العميل المستهدف مباشرة
+        const node = nodesArray[0];
 
-        // Hydrate Node Visual Progress Indicators
+        // تحديث المؤشرات المرئية بالقيم الحقيقية القادمة من البايثون
         document.getElementById("cpu").innerText = node.cpu.toFixed(1) + "%";
         document.getElementById("cpu-bar").style.width = node.cpu + "%";
         document.getElementById("ram").innerText = node.ram.toFixed(1) + "%";
@@ -667,32 +706,35 @@ async function fetchData() {
         document.getElementById("disk").innerText = node.disk.toFixed(1) + "%";
         document.getElementById("disk-bar").style.width = node.disk + "%";
 
-        // Dynamic State Changes for Health Matrix Score
-        document.getElementById("health-score").innerText = json.health.score;
-        const healthStatus = document.getElementById("health-status");
-        healthStatus.innerText = json.health.status;
+        // Calculate health score
+        const healthScore = json.health ? json.health.score : (100 - (node.cpu + node.ram)/2).toFixed(0);
+        const healthStatusText = json.health ? json.health.status : (healthScore > 50 ? "Healthy" : "Critical");
         
-        if (json.health.status === "Warning") {
+        document.getElementById("health-score").innerText = healthScore;
+        const healthStatus = document.getElementById("health-status");
+        healthStatus.innerText = healthStatusText;
+        
+        if (healthStatusText === "Warning") {
             healthStatus.style.background = "rgba(245, 158, 11, 0.1)"; healthStatus.style.color = "var(--color-warning)";
-        } else if (json.health.status === "Critical") {
+        } else if (healthStatusText === "Critical") {
             healthStatus.style.background = "rgba(239, 68, 68, 0.1)"; healthStatus.style.color = "var(--color-critical)";
         } else {
             healthStatus.style.background = "rgba(16, 185, 129, 0.1)"; healthStatus.style.color = "var(--color-healthy)";
         }
 
-        // Emergency Broadcasting Banner Visibility Toggle
+        // Emergency Notice and Warnings
+        const activeAlerts = json.alerts || [];
         const alertBox = document.getElementById("alertBox");
-        if(alertBox) alertBox.style.display = json.alerts.length > 0 ? "block" : "none";
+        if(alertBox) alertBox.style.display = activeAlerts.length > 0 ? "block" : "none";
 
-        // Append Ingestion Alert Arrays
         const alertsContainer = document.getElementById("alerts-container");
-        if (json.alerts.length === 0) {
+        if (activeAlerts.length === 0) {
             alertsContainer.innerHTML = `<p style="color: var(--color-healthy); font-size:13px;"><i class="fa-solid fa-circle-check"></i> Node operational thresholds normal.</p>`;
         } else {
-            alertsContainer.innerHTML = json.alerts.map(alert => `<div class="history-item" style="border-color: var(--color-critical); color: #fca5a5;">${alert.message || alert}</div>`).join("");
+            alertsContainer.innerHTML = activeAlerts.map(alert => `<div class="history-item" style="border-color: var(--color-critical); color: #fca5a5;">${alert.message || alert}</div>`).join("");
         }
 
-        // Thread Allocation Profiler Hydration (CPU/RAM Processes)
+        // Update resource-intensive processes (Top Processes) if sent from the Agent
         if (json.processes && json.processes.top_cpu) {
             document.getElementById("cpu-processes").innerHTML = json.processes.top_cpu.map(p => `
                 <tr>
@@ -705,10 +747,13 @@ async function fetchData() {
                     <td><i class="fa-solid fa-terminal text-muted small me-2"></i>${p.name || "Unknown"} <span class="text-muted small">(${p.pid})</span></td>
                     <td class="text-end fw-bold text-info">${p.memory.toFixed(1)}%</td>
                 </tr>`).join("");
+        } else {
+            document.getElementById("cpu-processes").innerHTML = `<tr><td colspan="2" class="text-center text-muted small py-2">No process telemetry active</td></tr>`;
+            document.getElementById("memory-processes").innerHTML = `<tr><td colspan="2" class="text-center text-muted small py-2">No memory page telemetry active</td></tr>`;
         }
 
-        // Keep rolling chart localized to a maximum viewport length of 30 steps
-        const time = new Date().toLocaleTimeString();
+        // تحديث التخطيط البياني المتحرك (Time-series Graph Analyzer)
+        const time = node.last_seen ? node.last_seen.split(" ")[1] : new Date().toLocaleTimeString();
         labels.push(time); cpuData.push(node.cpu); ramData.push(node.ram); diskData.push(node.disk);
         if (labels.length > 30) { labels.shift(); cpuData.shift(); ramData.shift(); diskData.shift(); }
         chart.update();
@@ -717,13 +762,11 @@ async function fetchData() {
     }
 }
 
-/**
- * Syncs the system alert history metrics from the SQLite persistent trace log database.
- */
 async function fetchAlertHistory() {
     if (!document.getElementById('telemetry-pane').classList.contains('show')) return;
     try {
-        const response = await fetch("/api/alerts/history", { method: "GET", headers: getAuthHeaders() });
+        const selectedAgent = document.getElementById("agentSelector").value;
+        const response = await fetch(`/api/alerts/history?agent=${selectedAgent}`, { method: "GET", headers: getAuthHeaders() });
         if (response.status === 401) executeSecureLogout();
 
         const json = await response.json();
@@ -745,13 +788,7 @@ async function fetchAlertHistory() {
 // ==============================================================================
 // 5. CORPORATE DIRECTORY PIPELINE CONTROLLERS (RBAC MATRIX)
 // ==============================================================================
-
-/**
- * Pulls security clearing registry from backend to map active operators.
- * Includes defensive structural safety triggers for out-of-order execution states.
- */
 async function fetchUserDirectory() {
-    // Dynamic transition modifier for glow system cards
     document.getElementById('main-login-card')?.style.setProperty('--glow-color', 'rgba(6, 182, 212, 0.15)');
     
     try {
@@ -763,7 +800,7 @@ async function fetchUserDirectory() {
         if(userCountEl) userCountEl.innerText = data.users ? data.users.length : 0;
         
         const tableBody = document.getElementById("directory-table-body");
-        if (!tableBody) return; // Fail-safe return parameter if current DOM node state isn't appended
+        if (!tableBody) return;
 
         if (!data.users || data.users.length === 0) {
             tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted small py-4">No enterprise users found within active node cluster context.</td></tr>`;
@@ -794,13 +831,9 @@ async function fetchUserDirectory() {
     }
 }
 
-// Global modal state mutation holders
 let selectedUserId = null;
 let activeActionType = null; 
 
-/**
- * Instantiates structural updates on RBAC security authorization tokens.
- */
 function triggerRoleMutation(userId, username, currentRole) {
     selectedUserId = userId;
     activeActionType = "UPDATE_ROLE";
@@ -813,9 +846,6 @@ function triggerRoleMutation(userId, username, currentRole) {
     new bootstrap.Modal(document.getElementById('actionModal')).show();
 }
 
-/**
- * Triggers modal execution pipeline for structural profile purging.
- */
 function triggerAccessRevocation(userId, username) {
     selectedUserId = userId;
     activeActionType = "REVOKE_ACCESS";
@@ -827,7 +857,6 @@ function triggerAccessRevocation(userId, username) {
     new bootstrap.Modal(document.getElementById('actionModal')).show();
 }
 
-// Modal Execution Wire Interceptor Event Listener
 document.getElementById("btn-modal-confirm").addEventListener("click", async () => {
     if (!selectedUserId || !activeActionType) return;
     
@@ -849,7 +878,7 @@ document.getElementById("btn-modal-confirm").addEventListener("click", async () 
 
         if (response.ok) {
             bootstrap.Modal.getInstance(document.getElementById('actionModal')).hide();
-            fetchUserDirectory(); // Execute reactive reload sequence
+            fetchUserDirectory();
         } else {
             alert("Administrative execution vector failed. Check structural logs.");
         }
@@ -858,10 +887,6 @@ document.getElementById("btn-modal-confirm").addEventListener("click", async () 
     }
 });
 
-/**
- * Bootstrap Tab Switching Event Listener Framework.
- * Ensures data streams only run once the tab partition is completely drawn.
- */
 document.getElementById('directory-tab').addEventListener('shown.bs.tab', function (e) {
     fetchUserDirectory();
 });
@@ -872,7 +897,7 @@ document.getElementById('directory-tab').addEventListener('shown.bs.tab', functi
 fetchData();
 fetchAlertHistory();
 
-// Initialize time loops for background metric consolidation updates
+// تكرار استدعاء التحديثات كل ثانيتين بشكل تلقائي ومتزن
 setInterval(fetchData, 2000);
 setInterval(fetchAlertHistory, 5000);
 </script>
