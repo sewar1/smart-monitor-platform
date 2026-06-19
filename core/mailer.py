@@ -1,6 +1,13 @@
+# ==============================================================================
+# SMART MONITOR PLATFORM - ENTERPRISE MAIL MANAGEMENT SUBSYSTEM
+# ==============================================================================
+# Handles enterprise-grade SMTP gateways to dispatch secure 2FA verification tokens.
+# Optimized with cryptographically secure random generators (secrets module).
+# ==============================================================================
+
 import os
 import smtplib
-import random
+import secrets
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from core.logger import log_info, log_error
@@ -14,11 +21,14 @@ class MailerManager:
         self.smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
         self.smtp_port = int(os.getenv("SMTP_PORT", 587))
         self.email_user = os.getenv("EMAIL_USER")
-        self.email_password = os.getenv("EMAIL_PASSWORD") # App-Specific Password , Not the regular password.
+        self.email_password = os.getenv("EMAIL_PASSWORD") # App-Specific Password, Not the regular password.
 
     def generate_verification_token(self) -> str:
-        """Generates a secure, randomized 6-digit numeric verification token."""
-        return str(random.randint(100000, 999999))
+        """
+        Generates a cryptographically secure, randomized 6-digit numeric verification token.
+        Uses CSPRNG (secrets module) to prevent theoretical token predictability.
+        """
+        return str(secrets.randbelow(900000) + 100000)
 
     def send_verification_email(self, recipient_email: str, token: str) -> bool:
         """

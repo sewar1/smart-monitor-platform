@@ -35,7 +35,7 @@ class AlertEngine:
         ]
 
         for node in nodes:
-            node_name = node.get("name", "unknown-server")
+            node_name = node.get("name") or node.get("server") or "unknown-server"
 
             for rule in validation_rules:
                 metric_key = rule["key"]

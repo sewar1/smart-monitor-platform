@@ -1,5 +1,5 @@
 # ==============================================================================
-# SMART MONITOR PLATFORM - INFRSTRUCTURE HEALTH ANALYZER
+# SMART MONITOR PLATFORM - INFRASTRUCTURE HEALTH ANALYZER
 # ==============================================================================
 # Multi-criteria system status analysis engine and process investigator.
 # Engineered with process lifecycle guards to prevent OS-level execution race conditions.
@@ -12,7 +12,7 @@ from typing import Dict, List, Tuple
 class SystemAnalyzer:
     """
     Analyzes telemetry snapshots, computes weighted health matrices,
-    and isolates high-consuming Linux OS processes.
+    and isolates high-consuming OS processes (Cross-Platform Compliant).
     """
 
     def __init__(self, cpu_weight: float = 0.4, ram_weight: float = 0.4, disk_weight: float = 0.2):
@@ -27,8 +27,8 @@ class SystemAnalyzer:
 
     def get_top_consuming_processes(self, limit: int = 5) -> Dict[str, List[Dict]]:
         """
-        Scans Linux kernel process table snapshots dynamically.
-        Safely captures and filters volatile system state processes (Zombies, Privileged).
+        Scans system process table snapshots dynamically.
+        Safely captures and filters volatile system state processes across OS kernels.
         """
         active_processes: List[Dict] = []
 
@@ -61,6 +61,7 @@ class SystemAnalyzer:
     def calculate_weighted_health_score(self, cpu_usage: float, ram_usage: float, disk_usage: float) -> float:
         """
         Calculates the definitive infrastructure health index using a weighted balance algorithm.
+        Formula: Score = (100 - CPU)*W_cpu + (100 - RAM)*W_ram + (100 - Disk)*W_disk
         """
         cpu_free_component = (100.0 - cpu_usage) * self.cpu_weight
         ram_free_component = (100.0 - ram_usage) * self.ram_weight

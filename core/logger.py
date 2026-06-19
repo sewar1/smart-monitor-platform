@@ -3,9 +3,11 @@
 # ==============================================================================
 # Thread-safe, non-blocking asynchronous log rotation matrix.
 # Implements strict resource bounding to eliminate persistent storage depletion.
+# Optimized for high-throughput multi-agent environment tracking.
 # ==============================================================================
 
 import os
+import sys
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -59,8 +61,9 @@ class ProductionLogger:
     def _attach_console_stream(self) -> None:
         """
         Pipes real-time diagnostic output to STDOUT/STDERR for systemd/journalctl interception.
+        Explicitly binds to standard sys streams to prevent pipeline deadlocks under microservices.
         """
-        console_handler = logging.StreamHandler()
+        console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setFormatter(self.formatter)
         
         self.system_logger.addHandler(console_handler)
