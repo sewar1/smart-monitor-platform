@@ -3,52 +3,71 @@
 # ==============================================================================
 # Target deployment: Standalone Linux/Windows host monitoring daemon.
 # Streams metric payloads via REST outbound channels to the central controller.
+# Refactored to match the centralized database and app.py filtering contracts.
 # ==============================================================================
 
+import os
 import time
+import sys
 import socket
 import psutil
 import requests
 
-# 🌐 CONFIGURATION MATRIX
-# Change 'localhost' to your central server's IP address when deploying on remote hosts
-CENTRAL_SERVER_URL = "http://localhost:5000/api/metrics/receiver"
-STREAM_INTERVAL_SECONDS = 5
+# CONFIGURATION MATRIX & ENVIRONMENT BINDING
+# Dynamically reads from Host Environment mapped to match your centralized dashboard ports
+CENTRAL_SERVER_URL = os.getenv("CENTRAL_SERVER_URL", "http://localhost:5000/api/metrics")
+STREAM_INTERVAL_SECONDS = int(os.getenv("STREAM_INTERVAL_SECONDS", "5"))
 
-def get_hostname() -> str:
-    """Extracts the unique network identifier node name of the current host."""
-    return socket.gethostname()
+def get_node_metadata() -> str:
+    """
+    Extracts custom server alias, or falls back to the actual hostname machine identifier.
+    Matches the AGENT_NAME environmental variable layout.
+    """
+    return os.getenv("AGENT_NAME", socket.gethostname())
 
 def collect_system_metrics() -> dict:
     """Performs non-blocking kernel state polling to extract real-time metrics."""
+    server_name = get_node_metadata()
+    
+    # Cross-Platform Guard: Windows clusters fail on '/' mount path inquiries
+    disk_path = 'C:\\' if sys.platform.startswith('win') else '/'
+    try:
+        disk_percent = psutil.disk_usage(disk_path).percent
+    except Exception:
+        disk_percent = psutil.disk_usage('/').percent # Absolute fallback
+
+    # Returns the exact keys required by app.py and database ingestion models
     return {
-        "server": get_hostname(),
+        "name": server_name,
         "cpu": psutil.cpu_percent(interval=None),
         "ram": psutil.virtual_memory().percent,
-        "disk": psutil.disk_usage('/').percent
+        "disk": disk_percent
     }
 
 def stream_telemetry_loop():
     """Main lifecycle thread handling telemetry packaging and transmission."""
-    hostname = get_hostname()
-    print(f"[+] Smart Monitor Agent started successfully on host: {hostname}")
+    server_name = get_node_metadata()
+    print(f"[+] Smart Monitor Agent started successfully on node: {server_name}")
     print(f"[+] Target Central Server Endpoint: {CENTRAL_SERVER_URL}")
     print("[-] Commencing metric data synchronization pipeline...\n")
 
+    # Initialize the CPU tracker interval on first boot loop
+    psutil.cpu_percent(interval=None)
+    time.sleep(1)
+
     while True:
         try:
-            # 1. Gather dynamic metric snapshots
+            # 1. Gather dynamic localized metric snapshots
             payload = collect_system_metrics()
             
             # 2. Fire telemetry packet across the network
             response = requests.post(CENTRAL_SERVER_URL, json=payload, timeout=3)
             
-            # 3. Audit transmission success status
-            if response.status_code == 201:
-
-                print(f"[SUCCESS] Telemetry synchronized at {time.strftime('%X')} -> CPU: {payload['cpu']}% | RAM: {payload['ram']}% | DISK: {payload['disk']}%")
+            # 3. Audit transmission success status (Accepts 200 or 201 based on backend setup)
+            if response.status_code in [200, 201]:
+                print(f"[SUCCESS] Telemetry synchronized at {time.strftime('%X')} | Node: {payload['name']} -> CPU: {payload['cpu']}% | RAM: {payload['ram']}% | DISK: {payload['disk']}%")
             else:
-                print(f"[WARNING] Server rejected payload with status code: {response.status_code}")
+                print(f"[WARNING] Central Server rejected payload with status code: {response.status_code}")
                 
         except requests.exceptions.ConnectionError:
             print(f"[ERROR] Transmit Fault: Unable to reach Central Server at {CENTRAL_SERVER_URL}. Retrying...")
