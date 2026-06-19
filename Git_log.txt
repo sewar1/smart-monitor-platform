@@ -1,0 +1,39 @@
+1. رسالة خاصة بحل مشكلة الـ Port وتجميد الواجهة الأمامية:
+
+git commit -m "fix(backend): patch metrics endpoint and resolve port telemetry freeze
+
+- Restructured /api/metrics and /api/alerts/history to capture '?agent=' query parameter.
+- Integrated request.args.get('agent') to dynamic PostgreSQL isolation layer.
+- Fixed front-end unhydration bug by dynamically feeding mock process layouts based on the active agent node.
+- Standardized port communication matrix to prevent SPA 404 and connection breaks."
+
+_____________________________________________________
+2. رسالة خاصة بتعديل ملف المقاييس وتحويله لـ Agent ذكي:
+
+git commit -m "refactor(metrics): migrate metrics.py into a dynamic single-node harvester
+
+- Removed legacy hardcoded multi-node simulation (linux-node-02).
+- Added cross-platform compliance via psutil for Windows/Linux/Docker environments.
+- Implemented dynamic agent naming fallback using os.getenv('AGENT_NAME', 'default-agent').
+- Maintained perfect backward compatibility for the core dashboard routing."
+
+_____________________________________________________
+
+
+3. 
+
+git commit -m "refactor(analyzer): optimize weighted health score and process tracking
+
+- Fixed an issue where disk metrics were ignored (passed as 0) in the dashboard calculations.
+- Updated calculate_health_score to incorporate real-time disk telemetry.
+- Enforced process lifecycle guards (NoSuchProcess, AccessDenied) to prevent Linux/Windows kernel race conditions during scans."
+
+____________________________________________
+
+4. رسالة جامعة لتعديل كافة الأكواد ومزامنتها:
+Bash
+git commit -m "chore(architecture): synchronise centralized backend engine components
+
+- Fully refactored app.py, metrics.py, analyzer.py, and alerts.py to support multi-tenant agent filtering.
+- Aligned data contracts between core subsystems for seamless database ingestion.
+- Ready for full repository migration and GitHub deployment."
