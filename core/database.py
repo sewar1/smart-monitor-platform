@@ -3,9 +3,12 @@
 # ==============================================================================
 # Re-engineered for distributed Docker environments utilizing state isolation.
 # Uses dynamic kernel space environment variables for infrastructure binding.
+# Updated for Multi-Node Geographical Localization Matrix (Sprint 4).
 # ==============================================================================
 
 import os
+from dotenv import load_dotenv
+load_dotenv()
 import bcrypt
 import psycopg2
 from datetime import datetime
@@ -44,35 +47,39 @@ class DatabaseManager:
         try:
             with self._get_connection() as conn:
                 with conn.cursor() as cursor:
-                    # Schema 1: Incidents and security alerts logging system
+                    # Schema 1: Incidents and security alerts logging system (Geographic-Aware)
                     cursor.execute("""
                         CREATE TABLE IF NOT EXISTS alerts (
                             id SERIAL PRIMARY KEY,
                             timestamp TIMESTAMP NOT NULL,
                             server VARCHAR(100) NOT NULL,
+                            location VARCHAR(100) DEFAULT 'Ludwigshafen',
                             message TEXT NOT NULL,
                             level VARCHAR(20) NOT NULL
                         )
                     """)
 
-                    # Schema 2: Linear telemetry history (Supports Multi-Node)
+                    # Schema 2: Linear telemetry history (Supports Multi-Node City Localization)
                     cursor.execute("""
                         CREATE TABLE IF NOT EXISTS metrics (
                             id SERIAL PRIMARY KEY,
                             timestamp TIMESTAMP NOT NULL,
-                            cpu REAL NOT NULL,
-                            ram REAL NOT NULL,
-                            disk REAL NOT NULL,
-                            server VARCHAR(100) NOT NULL
+                            cpu FLOAT NOT NULL,
+                            ram FLOAT NOT NULL,
+                            disk FLOAT NOT NULL,
+                            server VARCHAR(100) NOT NULL,
+                            location VARCHAR(100) DEFAULT 'Ludwigshafen'
                         )
                     """)
 
-                    # Schema 3: Security Rings - Production Grade Hashed User Store
+                    # Schema 3: Security Rings - Production Grade Hashed User Store (With RBAC Compliance)
                     cursor.execute("""
                         CREATE TABLE IF NOT EXISTS users (
                             id SERIAL PRIMARY KEY,
                             username VARCHAR(50) UNIQUE NOT NULL,
                             password_hash VARCHAR(255) NOT NULL,
+                            role VARCHAR(50) DEFAULT 'Operator',
+                            is_verified BOOLEAN DEFAULT TRUE,
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                         )
                     """)
@@ -101,7 +108,7 @@ class DatabaseManager:
                     if cursor.fetchone()[0] == 0:
                         # Record injection when identity sequence is empty
                         cursor.execute("""
-                            INSERT INTO users (username, password_hash, role, is_verified))
+                            INSERT INTO users (username, password_hash, role, is_verified)
                             VALUES (%s, %s, %s, %s)
                         """, ("admin", hashed_password, "Admin", True))
                         log_info("[SECURITY SEED] Default administrative user registered successfully.")
@@ -118,70 +125,90 @@ class DatabaseManager:
         except Exception as seed_fault:
             log_error(f"Failed to seed security infrastructure: {seed_fault}")
 
-    def persist_incident_log(self, server: str, message: str, level: str = "WARNING") -> None:
-        """Safely records systemic anomalies into the Postgres server."""
+    def persist_incident_log(self, server: str, location: str, message: str, level: str = "WARNING") -> None:
+        """Safely records systemic anomalies into the Postgres server with location tagging."""
         current_time = datetime.now()
         try:
             with self._get_connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute("""
-                        INSERT INTO alerts (timestamp, server, message, level)
-                        VALUES (%s, %s, %s, %s)
-                    """, (current_time, server, message, level))
+                        INSERT INTO alerts (timestamp, server, location, message, level)
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (current_time, server, location, message, level))
                     conn.commit()
         except Exception as io_fault:
             log_error(f"Failed to persist incident to PostgreSQL cluster: {io_fault}")
 
-    def fetch_historical_incidents(self, limit: int = 50) -> List[Tuple]:
-        """Retrieves inverse-chronological sequence records bounding current active incidents."""
+    def fetch_historical_incidents(self, limit: int = 50, agent_name: Optional[str] = None) -> List[Tuple]:
+        """Retrieves inverse-chronological sequence records bounding current active incidents with optional agent filter."""
         try:
             with self._get_connection() as conn:
                 with conn.cursor() as cursor:
-                    cursor.execute("""
-                        SELECT timestamp, server, message, level
-                        FROM alerts
-                        ORDER BY id DESC
-                        LIMIT %s
-                    """, (limit,))
+                    # Implement dynamic agent routing filter contextually
+                    if agent_name and agent_name.lower() != 'all':
+                        cursor.execute("""
+                            SELECT timestamp, server, location, message, level
+                            FROM alerts
+                            WHERE LOWER(server) = LOWER(%s)
+                            ORDER BY id DESC
+                            LIMIT %s
+                        """, (agent_name, limit))
+                    else:
+                        cursor.execute("""
+                            SELECT timestamp, server, location, message, level
+                            FROM alerts
+                            ORDER BY id DESC
+                            LIMIT %s
+                        """, (limit,))
                     return cursor.fetchall()
         except Exception as read_fault:
             log_error(f"Failed to fetch incident logs from PostgreSQL cluster: {read_fault}")
             return []
 
-    def persist_telemetry_metrics(self, server: str, cpu: float, ram: float, disk: float) -> None:
-        """Ingests real-time raw resource matrix streaming from remote external Agents."""
+    def persist_telemetry_metrics(self, server: str, location: str, cpu: float, ram: float, disk: float) -> None:
+        """Ingests real-time raw resource matrix streaming with localized city nodes tags."""
         current_time = datetime.now()
         try:
             with self._get_connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute("""
-                        INSERT INTO metrics (timestamp, cpu, ram, disk, server)
-                        VALUES (%s, %s, %s, %s, %s)
-                    """, (current_time, cpu, ram, disk, server))
+                        INSERT INTO metrics (timestamp, cpu, ram, disk, server, location)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """, (current_time, cpu, ram, disk, server, location))
                     conn.commit()
         except Exception as io_fault:
             log_error(f"Failed to persist Agent metrics to PostgreSQL cluster: {io_fault}")
 
-    def fetch_latest_cluster_state(self) -> List[Dict[str, Any]]:
-        """Advanced Window Function query for extraction of newest single metric records."""
+    def fetch_latest_cluster_state(self, agent_name: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Advanced Window Function query for extraction of newest single metric records per node with optional agent filter."""
         try:
             with self._get_connection() as conn:
                 with conn.cursor() as cursor:
-                    cursor.execute("""
-                        SELECT DISTINCT ON (server) server, cpu, ram, disk, timestamp
-                        FROM metrics
-                        ORDER BY server, id DESC
-                    """)
+                    # Contextual filtering evaluation logic for selected monitoring nodes
+                    if agent_name and agent_name.lower() != 'all':
+                        cursor.execute("""
+                            SELECT DISTINCT ON (server) server, location, cpu, ram, disk, timestamp
+                            FROM metrics
+                            WHERE LOWER(server) = LOWER(%s)
+                            ORDER BY server, id DESC
+                        """, (agent_name,))
+                    else:
+                        cursor.execute("""
+                            SELECT DISTINCT ON (server) server, location, cpu, ram, disk, timestamp
+                            FROM metrics
+                            ORDER BY server, id DESC
+                        """)
                     rows = cursor.fetchall()
                     
                     cluster_nodes = []
                     for row in rows:
                         cluster_nodes.append({
                             "name": row[0],
-                            "cpu": row[1],
-                            "ram": row[2],
-                            "disk": row[3],
-                            "last_seen": row[4].strftime("%Y-%m-%d %H:%M:%S")
+                            "location": row[1],
+                            "cpu": row[2],
+                            "ram": row[3],
+                            "disk": row[4],
+                            "last_seen": row[5].strftime("%Y-%m-%d %H:%M:%S")
                         })
                     return cluster_nodes
         except Exception as query_fault:
@@ -191,7 +218,7 @@ class DatabaseManager:
     def authenticate_user_credentials(self, username: str, plain_password: str) -> bool:
         """
         Queries secure user layers and evaluates a constant-time cryptographic 
-        comparison to verify user identities safely against constant-time side-channel threats.
+        comparison to verify user identities safely against side-channel threats.
         """
         try:
             with self._get_connection() as conn:
@@ -216,17 +243,17 @@ _db_orchestrator = DatabaseManager()
 def init_db() -> None:
     _db_orchestrator.init_infrastructure_tables()
 
-def save_alert(server: str, message: str, level: str = "WARNING") -> None:
-    _db_orchestrator.persist_incident_log(server, message, level)
+def save_alert(server: str, location: str, message: str, level: str = "WARNING") -> None:
+    _db_orchestrator.persist_incident_log(server, location, message, level)
 
-def get_alert_history(limit: int = 50) -> List[Tuple]:
-    return _db_orchestrator.fetch_historical_incidents(limit=limit)
+def get_alert_history(limit: int = 50, agent: Optional[str] = None) -> List[Tuple]:
+    return _db_orchestrator.fetch_historical_incidents(limit=limit, agent_name=agent)
 
-def save_metrics(server: str, cpu: float, ram: float, disk: float) -> None:
-    _db_orchestrator.persist_telemetry_metrics(server, cpu, ram, disk)
+def save_metrics(server: str, location: str, cpu: float, ram: float, disk: float) -> None:
+    _db_orchestrator.persist_telemetry_metrics(server, location, cpu, ram, disk)
 
-def get_latest_cluster_metrics() -> List[Dict[str, Any]]:
-    return _db_orchestrator.fetch_latest_cluster_state()
+def get_latest_cluster_metrics(agent: Optional[str] = None) -> List[Dict[str, Any]]:
+    return _db_orchestrator.fetch_latest_cluster_state(agent_name=agent)
 
 def verify_user(username: str, plain_pass: str) -> bool:
     return _db_orchestrator.authenticate_user_credentials(username, plain_pass)
