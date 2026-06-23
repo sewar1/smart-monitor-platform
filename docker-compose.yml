@@ -7,7 +7,6 @@ services:
   db:
     image: postgres:15-alpine
     container_name: smart_monitor_db
-    restart: always
     environment:
       POSTGRES_USER: postgres_admin
       POSTGRES_PASSWORD: secure_devops_pass
@@ -16,7 +15,8 @@ services:
       - "5433:5432" # Binds external port 5433 to avoid host Windows PostgreSQL conflicts
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db_init:/docker-entrypoint-initdb.d # Initializes the database with custom SQL scripts on first run
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql # Initializes the database with necessary schemas and tables on first run
+    restart: always
     networks:
       - monitor_network
 

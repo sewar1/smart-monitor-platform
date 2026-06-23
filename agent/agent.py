@@ -2,21 +2,31 @@
 # SMART MONITOR INFRASTRUCTURE - DISTRIBUTED TELEMETRY AGENT
 # ==============================================================================
 # Target deployment: Standalone Linux/Windows host monitoring daemon.
-# Streams metric payloads via REST outbound channels to the central controller.
-# Refactored to match the centralized database and app.py filtering contracts.
+# Streams metric payloads via persistent HTTP Sessions to the central controller.
+# Optimized with HTTP Keep-Alive, structured logging, and production error handling.
 # ==============================================================================
 
 import os
 import time
 import sys
 import socket
+import logging
 import psutil
 import requests
 
 # CONFIGURATION MATRIX & ENVIRONMENT BINDING
-# Dynamically reads from Host Environment mapped to match your centralized dashboard ports
 CENTRAL_SERVER_URL = os.getenv("CENTRAL_SERVER_URL", "http://localhost:5000/api/metrics")
 STREAM_INTERVAL_SECONDS = int(os.getenv("STREAM_INTERVAL_SECONDS", "5"))
+
+# SETUP STRUCTURED PRODUCTION LOGGING
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger("TelemetryAgent")
 
 def get_node_metadata() -> str:
     """
@@ -34,9 +44,8 @@ def collect_system_metrics() -> dict:
     try:
         disk_percent = psutil.disk_usage(disk_path).percent
     except Exception:
-        disk_percent = psutil.disk_usage('/').percent # Absolute fallback
+        disk_percent = psutil.disk_usage('/').percent  # Absolute fallback
 
-    # Returns the exact keys required by app.py and database ingestion models
     return {
         "name": server_name,
         "cpu": psutil.cpu_percent(interval=None),
@@ -47,35 +56,44 @@ def collect_system_metrics() -> dict:
 def stream_telemetry_loop():
     """Main lifecycle thread handling telemetry packaging and transmission."""
     server_name = get_node_metadata()
-    print(f"[+] Smart Monitor Agent started successfully on node: {server_name}")
-    print(f"[+] Target Central Server Endpoint: {CENTRAL_SERVER_URL}")
-    print("[-] Commencing metric data synchronization pipeline...\n")
+    logger.info(f"Smart Monitor Agent started successfully on node: {server_name}")
+    logger.info(f"Target Central Server Endpoint: {CENTRAL_SERVER_URL}")
+    logger.info("Commencing metric data synchronization pipeline...")
 
     # Initialize the CPU tracker interval on first boot loop
     psutil.cpu_percent(interval=None)
     time.sleep(1)
 
-    while True:
-        try:
-            # 1. Gather dynamic localized metric snapshots
-            payload = collect_system_metrics()
-            
-            # 2. Fire telemetry packet across the network
-            response = requests.post(CENTRAL_SERVER_URL, json=payload, timeout=3)
-            
-            # 3. Audit transmission success status (Accepts 200 or 201 based on backend setup)
-            if response.status_code in [200, 201]:
-                print(f"[SUCCESS] Telemetry synchronized at {time.strftime('%X')} | Node: {payload['name']} -> CPU: {payload['cpu']}% | RAM: {payload['ram']}% | DISK: {payload['disk']}%")
-            else:
-                print(f"[WARNING] Central Server rejected payload with status code: {response.status_code}")
+    # Reusable Persistent HTTP Session for connection pooling & Keep-Alive optimized performance
+    with requests.Session() as session:
+        while True:
+            try:
+                # 1. Gather dynamic localized metric snapshots
+                payload = collect_system_metrics()
                 
-        except requests.exceptions.ConnectionError:
-            print(f"[ERROR] Transmit Fault: Unable to reach Central Server at {CENTRAL_SERVER_URL}. Retrying...")
-        except Exception as general_fault:
-            print(f"[CRITICAL AGENT FAULT]: {general_fault}")
-            
-        # Yield execution control state back to the kernel for the configured buffer time
-        time.sleep(STREAM_INTERVAL_SECONDS)
+                # 2. Fire telemetry packet across the network using the persistent session
+                response = session.post(CENTRAL_SERVER_URL, json=payload, timeout=3)
+                
+                # 3. Audit transmission success status
+                if response.status_code in [200, 201]:
+                    logger.info(
+                        f"Telemetry synchronized | Node: {payload['name']} -> "
+                        f"CPU: {payload['cpu']}% | RAM: {payload['ram']}% | DISK: {payload['disk']}%"
+                    )
+                else:
+                    logger.warning(f"Central Server rejected payload with status code: {response.status_code}")
+                    
+            except requests.exceptions.ConnectionError:
+                logger.error(f"Transmit Fault: Unable to reach Central Server at {CENTRAL_SERVER_URL}. Retrying...")
+            except Exception as general_fault:
+                logger.critical(f"Unexpected Agent Fault: {general_fault}")
+                
+            # Yield execution control state back to the kernel
+            time.sleep(STREAM_INTERVAL_SECONDS)
 
 if __name__ == "__main__":
-    stream_telemetry_loop()
+    try:
+        stream_telemetry_loop()
+    except KeyboardInterrupt:
+        logger.info("Agent process terminated gracefully by user.")
+        sys.exit(0)
