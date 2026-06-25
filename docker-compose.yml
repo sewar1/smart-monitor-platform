@@ -14,7 +14,7 @@ services:
     ports:
       - "5433:5432" # Binds external port 5433 to avoid host Windows PostgreSQL conflicts
     volumes:
-      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql # Initializes the database with necessary schemas and tables on first run
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql # Ticket 1 : Initializes the database with necessary schemas and tables on first run
       - postgres_data:/var/lib/postgresql/data
     restart: always
     networks:
@@ -54,9 +54,10 @@ services:
     container_name: smart_monitor_agent_docker
     restart: always
     environment:
-      - CENTRAL_SERVER_URL=http://dashboard:5000/api/metrics/receiver # Routes traffic through internal Docker network DNS & adds the receiver endpoint to the URL
+      - CENTRAL_SERVER_URL=http://dashboard:5000/api/metrics/receiver # Ticket 2 : Routes traffic through internal Docker network DNS & adds the receiver endpoint to the URL
       - STREAM_INTERVAL_SECONDS=5
-      - AGENT_NAME=Docker_Production_Container
+      - NODE_ID=Docker_Production_Container # Ticket 3 : Unique node identifier for distributed deployments
+      - LOCATION=Ludwigshafen # Ticket 3 : Location identifier for distributed deployments
     depends_on:
       - dashboard
     networks:
