@@ -12,7 +12,8 @@ load_dotenv()
 import bcrypt
 import psycopg2
 from psycopg2 import pool  # Enterprise Connection Pooling module
-from datetime import datetime
+import json
+from datetime import datetime, timezone
 from typing import List, Tuple, Dict, Any, Optional
 from core.logger import log_info, log_error
 
@@ -45,15 +46,56 @@ class DatabaseManager:
         except Exception as pool_fault:
             log_error(f"Failed to establish PostgreSQL Connection Pool: {pool_fault}")
             raise pool_fault
-
+        
     def _get_pooled_connection(self):
         """Borrows an active runtime socket connection from the initialized pool."""
         return self._connection_pool.getconn()
+    
 
     def _release_pooled_connection(self, conn) -> None:
         """Returns a borrowed connection back to the pool to prevent resource starvation leaks."""
         if conn:
             self._connection_pool.putconn(conn)
+
+    def save_metrics(self, server_name: str, location: str, cpu_stat: float, ram_stat: float, disk_stat: float, top_processes_json: str = "[]") -> None:
+        """
+        [Ticket 4 Update]: Overhauls and persists dynamic multi-node telemetry and high-frequency 
+        process maps (JSONB) into the PostgreSQL cluster with a dedicated tracking timestamp.
+        """
+        connection = None
+        cursor = None
+        try:
+            connection = self._get_pooled_connection()
+            cursor = connection.cursor()
+
+            # [Ticket 1 & 4 Matrix Injection]: Schema optimized with native metrics schema table constraints.
+            # Captures both node hardware state vector and JSONB execution maps uniformly.
+
+            # [Ticket 4]: The top_processes_json parameter is now included in the insert query to store the top processes data as a JSONB field in the metrics table, and add os_type to the insert query for telemetry ingestion
+            insert_query ="""
+                INSERT INTO metrics (node_id, location, os_type, cpu_usage, ram_usage, disk_usage, top_processes, timestamp)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+            """
+
+            # [Ticket 4]: Injects a UTC timestamp for cross-node consistency and chronological ordering in the metrics table.
+            current_timestamp = datetime.now(timezone.utc)  # UTC timestamp for cross-node consistency
+            detected_os = "Linux/Docker" # Ticket 4: OS type is now hardcoded for telemetry ingestion, can be extended to dynamic detection if needed
+            cursor.execute(
+                    insert_query,
+                    (server_name, location, detected_os, float(cpu_stat), float(ram_stat), float(disk_stat), top_processes_json, current_timestamp) # Ticket 4: os_type added to the insert query for telemetry ingestion
+            )
+
+            connection.commit() # Commit the transaction to persist the metrics data
+        except Exception as io_fault:
+            if connection:
+                connection.rollback()  # Rollback in case of any error during the transaction
+            log_error(f"Failed to capture real-time remote agent metric transaction: {io_fault}") # Log the error for further investigation
+            raise io_fault  # Re-raise the exception to propagate it up the call stack
+        finally:
+            if cursor:
+                cursor.close()  # Close the cursor to free up resources
+            self._release_pooled_connection(connection)  # Release the connection back to the pool
+
 
     def init_infrastructure_tables(self) -> None:
         """
@@ -103,10 +145,11 @@ class DatabaseManager:
         try:
             conn = self._get_pooled_connection()
             with conn.cursor() as cursor:
+                # [Ticket 4 Update]: Column alignments standardized to server_name context
                 cursor.execute("""
-                    INSERT INTO alerts (node_id, alert_type, message)
-                    VALUES (%s, %s, %s)
-                """, (server, level, message))
+                    INSERT INTO alerts (server_name, location, alert_type, message, timestamp)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (server, location, level, message, datetime.now(timezone.utc)))
                 conn.commit()
         except Exception as io_fault:
             log_error(f"Failed to persist remote incident to central engine: {io_fault}")
@@ -121,15 +164,15 @@ class DatabaseManager:
             with conn.cursor() as cursor:
                 if agent_name and agent_name.lower() != 'all':
                     cursor.execute("""
-                        SELECT timestamp, node_id, alert_type, message, resolved
+                        SELECT timestamp, server_name, location, message, alert_type
                         FROM alerts
-                        WHERE LOWER(node_id) = LOWER(%s)
+                        WHERE LOWER(server_name) = LOWER(%s)
                         ORDER BY id DESC
                         LIMIT %s
                     """, (agent_name, limit))
                 else:
                     cursor.execute("""
-                        SELECT timestamp, node_id, alert_type, message, resolved
+                        SELECT timestamp, server_name, location, message, alert_type
                         FROM alerts
                         ORDER BY id DESC
                         LIMIT %s
@@ -162,23 +205,27 @@ class DatabaseManager:
             self._release_pooled_connection(conn)
 
     def fetch_latest_cluster_state(self, agent_name: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Queries single latest state evaluation matrix for nodes dynamically via windows filters."""
+        """
+        [Ticket 4 Update]: Queries unique state evaluation matrix for nodes dynamically.
+        Preserves raw datetime objects to safeguard dashboard timezone-aware calculations.
+        """
         conn = None
         try:
             conn = self._get_pooled_connection()
             with conn.cursor() as cursor:
+                # [Ticket 4]: Dynamic agent filtering for multi-node deployments. If agent_name is provided, filter by that agent; otherwise, return all nodes.
                 if agent_name and agent_name.lower() != 'all':
                     cursor.execute("""
-                        SELECT DISTINCT ON (node_id) node_id, location, cpu_usage, ram_usage, disk_usage, timestamp
+                        SELECT DISTINCT ON (server_name) server_name, location, cpu_usage, ram_usage, disk_usage, timestamp
                         FROM metrics
-                        WHERE LOWER(node_id) = LOWER(%s)
-                        ORDER BY node_id, id DESC
+                        WHERE LOWER(server_name) = LOWER(%s)
+                        ORDER BY server_name, id DESC
                     """, (agent_name,))
                 else:
                     cursor.execute("""
-                        SELECT DISTINCT ON (node_id) node_id, location, cpu_usage, ram_usage, disk_usage, timestamp
+                        SELECT DISTINCT ON (server_name) server_name, location, cpu_usage, ram_usage, disk_usage, timestamp
                         FROM metrics
-                        ORDER BY node_id, id DESC
+                        ORDER BY server_name, id DESC
                     """)
                 rows = cursor.fetchall()
                 
@@ -190,7 +237,8 @@ class DatabaseManager:
                         "cpu": float(row[2]),
                         "ram": float(row[3]),
                         "disk": float(row[4]),
-                        "last_seen": row[5].strftime("%Y-%m-%d %H:%M:%S")
+                        # [Ticket 4]: Preserves the raw timestamp object for timezone-aware calculations in the dashboard layer.
+                        "last_seen": row[5]
                     })
                 return cluster_nodes
         except Exception as query_fault:
@@ -233,8 +281,9 @@ def save_alert(server: str, location: str, message: str, level: str = "WARNING")
 def get_alert_history(limit: int = 50, agent: Optional[str] = None) -> List[Tuple]:
     return _db_orchestrator.fetch_historical_incidents(limit=limit, agent_name=agent)
 
-def save_metrics(server: str, location: str, cpu: float, ram: float, disk: float) -> None:
-    _db_orchestrator.persist_telemetry_metrics(server, location, cpu, ram, disk)
+# [Ticket 4 Hotfix Alignment]: Emulation router re-mapped to support 6 positional parameters
+def save_metrics(server: str, location: str, cpu: float, ram: float, disk: float, top_processes: str = "[]") -> None:
+    _db_orchestrator.save_metrics(server, location, cpu, ram, disk, top_processes)
 
 def get_latest_cluster_metrics(agent: Optional[str] = None) -> List[Dict[str, Any]]:
     return _db_orchestrator.fetch_latest_cluster_state(agent_name=agent)

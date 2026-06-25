@@ -5,7 +5,7 @@
 # Engineered for dynamic multi-node telemetry ingestion and environment isolation.
 # Follows Twelve-Factor App methodologies utilizing asynchronous notifications.
 # Augmented with JWT & Cryptographic bcrypt Ring Infrastructure Security.
-# Refactored for Multi-Node Geographical Localization Matrix (Sprint 4).
+# Refactored for Multi-Node Geographical Localization Matrix.
 # ==============================================================================
 
 import os
@@ -15,7 +15,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import jwt
 import bcrypt  # 🛡️ High-fidelity hashing library for secure password encryption and verification
-from datetime import datetime, timedelta
+import json # ticket 4:
+from datetime import datetime, timedelta, timezone # ticket 4: added timezone for better timestamp handling
 from functools import wraps
 from flask import Flask, render_template, jsonify, request
 from dotenv import load_dotenv
@@ -202,11 +203,17 @@ def receive_agent_telemetry():
         cpu_stat = payload.get("cpu")
         ram_stat = payload.get("ram")
         disk_stat = payload.get("disk")
+        top_processes = payload.get("top_processes", []) # Ticket 4 : added top_processes to the payload to match the updated save_metrics function signature in core/database.py
 
         if None in (server_name, cpu_stat, ram_stat, disk_stat):
             return jsonify({"status": "rejected", "reason": "Incomplete telemetry parameters"}), 400
         try: # to handle the new parameter added to the save_metrics function signature in core/database.py
-            save_metrics(server_name, location, float(cpu_stat), float(ram_stat), float(disk_stat), "{}") # added "{}" as a new parameter to match the updated save_metrics function signature in core/database.py
+            save_metrics(server_name,
+                         location,
+                         float(cpu_stat),
+                         float(ram_stat),
+                         float(disk_stat),
+                         json.dumps(top_processes)) # Ticket 4 : added json.dumps(top_processes) as a new parameter to match the updated save_metrics function signature in core/database.py
         except Exception as db_err: # to handle any database insertion errors and log them without crashing the API
             log_error(f"Database insertion failed: {db_err}") # log the database insertion error
         current_node_state = [{"name": server_name, "location": location, "cpu": cpu_stat, "ram": ram_stat, "disk": disk_stat}]
@@ -214,7 +221,7 @@ def receive_agent_telemetry():
         active_alerts = check_alerts(current_node_state)
 
         if active_alerts:
-            alert_message = f"Host Node: [{server_name}] Anomaly Report:\n" + "\n".join(active_alerts) # removed the location from the alert message to avoid redundancy since it's already included in the node state
+            alert_message = f"Host Node: [{server_name}] in ({location}) Anomaly Report:\n" + "\n".join(active_alerts) # Ticket 4: added location to the alert message for better context
             log_warning(f"Incident mitigation initialized for active threats on {server_name}: {alert_message}")
 
             for alert in active_alerts:
@@ -228,8 +235,8 @@ def receive_agent_telemetry():
 
         return jsonify({"status": "synchronized", "node": server_name, "location": location}), 201
     except Exception as ingestion_fault:
-        log_error(f"Critical Ingestion Fault: {ingestion_fault}") # report the error to the log for debugging purposes
-        return jsonify({"status": "fault", "reason": "Internal anomaly"}), 500 # replpaced the error message with a more generic one to avoid exposing internal details to the client
+        log_error(f"Failed to persist Agent metrics to PostgreSQL cluster: {ingestion_fault}") # Ticket 4: added logging for the ingestion fault to help with debugging
+        return jsonify({"status": "fault", "reason": str(ingestion_fault)}), 500 # Ticket 4: added the ingestion fault reason to the response for better debugging
 
 
 @app.route("/api/metrics", methods=["GET"])
@@ -237,10 +244,10 @@ def receive_agent_telemetry():
 def get_dashboard_metrics():
     """Compiles unified distributed node metrics histories out of PostgreSQL relational caches."""
     try:
-        # Capture the contextual query filtering param from request headers/query
+        # Ticket 4 [Checklist 2]: Implement dynamic agent filtering for the metrics endpoint
         selected_agent = request.args.get('agent', 'all')
         
-        # Pass the dynamic agent filter into the database manager layer
+        # Fetch the latest cluster metrics and alert history based on the selected agent filter
         cluster_nodes = get_latest_cluster_metrics(agent=selected_agent)
         raw_alerts = get_alert_history(limit=20, agent=selected_agent)
         
@@ -256,8 +263,25 @@ def get_dashboard_metrics():
 
         global_score = 100.0
         active_status = "Healthy"
+
+        now = datetime.now(timezone.utc) # Ticket 4: added timezone-aware current time for better timestamp handling
+        for node in cluster_nodes: # Ticket 4: added a loop to check for stale metrics data and update the node status accordingly
+            last_seen = node.get("last_seen") # Ticket 4: added a last_seen timestamp to check for stale metrics data
+            if last_seen: # Ticket 4: added a check to see if the last_seen timestamp is older than 60 seconds and mark the node as stale if it is
+                if last_seen.tzinfo is None: # Ticket 4: added a check to see if the last_seen timestamp is naive and make it timezone-aware
+                    last_seen = last_seen.replace(tzinfo=timezone.utc) # Ticket 4: make the last_seen timestamp timezone-aware , to protect from TypeError: can't subtract offset-naive and offset-aware datetimes
+
+                if  now -last_seen > timedelta(seconds=60): # Ticket 4: added a check to see if the last_seen timestamp is older than 60 seconds and mark the node as stale if it is
+                    node ["status"] = "Offline" # Ticket 4: red badge
+                else:
+                    node ["status"] = "Online"  # Ticket 4: green badge
+            
+            else:
+                node["status"] = "Online"  # Ticket 4: green badge
+    
+            
         
-        if cluster_nodes:
+        if cluster_nodes: # Ticket 4: added a check to see if there are any nodes in the cluster and calculate the global score accordingly
             avg_cpu = sum(node['cpu'] for node in cluster_nodes) / len(cluster_nodes)
             avg_ram = sum(node['ram'] for node in cluster_nodes) / len(cluster_nodes)
             global_score = calculate_health_score(avg_cpu, avg_ram, 0)
@@ -266,12 +290,12 @@ def get_dashboard_metrics():
         # Hydrate processes array with live data contextual layout matching selected environment
         mock_processes = {
             "top_cpu": [
-                {"pid": 1024, "name": f"{selected_agent}_service_daemon" if selected_agent != 'all' else "postgres_engine", "cpu": 4.2},
-                {"pid": 2048, "name": "flask_core_api", "cpu": 2.1}
+                {"pid": 1024, "name": f"{selected_agent}_service" if selected_agent != 'all' else "postgres_engine", "cpu": 4.2} # Ticket 4: added selected_agent to the process name for better context
+               # {"pid": 2048, "name": "flask_core_api", "cpu": 2.1}
             ],
             "top_memory": [
-                {"pid": 1024, "name": f"{selected_agent}_service_daemon" if selected_agent != 'all' else "postgres_engine", "memory": 12.5},
-                {"pid": 3056, "name": "node_agent_daemon", "memory": 8.4}
+                {"pid": 1024, "name": f"{selected_agent}_service" if selected_agent != 'all' else "postgres_engine", "memory": 12.5} # Ticket 4: added selected_agent to the process name for better context
+               # {"pid": 3056, "name": "node_agent_daemon", "memory": 8.4}
             ]
         }
 
