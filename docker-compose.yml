@@ -14,11 +14,12 @@ services:
     ports:
       - "5433:5432" # Binds external port 5433 to avoid host Windows PostgreSQL conflicts
     volumes:
-      - postgres_data:/var/lib/postgresql/data
       - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql # Initializes the database with necessary schemas and tables on first run
+      - postgres_data:/var/lib/postgresql/data
     restart: always
     networks:
       - monitor_network
+     
 
   # ==============================================================================
   # Container 2: Flask Telemetry API Engine & Central Dashboard Core
@@ -53,7 +54,7 @@ services:
     container_name: smart_monitor_agent_docker
     restart: always
     environment:
-      - CENTRAL_SERVER_URL=http://dashboard:5000/api/metrics # Routes traffic through internal Docker network DNS
+      - CENTRAL_SERVER_URL=http://dashboard:5000/api/metrics/receiver # Routes traffic through internal Docker network DNS & adds the receiver endpoint to the URL
       - STREAM_INTERVAL_SECONDS=5
       - AGENT_NAME=Docker_Production_Container
     depends_on:
@@ -83,11 +84,11 @@ services:
 # VOLUMES & PERSISTENT STORAGE SPECIFICATIONS
 # ==============================================================================
 volumes:
-  postgres_data:
+  postgres_data: # Persists PostgreSQL data across container restarts and recreations
 
 # ==============================================================================
 # ISOLATED SOFTWARE NETWORK TOPOLOGY
 # ==============================================================================
 networks:
   monitor_network:
-    driver: bridge
+    driver: bridge # Defines an isolated bridge network for inter-container communication without exposing internal services to the host network

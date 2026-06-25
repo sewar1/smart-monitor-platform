@@ -191,12 +191,13 @@ def send_email_alert(message: str) -> None:
 
 @app.route("/api/metrics/receiver", methods=["POST"])
 def receive_agent_telemetry():
+    print("🚀🚀 API RECEIVED A HIT!! 🚀🚀", flush=True) # to check if the API is receiving requests or the problem in another file Z.B analyzer.py or security.py
     try:
         payload = request.get_json()
         if not payload:
             return jsonify({"status": "rejected", "reason": "Missing or corrupted JSON payload"}), 400
         
-        server_name = payload.get("server") 
+        server_name = payload.get("name") #  old=server,new=name : edited to match the agent payload key
         location = payload.get("location", "Ludwigshafen") 
         cpu_stat = payload.get("cpu")
         ram_stat = payload.get("ram")
@@ -204,14 +205,16 @@ def receive_agent_telemetry():
 
         if None in (server_name, cpu_stat, ram_stat, disk_stat):
             return jsonify({"status": "rejected", "reason": "Incomplete telemetry parameters"}), 400
-
-        save_metrics(server_name, location, float(cpu_stat), float(ram_stat), float(disk_stat))
+        try: # to handle the new parameter added to the save_metrics function signature in core/database.py
+            save_metrics(server_name, location, float(cpu_stat), float(ram_stat), float(disk_stat), "{}") # added "{}" as a new parameter to match the updated save_metrics function signature in core/database.py
+        except Exception as db_err: # to handle any database insertion errors and log them without crashing the API
+            log_error(f"Database insertion failed: {db_err}") # log the database insertion error
         current_node_state = [{"name": server_name, "location": location, "cpu": cpu_stat, "ram": ram_stat, "disk": disk_stat}]
         
         active_alerts = check_alerts(current_node_state)
 
         if active_alerts:
-            alert_message = f"Host Node: [{server_name}] in ({location}) Anomaly Report:\n" + "\n".join(active_alerts)
+            alert_message = f"Host Node: [{server_name}] Anomaly Report:\n" + "\n".join(active_alerts) # removed the location from the alert message to avoid redundancy since it's already included in the node state
             log_warning(f"Incident mitigation initialized for active threats on {server_name}: {alert_message}")
 
             for alert in active_alerts:
@@ -225,8 +228,8 @@ def receive_agent_telemetry():
 
         return jsonify({"status": "synchronized", "node": server_name, "location": location}), 201
     except Exception as ingestion_fault:
-        log_error(f"Failed to persist Agent metrics to PostgreSQL cluster: {ingestion_fault}")
-        return jsonify({"status": "fault", "reason": str(ingestion_fault)}), 500
+        log_error(f"Critical Ingestion Fault: {ingestion_fault}") # report the error to the log for debugging purposes
+        return jsonify({"status": "fault", "reason": "Internal anomaly"}), 500 # replpaced the error message with a more generic one to avoid exposing internal details to the client
 
 
 @app.route("/api/metrics", methods=["GET"])

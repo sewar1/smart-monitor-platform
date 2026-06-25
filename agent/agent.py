@@ -15,7 +15,7 @@ import psutil
 import requests
 
 # CONFIGURATION MATRIX & ENVIRONMENT BINDING
-CENTRAL_SERVER_URL = os.getenv("CENTRAL_SERVER_URL", "http://localhost:5000/api/metrics")
+CENTRAL_SERVER_URL = os.getenv("CENTRAL_SERVER_URL", "http://localhost:5000/api/metrics/receiver") # add receiver endpoint to the URL
 STREAM_INTERVAL_SECONDS = int(os.getenv("STREAM_INTERVAL_SECONDS", "5"))
 
 # SETUP STRUCTURED PRODUCTION LOGGING
