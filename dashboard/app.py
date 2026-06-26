@@ -28,7 +28,7 @@ load_dotenv()
 # SUBSYSTEM ARCHITECTURE INTEGRATIONS & DATA ACCELERATION LAYERS
 # ==============================================================================
 from core.alerts import check_alerts
-from core.analyzer import calculate_health_score, get_health_status
+from core.analyzer import calculate_health_score, get_health_status, check_and_mitigate_freezes # Ticket 5: added check_and_mitigate_freezes for anti-freeze guard
 from core.logger import log_info, log_warning, log_error
 from core.database import (
     init_db, 
@@ -207,7 +207,7 @@ def receive_agent_telemetry():
 
         if None in (server_name, cpu_stat, ram_stat, disk_stat):
             return jsonify({"status": "rejected", "reason": "Incomplete telemetry parameters"}), 400
-        try: # to handle the new parameter added to the save_metrics function signature in core/database.py
+        try: # Ticket 4:to handle the new parameter added to the save_metrics function signature in core/database.py
             save_metrics(server_name,
                          location,
                          float(cpu_stat),
@@ -215,9 +215,28 @@ def receive_agent_telemetry():
                          float(disk_stat),
                          json.dumps(top_processes)) # Ticket 4 : added json.dumps(top_processes) as a new parameter to match the updated save_metrics function signature in core/database.py
         except Exception as db_err: # to handle any database insertion errors and log them without crashing the API
-            log_error(f"Database insertion failed: {db_err}") # log the database insertion error
+            log_error(f"PostgreSQL Ingestion Node Failure: {db_err}") # log the database insertion error
+            # Cut execution immediately if core persistent storage is offline
+            return jsonify({"status": "fault", "reason": "Database ingestion error"}), 500 # return a 500 error to the agent without crashing the API
+        # Define volatile runtime memory state matrix
         current_node_state = [{"name": server_name, "location": location, "cpu": cpu_stat, "ram": ram_stat, "disk": disk_stat}]
         
+        # Ticket 5: Trigger automated reactive Anti-Freeze Guard loop
+        try:
+            incidents = check_and_mitigate_freezes(float(cpu_stat), float(ram_stat), server_name, location) # Ticket 5: added check_and_mitigate_freezes for anti-freeze guard
+            for incident in incidents:
+                # Ticket 5: Persist each mitigated incident into the alerts table for historical tracking
+                save_alert(
+                    server=incident["server"], 
+                    location=incident["location"], 
+                    message=incident["message"], 
+                    level=incident["level"]
+                )
+        except Exception as mitigation_fault:
+            log_error(f"Anti-Freeze Guard Initialization Failed: {mitigation_fault}")
+            return jsonify({"status": "fault", "reason": "Freeze mitigation error"}), 500
+
+
         active_alerts = check_alerts(current_node_state)
 
         if active_alerts:
