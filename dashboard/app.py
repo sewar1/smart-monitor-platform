@@ -464,6 +464,35 @@ def delete_user(user_id):
         log_error(f"User deletion execution fault: {e}")
         return jsonify({"error": "Failed to purge identity mapping from core storage."}), 500
 
+
+# import subprocess
+# subprocess.Popen(["sleep","3600"]) # Ticket 5 Checklist 3: Temporary added a sleep command to keep the Flask server running for testing purposes, can be removed in production
+
+# =========================================================================================
+#Subprocess in Python is the official and essential tool that allows a program to exit the 
+# isolated Python environment
+# and interact directly with the operating system (OS Kernel) as if writing in the Terminal.
+#
+#Popin (short for Process Open) is the backbone of this library.
+#
+# What exactly does `subprocess.Popen` do?
+# When you call `subprocess.Popen(["sleep", "3600"]), you are telling Python to do the following:
+# Create a new child process (Fork/Spawn Child Process): Python requests the operating system to
+# launch a completely external program (in this case, the Linux sleep program).
+#
+#Asynchronous/Non-blocking execution: This is the greatest secret of Popen! Once the child process
+#  is launched, Python doesn't wait for it to finish. Instead, it runs in the background and
+#  immediately returns to execute the next lines of code in your script.
+#
+# Why did we use it in the test?
+#We used it because if we had used regular functions like `subprocess.run()`,
+# Flask would have frozen completely for a full hour (3600 seconds) waiting for
+# the process to finish and wouldn't have received any API requests! But thanks to
+#  Popen, we launched a "naughty, dormant" process in the container's background,
+#  leaving Flask free to receive the hit from the agent and have the security guard catch it!
+# ==========================================================================================
+
+
 if __name__ == "__main__":
     init_db()  # Ensure database is initialized before starting the server
     app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)

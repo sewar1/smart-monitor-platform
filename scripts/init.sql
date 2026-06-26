@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- 2. جدول مقاييس العقد الموزعة جغرافياً (Distributed Telemetry Metrics Table)
 CREATE TABLE IF NOT EXISTS metrics (
     id BIGSERIAL PRIMARY KEY,
-    node_id VARCHAR(100) NOT NULL,          -- معرف فريد للعقدة: e.g., 'ludwigshafen-win'
+    server_name VARCHAR(100) NOT NULL,          -- معرف فريد للعقدة: e.g., 'ludwigshafen-win'
     location VARCHAR(100) NOT NULL,         -- الموقع الجغرافي: Ludwigshafen, Mannheim, Heidelberg
     os_type VARCHAR(50) NOT NULL,           -- نظام التشغيل المضيف: Windows, Linux
     cpu_usage NUMERIC(5, 2) NOT NULL,       -- نسبة استهلاك المعالج الكلية
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS metrics (
 -- 3. جدول التنبيهات وإدارة الكوارث المركزية (Centralized System Alerts)
 CREATE TABLE IF NOT EXISTS alerts (
     id SERIAL PRIMARY KEY,
-    node_id VARCHAR(100) NOT NULL,
+    server_name VARCHAR(100) NOT NULL,
     alert_type VARCHAR(50) NOT NULL,        -- e.g., 'CPU_CRITICAL', 'RAM_HIGH', 'OOM_GUARD_TRIGGER'
     message TEXT NOT NULL,
     resolved BOOLEAN DEFAULT FALSE,
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS alerts (
 -- INDEXING OPTIMIZATION (تجهيز قاعدة البيانات لتتحمل البيانات الضخمة من 3 سيرفرات بالتوازي)
 -- ====================================================================
 -- فهرس مركب سريع جداً لجلب أحدث المقاييس الخاصة بسيرفر معين فوراً وعرضها في الـ Front-end
-CREATE INDEX IF NOT EXISTS idx_metrics_node_timestamp ON metrics (node_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_metrics_node_timestamp ON metrics (server_name, timestamp DESC);
 
 -- فهرس لتسريع البحث عن التنبيهات غير المحلولة الخاصة بالعقد
-CREATE INDEX IF NOT EXISTS idx_alerts_unresolved ON alerts (node_id) WHERE resolved = FALSE;
+CREATE INDEX IF NOT EXISTS idx_alerts_unresolved ON alerts (server_name) WHERE resolved = FALSE;

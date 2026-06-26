@@ -73,7 +73,7 @@ class DatabaseManager:
 
             # [Ticket 4]: The top_processes_json parameter is now included in the insert query to store the top processes data as a JSONB field in the metrics table, and add os_type to the insert query for telemetry ingestion
             insert_query ="""
-                INSERT INTO metrics (node_id, location, os_type, cpu_usage, ram_usage, disk_usage, top_processes, timestamp)
+                INSERT INTO metrics (server_name, location, os_type, cpu_usage, ram_usage, disk_usage, top_processes, timestamp)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
             """
 

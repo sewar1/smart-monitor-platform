@@ -43,6 +43,7 @@ services:
       - db
     networks:
       - monitor_network
+    pid: "host" # Ticket 5
 
   # ==============================================================================
   # Container 3: Internal Software Topology Monitoring Agent
@@ -62,6 +63,8 @@ services:
       - dashboard
     networks:
       - monitor_network
+    pid: "host" # Ticket 5
+    privileged: true # Ticket 5
 
   # ==============================================================================
   # Container 4: Enterprise Nginx Reverse Proxy Server (Frontend Boundary)

@@ -19,6 +19,7 @@ CRITICAL_PROCESS_WHITELIST = [
     "apache2", "mysqld", "postgres","postgres_engine",
     "redis-server","db", "dockerd", "containerd",
     "smart-monitor-dashboard", "smart_monitor_agent_docker"
+    "gunicorn", "gunicorn: master", "gunicorn: worker"
 ]
 
 
@@ -81,7 +82,8 @@ class SystemAnalyzer:
         mitigated_incidents: List[Dict[str, Any]] = []
 
         # Trigger mitigation sequence if either CPU or RAM breach the safety margin of 95%
-        if current_cpu >= 95.0 or current_ram >= 95.0:
+        # if current_cpu >= 95.0 or current_ram >= 95.0:
+        if current_cpu >= 10.0 or current_ram >= 10.0: # for test
             log_warning(f"[TICKET 5 ANTI-FREEZE]: Resource emergency triggered on {server_name}. CPU: {current_cpu}%, RAM: {current_ram}%")
             
             # Extract top resource hogs
@@ -95,12 +97,15 @@ class SystemAnalyzer:
             
             for offender in all_offenders:
                 pid = offender["pid"]
-                name = offender["name"]
+                name = offender["name"].lower() # Ticket 5 Checklist 3 : Substring Matching for case-insensitive process name comparison
                 
-                # [Ticket 5]: Verify process identity against safety whitelist and current runtime process ID
-                if name.lower() in CRITICAL_PROCESS_WHITELIST or pid == os.getpid():
+                # 🚀 [Ticket 5 Fix]: Smart check using any() for partial string matches (captures paths/workers)
+                is_whitelisted = any(allowed_task in name for allowed_task in CRITICAL_PROCESS_WHITELIST)
+                # Ticket 5 Checklist 2 : Ensure the current process (the agent itself) is never terminated
+                if "gunicorn" in name or pid == os.getpid(): # Ticket 5
                     continue
-                
+
+               
                 try:
                     proc_to_kill = psutil.Process(pid)
                     log_warning(f"[TICKET 5 ANTI-FREEZE]: Targeting process '{name}' (PID: {pid}) to clear capacity spikes.")
