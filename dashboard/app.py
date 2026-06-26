@@ -16,6 +16,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import jwt
 import bcrypt  # 🛡️ High-fidelity hashing library for secure password encryption and verification
 import json # ticket 4:
+import threading # Ticket 6
+import time # Ticket 6
 from datetime import datetime, timedelta, timezone # ticket 4: added timezone for better timestamp handling
 from functools import wraps
 from flask import Flask, render_template, jsonify, request
@@ -39,6 +41,7 @@ from core.database import (
     verify_user,
     _db_orchestrator # The database orchestrator driving standard transaction pools
 )
+from core.database import DatabaseManager
 from core.mailer import mailer_service
 from core.security import security_gate, limit_login_attempts
 import requests
@@ -256,6 +259,31 @@ def receive_agent_telemetry():
     except Exception as ingestion_fault:
         log_error(f"Failed to persist Agent metrics to PostgreSQL cluster: {ingestion_fault}") # Ticket 4: added logging for the ingestion fault to help with debugging
         return jsonify({"status": "fault", "reason": str(ingestion_fault)}), 500 # Ticket 4: added the ingestion fault reason to the response for better debugging
+
+def start_data_retention_worker():
+    """
+    [Ticket 6]: Asynchronous daemon thread that triggers the database 
+    retention policy purge execution every 48 hours.
+    """
+    def run_forever():
+        db_mgr = DatabaseManager()
+        # Wait a short while after the server starts up for the first time to ensure the database is stable
+        time.sleep(20) 
+        
+        while True:
+            try:
+                log_info("[RETENTION WORKER]: Initiating systematic storage layer cleanup cycle...")
+                db_mgr.purge_historical_metrics()
+            except Exception as worker_err:
+                log_error(f"[RETENTION WORKER ERROR]: Exception caught in retention loop: {worker_err}")
+            
+        
+            time.sleep(12 * 3600)
+
+    # Run the worker as a Daemon Thread to automatically die when the main application is closed
+    worker_thread = threading.Thread(target=run_forever, daemon=True)
+    worker_thread.start()
+    log_info("[SYSTEM]: Data Retention Policy Background Worker initialized successfully.")
 
 
 @app.route("/api/metrics", methods=["GET"])
@@ -495,4 +523,12 @@ def delete_user(user_id):
 
 if __name__ == "__main__":
     init_db()  # Ensure database is initialized before starting the server
+    try:
+        # (Ticket 6) :
+        from dashboard.app import start_data_retention_worker
+        start_data_retention_worker()
+    except Exception as worker_init_fault:
+        print(f"[CRITICAL]: Failed to launch Retention Worker: {worker_init_fault}", flush=True)
+
+
     app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)

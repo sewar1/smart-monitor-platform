@@ -267,6 +267,45 @@ class DatabaseManager:
             self._release_pooled_connection(conn)
 
 
+    def purge_historical_metrics(self) -> int:
+        """
+        [Ticket 6]: Wipes historical metric records older than 168 hours (7 days)
+        to optimize storage layer index latency and prevent memory bloat.
+        Returns the number of deleted rows.
+        """
+        connection = None 
+        cursor = None
+        rows_deleted = 0
+        try:
+            connection = self._get_pooled_connection()
+            cursor = connection.cursor()
+
+            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24) # Tichet 6 : c
+
+            purge_query ="""
+                DELETE FROM metrics 
+                WHERE timestamp < %s;
+            """
+            cursor.execute(purge_query, (cutoff_time,))
+            rows_deleted = cursor.rowcount
+
+            connection.commit()
+            log_info(f"[DATABASE PURGE]: Successfully cleared {rows_deleted} obsolete metric records older than 24h.")
+
+        except Exception as db_fault:
+            if connection:
+                connection.rollback()
+            log_error(f"[DATABASE PURGE ERROR]: Failed to execute data retention cycle: {db_fault}")
+        finally:
+            if cursor:
+                cursor.close()
+            self._release_pooled_connection(connection)
+        
+        return rows_deleted
+
+
+
+
 # ==============================================================================
 # COMPATIBILITY EMULATION ROUTERS (PREVENTS SYSTEM INTEGRATION CRASHES)
 # ==============================================================================
