@@ -18,6 +18,15 @@ import bcrypt  # 🛡️ High-fidelity hashing library for secure password encry
 import json # ticket 4:
 import threading # Ticket 6
 import time # Ticket 6
+#========================================================
+# [Ticket 8 - Heartbeat Update]: Safely track live state timestamp
+# Dictionary to keep track of the last_seen timestamp for each hardware node
+nodes_heartbeats = {
+    "Docker_Production_Container": time.time(),
+    "Windows_Host": time.time(),
+    "VMware_Ubuntu": time.time()
+}
+#========================================================
 from datetime import datetime, timedelta, timezone # ticket 4: added timezone for better timestamp handling
 from functools import wraps
 from flask import Flask, render_template, jsonify, request
@@ -215,6 +224,31 @@ def send_email_alert(message: str) -> None:
             server.send_message(msg)
     except Exception as e: log_error(f"SMTP failed: {e}")
 
+#================================================
+# [Ticket 8 - Heartbeat Update]: Safely track live state timestamp
+#================================================
+
+@app.route('/api/nodes/status', methods=['GET'])
+# If you are using JWT protect it, otherwise leave it open for frontend polling
+def get_nodes_status():
+    """
+    Evaluates the immediate health status of all 3 agents based on 60 seconds threshold window.
+    """
+    current_time = time.time()
+    status_matrix = {}
+    
+    for node, last_seen in nodes_heartbeats.items():
+        # Calculate time elapsed since last transmission
+        time_elapsed = current_time - last_seen
+        
+        # Window calculation logic: 60 seconds threshold
+        if time_elapsed > 60:
+            status_matrix[node] = "Offline"
+        else:
+            status_matrix[node] = "Online"
+            
+    return jsonify(status_matrix), 200
+
 
 # ==============================================================================
 # DISTRIBUTED DATA INGESTION & CENTRAL INVENTORY API MATRIX
@@ -247,7 +281,11 @@ def receive_agent_telemetry():
         # Validation Guard: Block incomplete packets to prevent corrupted db inserts
         if None in (server_name, cpu_stat, ram_stat, disk_stat):
             return jsonify({"status": "rejected", "reason": "Incomplete telemetry parameters"}), 400
-            
+        #================================================================
+        # Ticket 8: [Heartbeat Update]: Safely track live state timestamp 
+        if server_name in nodes_heartbeats:
+            nodes_heartbeats[server_name] = time.time()
+        #================================================================
         try: 
             # [Ticket 4]: Invoking save_metrics with serialized process array parameter
             save_metrics(
