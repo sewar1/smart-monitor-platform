@@ -26,22 +26,46 @@ from dotenv import load_dotenv
 # Inject hidden environment configurations from local .env space into the OS execution kernel
 load_dotenv()
 
+
+# ==============================================================================
+# SMART ENVIRONMENT CHECK (DOCKER VS LOCAL WINDOWS) Ticket 7
+# ==============================================================================
+# This variable automatically detects if the code is running inside Docker or locally on Windows
+RUNNING_IN_DOCKER = os.getenv("RUNNING_IN_DOCKER", "false") == "true"
+
+
 # ==============================================================================
 # SUBSYSTEM ARCHITECTURE INTEGRATIONS & DATA ACCELERATION LAYERS
 # ==============================================================================
 from core.alerts import check_alerts
 from core.analyzer import calculate_health_score, get_health_status, check_and_mitigate_freezes # Ticket 5: added check_and_mitigate_freezes for anti-freeze guard
 from core.logger import log_info, log_warning, log_error
-from core.database import (
-    init_db, 
-    save_metrics, 
-    get_latest_cluster_metrics, 
-    save_alert, 
-    get_alert_history,
-    verify_user,
-    _db_orchestrator # The database orchestrator driving standard transaction pools
-)
-from core.database import DatabaseManager
+#===============================================================================
+# In order to make the code overcome this crash and continue to run the server
+# without a database, the import line inside the app.py file must be protected
+# by a try ... except firewall
+#===============================================================================
+try: # Ticket 7:
+    from core.database import (
+        init_db, 
+        save_metrics, 
+        get_latest_cluster_metrics, 
+        save_alert, 
+        get_alert_history,
+        verify_user,
+        _db_orchestrator # The database orchestrator driving standard transaction pools
+    )
+    from core.database import DatabaseManager
+except Exception as db_import_error:
+    print(f"[WARNING]: Database module failed to load locally (Expected without Docker): {db_import_error}", flush=True)
+    # Define empty dummy functions to prevent a NameError error later in the code.
+    def init_db(): pass
+    def save_metrics(*args, **kwargs): pass
+    def get_latest_cluster_metrics(*args, **kwargs): return {}
+    def save_alert(*args, **kwargs): pass
+    def get_alert_history(*args, **kwargs): return []
+    def verify_user(*args, **kwargs): return False
+#================================================================================
 from core.mailer import mailer_service
 from core.security import security_gate, limit_login_attempts
 import requests
@@ -59,8 +83,11 @@ app.config['SECRET_KEY'] = os.getenv("JWT_SECRET_KEY", "super_secure_telemetry_s
 # Synchronize enterprise relational schemas inside PostgreSQL upon container initialization
 with app.app_context():
     try:
-        init_db()
-        log_info("Central database architecture successfully synchronized via Flask context.")
+        if RUNNING_IN_DOCKER: # Ticket 7 : add Dynamic Environment Variables
+            init_db()
+            log_info("Central database architecture successfully synchronized via Flask context.")
+        else: # Ticket 7 : add Dynamic Environment Variables
+            log_info("Running locally on Windows: Database initialization bypassed to prevent hanging.")
     except Exception as init_fault:
         log_error(f"Critical Database Infrastructure Fault during init: {init_fault}")
 
@@ -195,40 +222,55 @@ def send_email_alert(message: str) -> None:
 
 @app.route("/api/metrics/receiver", methods=["POST"])
 def receive_agent_telemetry():
-    print("🚀🚀 API RECEIVED A HIT!! 🚀🚀", flush=True) # to check if the API is receiving requests or the problem in another file Z.B analyzer.py or security.py
+    """
+    Ingestion Endpoint: Receives incoming runtime telemetry packets from distributed agents.
+    Verifies payload parameters, commits state to PostgreSQL, and triggers reactive safeguards.
+    """
+    # Debug hook to verify endpoint reachability independently of firewall/analyzer layers
+    print("🚀🚀 API RECEIVED A HIT!! 🚀🚀", flush=True) 
+    
     try:
         payload = request.get_json()
         if not payload:
             return jsonify({"status": "rejected", "reason": "Missing or corrupted JSON payload"}), 400
         
-        server_name = payload.get("name") #  old=server,new=name : edited to match the agent payload key
+        # Extraction of telemetry metrics matrix keys from streaming agent input
+        server_name = payload.get("name") # Refactored from 'server' to 'name' to align with agent payload signatures
         location = payload.get("location", "Ludwigshafen") 
         cpu_stat = payload.get("cpu")
         ram_stat = payload.get("ram")
         disk_stat = payload.get("disk")
-        top_processes = payload.get("top_processes", []) # Ticket 4 : added top_processes to the payload to match the updated save_metrics function signature in core/database.py
+        
+        # [Ticket 4]: Extracted top_processes array to comply with updated persistence signatures
+        top_processes = payload.get("top_processes", []) 
 
+        # Validation Guard: Block incomplete packets to prevent corrupted db inserts
         if None in (server_name, cpu_stat, ram_stat, disk_stat):
             return jsonify({"status": "rejected", "reason": "Incomplete telemetry parameters"}), 400
-        try: # Ticket 4:to handle the new parameter added to the save_metrics function signature in core/database.py
-            save_metrics(server_name,
-                         location,
-                         float(cpu_stat),
-                         float(ram_stat),
-                         float(disk_stat),
-                         json.dumps(top_processes)) # Ticket 4 : added json.dumps(top_processes) as a new parameter to match the updated save_metrics function signature in core/database.py
-        except Exception as db_err: # to handle any database insertion errors and log them without crashing the API
-            log_error(f"PostgreSQL Ingestion Node Failure: {db_err}") # log the database insertion error
-            # Cut execution immediately if core persistent storage is offline
-            return jsonify({"status": "fault", "reason": "Database ingestion error"}), 500 # return a 500 error to the agent without crashing the API
-        # Define volatile runtime memory state matrix
+            
+        try: 
+            # [Ticket 4]: Invoking save_metrics with serialized process array parameter
+            save_metrics(
+                server_name,
+                location,
+                float(cpu_stat),
+                float(ram_stat),
+                float(disk_stat),
+                json.dumps(top_processes) # Stringified JSON payload to match PostgreSQL storage expectations
+            ) 
+        except Exception as db_err: 
+            # Capture database pipeline errors gracefully without crashing the active WSGI process
+            log_error(f"PostgreSQL Ingestion Node Failure: {db_err}") 
+            return jsonify({"status": "fault", "reason": "Database ingestion error"}), 500 
+            
+        # Compile temporary runtime memory state layout
         current_node_state = [{"name": server_name, "location": location, "cpu": cpu_stat, "ram": ram_stat, "disk": disk_stat}]
         
-        # Ticket 5: Trigger automated reactive Anti-Freeze Guard loop
+        # [Ticket 5]: Active Reactive Mitigation Loop (Anti-Freeze Guard Protection)
         try:
-            incidents = check_and_mitigate_freezes(float(cpu_stat), float(ram_stat), server_name, location) # Ticket 5: added check_and_mitigate_freezes for anti-freeze guard
+            incidents = check_and_mitigate_freezes(float(cpu_stat), float(ram_stat), server_name, location) 
             for incident in incidents:
-                # Ticket 5: Persist each mitigated incident into the alerts table for historical tracking
+                # [Ticket 5]: Persist decoupled freeze mitigation records for auditing history
                 save_alert(
                     server=incident["server"], 
                     location=incident["location"], 
@@ -239,11 +281,12 @@ def receive_agent_telemetry():
             log_error(f"Anti-Freeze Guard Initialization Failed: {mitigation_fault}")
             return jsonify({"status": "fault", "reason": "Freeze mitigation error"}), 500
 
-
+        # Anomaly threshold analysis engine pass
         active_alerts = check_alerts(current_node_state)
 
         if active_alerts:
-            alert_message = f"Host Node: [{server_name}] in ({location}) Anomaly Report:\n" + "\n".join(active_alerts) # Ticket 4: added location to the alert message for better context
+            # [Ticket 4]: Contextual routing enriched with regional location injection
+            alert_message = f"Host Node: [{server_name}] in ({location}) Anomaly Report:\n" + "\n".join(active_alerts) 
             log_warning(f"Incident mitigation initialized for active threats on {server_name}: {alert_message}")
 
             for alert in active_alerts:
@@ -252,22 +295,26 @@ def receive_agent_telemetry():
                 except Exception as db_err: 
                     log_error(f"Failed to persist incident logs from PostgreSQL cluster: {db_err}")
 
+            # Critical external alerting pipelines
             send_telegram_alert(alert_message)
             send_email_alert(alert_message)
 
         return jsonify({"status": "synchronized", "node": server_name, "location": location}), 201
+        
     except Exception as ingestion_fault:
-        log_error(f"Failed to persist Agent metrics to PostgreSQL cluster: {ingestion_fault}") # Ticket 4: added logging for the ingestion fault to help with debugging
-        return jsonify({"status": "fault", "reason": str(ingestion_fault)}), 500 # Ticket 4: added the ingestion fault reason to the response for better debugging
+        # [Ticket 4]: Extended visibility into internal fault vectors for easier traceback inspection
+        log_error(f"Failed to persist Agent metrics to PostgreSQL cluster: {ingestion_fault}") 
+        return jsonify({"status": "fault", "reason": str(ingestion_fault)}), 500 
+
 
 def start_data_retention_worker():
     """
-    [Ticket 6]: Asynchronous daemon thread that triggers the database 
-    retention policy purge execution every 48 hours.
+    [Ticket 6]: Asynchronous daemon worker that invokes the long-term 
+    storage retention policy cleanup routine systematically.
     """
     def run_forever():
         db_mgr = DatabaseManager()
-        # Wait a short while after the server starts up for the first time to ensure the database is stable
+        # Initial sleep sequence to allow cluster databases to reach stable readiness states
         time.sleep(20) 
         
         while True:
@@ -277,10 +324,10 @@ def start_data_retention_worker():
             except Exception as worker_err:
                 log_error(f"[RETENTION WORKER ERROR]: Exception caught in retention loop: {worker_err}")
             
-        
+            # Execute data expiration sweep routine at defined intervals
             time.sleep(12 * 3600)
 
-    # Run the worker as a Daemon Thread to automatically die when the main application is closed
+    # Configured as daemon execution type to terminate gracefully alongside server teardown
     worker_thread = threading.Thread(target=run_forever, daemon=True)
     worker_thread.start()
     log_info("[SYSTEM]: Data Retention Policy Background Worker initialized successfully.")
@@ -289,12 +336,15 @@ def start_data_retention_worker():
 @app.route("/api/metrics", methods=["GET"])
 @token_required  
 def get_dashboard_metrics():
-    """Compiles unified distributed node metrics histories out of PostgreSQL relational caches."""
+    """
+    Compiles and delivers unified matrix states out of relational databases
+    to service downstream telemetry and historical charts.
+    """
     try:
-        # Ticket 4 [Checklist 2]: Implement dynamic agent filtering for the metrics endpoint
+        # [Ticket 4 - Checklist 2]: Extract target environment query boundary param
         selected_agent = request.args.get('agent', 'all')
         
-        # Fetch the latest cluster metrics and alert history based on the selected agent filter
+        # Scoped structural filtering based on selected navigation boundary
         cluster_nodes = get_latest_cluster_metrics(agent=selected_agent)
         raw_alerts = get_alert_history(limit=20, agent=selected_agent)
         
@@ -311,38 +361,47 @@ def get_dashboard_metrics():
         global_score = 100.0
         active_status = "Healthy"
 
-        now = datetime.now(timezone.utc) # Ticket 4: added timezone-aware current time for better timestamp handling
-        for node in cluster_nodes: # Ticket 4: added a loop to check for stale metrics data and update the node status accordingly
-            last_seen = node.get("last_seen") # Ticket 4: added a last_seen timestamp to check for stale metrics data
-            if last_seen: # Ticket 4: added a check to see if the last_seen timestamp is older than 60 seconds and mark the node as stale if it is
-                if last_seen.tzinfo is None: # Ticket 4: added a check to see if the last_seen timestamp is naive and make it timezone-aware
-                    last_seen = last_seen.replace(tzinfo=timezone.utc) # Ticket 4: make the last_seen timestamp timezone-aware , to protect from TypeError: can't subtract offset-naive and offset-aware datetimes
-
-                if  now -last_seen > timedelta(seconds=60): # Ticket 4: added a check to see if the last_seen timestamp is older than 60 seconds and mark the node as stale if it is
-                    node ["status"] = "Offline" # Ticket 4: red badge
-                else:
-                    node ["status"] = "Online"  # Ticket 4: green badge
-            
-            else:
-                node["status"] = "Online"  # Ticket 4: green badge
-    
-            
+        # [Ticket 4]: Injecting timezone-aware current moments to safeguard calculation domains
+        now = datetime.now(timezone.utc) 
         
-        if cluster_nodes: # Ticket 4: added a check to see if there are any nodes in the cluster and calculate the global score accordingly
+        # [Ticket 4]: Heartbeat Evaluation Sweep for Agent Staleness Threshold Detection
+        for node in cluster_nodes: 
+            last_seen = node.get("last_seen") 
+            if last_seen: 
+                # [Ticket 4]: Coerce naive datetime objects into UTC space to mitigate offset calculation TypeErrors
+                if last_seen.tzinfo is None: 
+                    last_seen = last_seen.replace(tzinfo=timezone.utc) 
+
+                # Flag node state context boundary as Offline if missing reporting windows for > 60 seconds
+                if now - last_seen > timedelta(seconds=60): 
+                    node["status"] = "Offline" # Triggers the downstream UI critical red badge display
+                else:
+                    node["status"] = "Online"  # Triggers the downstream UI healthy green badge display
+            else:
+                node["status"] = "Online"  # Resilient fallback default
+    
+        # Re-calculate overarching system metrics health indexes using retrieved dataset
+        if cluster_nodes: 
             avg_cpu = sum(node['cpu'] for node in cluster_nodes) / len(cluster_nodes)
             avg_ram = sum(node['ram'] for node in cluster_nodes) / len(cluster_nodes)
             global_score = calculate_health_score(avg_cpu, avg_ram, 0)
             active_status = get_health_status(global_score)
 
-        # Hydrate processes array with live data contextual layout matching selected environment
+        # Populate process array tables dynamically wrapped to target environment contexts
         mock_processes = {
             "top_cpu": [
-                {"pid": 1024, "name": f"{selected_agent}_service" if selected_agent != 'all' else "postgres_engine", "cpu": 4.2} # Ticket 4: added selected_agent to the process name for better context
-               # {"pid": 2048, "name": "flask_core_api", "cpu": 2.1}
+                {
+                    "pid": 1024, 
+                    "name": f"{selected_agent}_service" if selected_agent != 'all' else "postgres_engine", 
+                    "cpu": 4.2
+                } 
             ],
             "top_memory": [
-                {"pid": 1024, "name": f"{selected_agent}_service" if selected_agent != 'all' else "postgres_engine", "memory": 12.5} # Ticket 4: added selected_agent to the process name for better context
-               # {"pid": 3056, "name": "node_agent_daemon", "memory": 8.4}
+                {
+                    "pid": 1024, 
+                    "name": f"{selected_agent}_service" if selected_agent != 'all' else "postgres_engine", 
+                    "memory": 12.5
+                } 
             ]
         }
 
@@ -352,6 +411,7 @@ def get_dashboard_metrics():
             "alerts": formatted_alerts,
             "processes": mock_processes  
         }), 200
+        
     except Exception as api_fault:
         log_error(f"Failed to fetch cluster state from PostgreSQL: {api_fault}")
         return jsonify({"error": "Failed to compile infrastructure status matrices"}), 500
@@ -360,16 +420,17 @@ def get_dashboard_metrics():
 @app.route("/api/alerts/history", methods=["GET"])
 @token_required  
 def alert_history():
+    """Fetches full tabular alert event listings mapped to contextual filter constraints."""
     try:
-        # Capture the dynamic context boundary filtering param
+        # Extract targeted agent variable to bound database retrieval scopes
         selected_agent = request.args.get('agent', 'all')
         rows = get_alert_history(limit=20, agent=selected_agent)
+        
         history = [f"{r[0].strftime('%Y-%m-%d %H:%M:%S') if r[0] else ''} | {r[1]} ({r[2]}) | {r[3]} | {r[4]}" for r in rows]
         return jsonify({"history": history}), 200
     except Exception as error:
         log_error(f"Failed to fetch incident logs from PostgreSQL cluster: {error}")
         return jsonify({"history": [], "error": "Database read failure"}), 500
-
 
 # ==============================================================================
 # STATIC CONTENT DELIVERY PIPELINE (UI ROUTING OVERHEADS)
@@ -522,13 +583,19 @@ def delete_user(user_id):
 
 
 if __name__ == "__main__":
-    init_db()  # Ensure database is initialized before starting the server
-    try:
-        # (Ticket 6) :
-        from dashboard.app import start_data_retention_worker
-        start_data_retention_worker()
-    except Exception as worker_init_fault:
-        print(f"[CRITICAL]: Failed to launch Retention Worker: {worker_init_fault}", flush=True)
+    if RUNNING_IN_DOCKER: # Ticket 7 : add Dynamic Environment Variables
+        init_db()  # Ensure database is initialized before starting the server
+        try:
+            # (Ticket 6) :
+            from dashboard.app import start_data_retention_worker
+            start_data_retention_worker()
+        except Exception as worker_init_fault:
+            print(f"[CRITICAL]: Failed to launch Retention Worker: {worker_init_fault}", flush=True)
+    else: # Ticket 7 : add Dynamic Environment Variables
+        print("[INFO]: Data retention worker and database initialization bypassed for local Windows testing.", flush=True)
 
+    # Automatically choose the host mapping based on environment context
+    server_host = "0.0.0.0" if RUNNING_IN_DOCKER else "127.0.0.1"
+    print(f"[SUCCESS]: Core server launching on http://{server_host}:5000/", flush=True)   
 
     app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)

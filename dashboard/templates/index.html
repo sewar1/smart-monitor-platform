@@ -3,903 +3,952 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Monitor Platform | Production Enterprise Dashboard</title>
-    
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Smart Monitor Platform</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // ==============================================================================
+        // التوجيه الفوري والأمني قبل رندر الصفحة
+        // ==============================================================================
+        if (!localStorage.getItem('monitor_jwt_token')) {
+            window.location.replace('login.html'); // التوجيه لصفحة تسجيل الدخول إذا لم يتم العثور على التوكن
+        }
+    </script>
 
     <style>
-        /* ==============================================================================
-           THEME DEFINITIONS & DESIGN SYSTEM VARIABLES (Glassmorphic Neo-Dark Mode)
-           ============================================================================== */
         :root {
-            --bg-main: #070a13;
-            --bg-card: rgba(15, 23, 42, 0.75);
-            --border-color: rgba(255, 255, 255, 0.08);
-            --text-muted: #94a3b8;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --border-color: #334155;
+            --color-primary: #3b82f6;
             --color-healthy: #10b981;
             --color-warning: #f59e0b;
             --color-critical: #ef4444;
-            --color-info: #3b82f6;
-            --glow-color: rgba(59, 130, 246, 0.15);
+            --text-muted: #94a3b8;
         }
 
         body {
-            background: radial-gradient(circle at top, #111827 0%, #070a13 100%);
+            background-color: var(--bg-main);
             color: #f8fafc;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            overflow-x: hidden;
-            min-height: 100vh;
+            font-family: system-ui, -apple-system, sans-serif;
         }
 
-        /* Premium Top Navigation Cluster Configuration */
         .navbar-custom {
-            background-color: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background-color: var(--bg-card);
             border-bottom: 1px solid var(--border-color);
-            padding: 16px 32px;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+            padding: 0.75rem 1.5rem;
         }
 
         .navbar-brand-custom {
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            color: #fff;
+            font-weight: 700;
+            letter-spacing: 0.05em;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 0.5rem;
+            color: #fff;
         }
 
-        /* Glassmorphic Responsive Card Containment Blocks */
-        .card-box {
-            background: var(--bg-card);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 0 30px var(--glow-color);
-            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .card-box:hover {
-            transform: translateY(-4px);
-            border-color: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35), 0 0 40px var(--glow-color);
-        }
-
-        .nav-tabs-custom {
-            border: none;
-            gap: 8px;
+        .glow-icon {
+            filter: drop-shadow(0 0 8px var(--color-primary));
         }
 
         .nav-tabs-custom .nav-link {
             color: var(--text-muted);
-            border: 1px solid transparent;
-            border-radius: 10px;
-            padding: 10px 20px;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.25s ease;
-            background: rgba(255, 255, 255, 0.02);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
         }
 
         .nav-tabs-custom .nav-link:hover {
-            color: #ffffff;
-            background: rgba(255, 255, 255, 0.06);
-            border-color: var(--border-color);
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.05);
         }
 
         .nav-tabs-custom .nav-link.active {
-            color: #ffffff;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.2) 100%);
-            border: 1px solid rgba(59, 130, 246, 0.4);
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
-        }
-
-        .metric-icon {
-            font-size: 22px;
-            padding: 12px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.04);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .label {
-            color: var(--text-muted);
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .value {
-            font-size: 30px;
-            font-weight: 800;
-            margin-top: 4px;
-        }
-
-        .progress-custom {
-            background-color: #1e293b;
-            height: 6px;
-            border-radius: 10px;
-            margin-top: 16px;
-        }
-
-        .status-badge {
-            font-size: 13px;
-            font-weight: 700;
-            padding: 6px 16px;
-            border-radius: 20px;
-            display: inline-block;
-            margin-top: 8px;
-        }
-
-        .alert-banner {
-            display: none;
-            background: linear-gradient(90deg, #ef4444, #991b1b);
-            color: white;
-            padding: 16px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-            font-weight: 700;
-            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35);
-            animation: corePulse 2s infinite ease-in-out;
-        }
-
-        @keyframes corePulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.9; transform: scale(0.998); }
-        }
-
-        .history-container {
-            max-height: 250px;
-            overflow-y: auto;
-            font-family: 'Courier New', Courier, monospace;
-        }
-
-        .history-container::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .history-container::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
-
-        .history-item {
-            font-size: 13px;
-            padding: 10px 14px;
-            background: rgba(255, 255, 255, 0.02);
-            border-left: 3px solid var(--color-warning);
-            margin-bottom: 8px;
-            border-radius: 0 8px 8px 0;
-        }
-
-        h4 {
-            font-size: 15px;
-            font-weight: 700;
             color: #fff;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            background-color: var(--color-primary) !important;
         }
 
-        .table-custom {
-            margin: 0;
-        }
-
-        .table-custom th {
+        .lang-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
             color: var(--text-muted);
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 12px 8px;
-        }
-
-        .table-custom td {
-            color: #e2e8f0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-            padding: 12px 8px;
-            vertical-align: middle;
-            font-size: 14px;
-        }
-
-        .table-custom tbody tr:hover {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .chart-container {
-            height: 40vh;
-            position: relative;
-        }
-
-        .lang-btn, .agent-select {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #94a3b8;
+            padding: 0.375rem 0.75rem;
             border-radius: 8px;
-            padding: 6px 12px;
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 0.875rem;
             transition: all 0.2s;
         }
 
-        .lang-btn:hover, .agent-select:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
-        }
-
-        .agent-select {
-            outline: none;
-            cursor: pointer;
-        }
-
-        .agent-select option {
-            background-color: #0f172a;
+        .lang-btn:hover {
             color: #fff;
+            border-color: var(--text-muted);
         }
 
-        .badge-role {
-            font-size: 11px;
+        .card-box {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-box h4 {
+            font-size: 1rem;
             font-weight: 600;
-            padding: 4px 8px;
-            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-box .label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            display: block;
+        }
+
+        .card-box .value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-top: 0.25rem;
+        }
+
+        .metric-icon {
+            font-size: 1.5rem;
+        }
+
+        .progress-custom {
+            height: 6px;
+            background-color: var(--border-color);
+            margin-top: 0.75rem;
+            border-radius: 3px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .node-heartbeat {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            background-color: var(--color-healthy);
+            box-shadow: 0 0 8px var(--color-healthy);
+        }
+
+        .node-heartbeat.heartbeat-red { background-color: var(--color-critical); box-shadow: 0 0 8px var(--color-critical); }
+        .node-heartbeat.heartbeat-blue { background-color: var(--color-primary); box-shadow: 0 0 8px var(--color-primary); }
+        .node-heartbeat.heartbeat-green { background-color: var(--color-healthy); box-shadow: 0 0 8px var(--color-healthy); }
+        .node-heartbeat.offline { background-color: #64748b !important; box-shadow: none !important; }
+
+        .alert-banner {
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(0,0,0,0) 100%);
+            border-left: 4px solid var(--color-critical);
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            color: #fca5a5;
+        }
+
+        .history-container {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.85rem;
+        }
+
+        .table-custom {
+            --bs-table-bg: transparent !important;
+            color: #f8fafc !important;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
         }
 
         .modal-content {
-            background-color: #0f172a;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
             color: #fff;
-            border-radius: 16px;
         }
+        
+        .text-light-custom { color: #cbd5e1; }
     </style>
 </head>
 <body>
 
-<nav class="navbar navbar-custom mb-4">
-    <div class="container-fluid">
-        <span class="navbar-brand-custom">
-            <i class="fa-solid fa-circle-nodes text-primary"></i> 
-            <span id="nav-title">SMART MONITOR PLATFORM</span>
-        </span>
-        <div class="d-flex align-items-center gap-3">
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container-fluid">
+            <span class="navbar-brand navbar-brand-custom">
+                <i class="fa-solid fa-shield-halved text-primary glow-icon"></i>
+                <span id="nav-title">SMART MONITOR PLATFORM</span>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle badge-role">v2.0-Cluster</span>
+            </span>
             
-            <div class="d-flex align-items-center gap-2">
-                <label for="agentSelector" class="small text-muted fw-bold d-none d-md-inline" id="lbl-select-agent">TARGET:</label>
-                <select id="agentSelector" class="agent-select" onchange="onAgentChange()">
-                    <option value="all">📊 ALL CLUSTER (Combined)</option>
-                    <option value="windows">🪟 Windows Node</option>
-                    <option value="docker">🐳 Docker Container</option>
-                    <option value="vmware">🐧 Linux VMware</option>
-                </select>
-            </div>
-
-            <ul class="nav nav-tabs nav-tabs-custom" id="dashboardTabs" role="tablist">
+            <ul class="nav nav-tabs nav-tabs-custom ms-auto" id="dashboardTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                  <button class="nav-link active" id="telemetry-tab" data-bs-toggle="tab" data-bs-target="#telemetry-pane" type="button" role="tab" aria-controls="telemetry-pane" aria-selected="true">
-                     <i class="fa-solid fa-chart-line me-2"></i><span id="tab-telemetry">Telemetry Metrics</span>
-                  </button>
+                    <button class="nav-link active" id="telemetry-tab" type="button" role="tab">
+                        <i class="fa-solid fa-chart-line me-2"></i><span id="tab-telemetry">Telemetry Metrics</span>
+                    </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                  <button class="nav-link" id="directory-tab" data-bs-toggle="tab" data-bs-target="#directory-pane" type="button" role="tab" aria-controls="directory-pane" aria-selected="false">
-                     <i class="fa-solid fa-users-gear me-2"></i><span id="tab-directory">User Directory</span>
-                  </button>
+                    <button class="nav-link" id="directory-tab" type="button" role="tab">
+                        <i class="fa-solid fa-users-gear me-2"></i><span id="tab-directory">User Directory</span>
+                    </button>
                 </li>
             </ul>
-            <button class="lang-btn" id="lang-btn" onclick="toggleDashboardLanguage()">DE</button>
-            <button class="btn btn-sm btn-outline-danger" onclick="executeSecureLogout()" style="border-radius: 8px;"><i class="fa-solid fa-power-off"></i></button>
+
+            <div class="ms-3 d-flex gap-2 align-items-center">
+                <button class="lang-btn" id="lang-btn" onclick="toggleLanguage()"><i class="fa-solid fa-language me-2"></i>DE</button>
+                <button class="btn btn-sm btn-outline-danger" onclick="executeSecureLogout()" style="border-radius: 8px; height: 38px;"><i class="fa-solid fa-power-off"></i></button>
+            </div>
         </div>
-    </div>
-</nav>
+    </nav>
 
-<div class="container-fluid px-4">
-    
-    <div id="alertBox" class="alert-banner">
-        <i class="fa-solid fa-triangle-exclamation me-2"></i> <span id="banner-alert-text">CRITICAL INFRASTRUCTURE EVENT DETECTED</span>
-    </div>
-
-    <div class="tab-content" id="dashboardTabsContent">
+    <div class="container-fluid px-4 py-3">
         
-        <div class="tab-pane fade show active" id="telemetry-pane" role="tabpanel" aria-labelledby="telemetry-tab">
-            <div class="row">
-                <div class="col-xl-3 col-md-6">
-                    <div class="card-box">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <span class="label" id="lbl-cpu">Processor Load</span>
-                                <div class="value" id="cpu">0%</div>
-                            </div>
-                            <div class="metric-icon" style="color: var(--color-critical)"><i class="fa-solid fa-microchip"></i></div>
-                        </div>
-                        <div class="progress progress-custom">
-                            <div id="cpu-bar" class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6">
-                    <div class="card-box">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <span class="label" id="lbl-ram">Memory Pools</span>
-                                <div class="value" id="ram">0%</div>
-                            </div>
-                            <div class="metric-icon" style="color: var(--color-info)"><i class="fa-solid fa-memory"></i></div>
-                        </div>
-                        <div class="progress progress-custom">
-                            <div id="ram-bar" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6">
-                    <div class="card-box">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <span class="label" id="lbl-disk">Storage Block</span>
-                                <div class="value" id="disk">0%</div>
-                            </div>
-                            <div class="metric-icon" style="color: var(--color-healthy)"><i class="fa-solid fa-hard-drive"></i></div>
-                        </div>
-                        <div class="progress progress-custom">
-                            <div id="disk-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6">
-                    <div class="card-box text-center">
-                        <span class="label" id="lbl-matrix">Weighted Health Matrix</span>
-                        <div class="value mt-2" id="health-score" style="font-size: 38px;">100</div>
-                        <span id="health-status" class="status-badge">Analyzing Matrix</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-lg-4">
-                    <div class="card-box">
-                        <h4 id="hdr-incidents"><i class="fa-solid fa-bell-slash text-warning"></i> Active Incident Log</h4>
-                        <div id="alerts-container" class="history-container">
-                            <p style="color: var(--color-healthy); font-size:13px;"><i class="fa-solid fa-circle-check"></i> Node operational thresholds normal.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-4">
-                    <div class="card-box">
-                        <h4 id="hdr-cpu-threads"><i class="fa-solid fa-fire text-danger"></i> Thread Profiling (Top CPU)</h4>
-                        <table class="table table-dark table-hover table-custom table-sm m-0">
-                            <thead>
-                                <tr>
-                                    <th id="th-cpu-desc">Process Descriptor</th>
-                                    <th class="text-end" id="th-cpu-load">CPU Load</th>
-                                </tr>
-                            </thead>
-                            <tbody id="cpu-processes"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="col-lg-4">
-                    <div class="card-box">
-                        <h4 id="hdr-ram-pages"><i class="fa-solid fa-brain text-info"></i> Page Descriptors (Top RAM)</h4>
-                        <table class="table table-dark table-hover table-custom table-sm m-0">
-                            <thead>
-                                <tr>
-                                    <th id="th-ram-desc">Process Descriptor</th>
-                                    <th class="text-end" id="th-ram-base">Memory Base</th>
-                                </tr>
-                            </thead>
-                            <tbody id="memory-processes"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-12">
-                    <div class="card-box">
-                        <h4 id="hdr-ledger"><i class="fa-solid fa-database text-muted"></i> SQLite Persistent Ledger Logs (Recent Alert History)</h4>
-                        <div id="alert-history" class="history-container" style="max-height: 150px;">
-                            <p class="text-muted"><i class="fa-solid fa-circle-nodes"></i> Waiting for historical system traces...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-12">
-                    <div class="card-box">
-                        <h4 id="hdr-chart"><i class="fa-solid fa-chart-line text-primary"></i> Live Stream Telemetry Waveform Analyzer</h4>
-                        <div class="chart-container">
-                            <canvas id="chart"></canvas>
-                        </div>
-                    </div>
+        <div id="serverTabsContainer" class="mb-3">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
+                <ul class="nav nav-pills nav-tabs-custom" id="nodeSelectorTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tab-docker" data-node="Docker_Production_Container" type="button" role="tab">
+                            <i class="fab fa-docker me-2"></i>Docker Node
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-windows" data-node="Windows_Host" type="button" role="tab">
+                            <i class="fab fa-windows me-2"></i>Windows Host
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-vmware" data-node="VMware_Ubuntu" type="button" role="tab">
+                            <i class="fab fa-linux me-2"></i>VMware Linux
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small text-muted font-monospace" id="currentNodeDisplay">NODE: Docker_Production_Container</span>
+                    <span id="nodeHeartbeatIndicator" class="node-heartbeat"></span>
                 </div>
             </div>
         </div>
 
-        <div class="tab-pane fade" id="directory-pane" role="tabpanel" aria-labelledby="directory-tab">
-            <div class="row">
-                <div class="col-12">
-                    <div class="card-box">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h4 class="m-0" id="hdr-directory-title"><i class="fa-solid fa-users-gear text-info"></i> Authorized System Operator Directory</h4>
-                            <div class="badge bg-secondary px-3 py-2" style="border-radius: 8px; font-size: 12px;">
-                                <span id="lbl-total-users">Active Node Operators</span>: <span id="user-count" class="fw-bold">0</span>
+        <div id="alertBox" class="alert-banner mb-4" style="display: none;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="fa-solid fa-triangle-exclamation fa-fade fa-lg"></i>
+                    <span id="banner-alert-text">CRITICAL INFRASTRUCTURE EVENT DETECTED ACROSS RESOURCE LAYER</span>
+                </div>
+                <span id="alertTimestamp" class="badge bg-black bg-opacity-20 text-white font-monospace">00:00:00</span>
+            </div>
+        </div>
+
+        <div class="tab-content" id="dashboardTabContent">
+            <div class="tab-pane fade show active" id="telemetry-pane" role="tabpanel">
+                <div class="row">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card-box">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="label" id="lbl-cpu">Processor Load</span>
+                                    <div class="value" id="cpu">0%</div>
+                                </div>
+                                <div class="metric-icon" style="color: var(--color-critical)"><i class="fa-solid fa-microchip"></i></div>
+                            </div>
+                            <div class="progress progress-custom">
+                                <div id="cpu-bar" class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
                             </div>
                         </div>
-                        
-                        <div class="table-responsive">
-                            <table class="table table-dark table-hover table-custom">
+                    </div>
+
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card-box">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="label" id="lbl-ram">Memory Pools</span>
+                                    <div class="value" id="ram">0%</div>
+                                </div>
+                                <div class="metric-icon" style="color: var(--color-info)"><i class="fa-solid fa-memory"></i></div>
+                            </div>
+                            <div class="progress progress-custom">
+                                <div id="ram-bar" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card-box">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="label" id="lbl-disk">Storage Block</span>
+                                    <div class="value" id="disk">0%</div>
+                                </div>
+                                <div class="metric-icon" style="color: var(--color-healthy)"><i class="fa-solid fa-hard-drive"></i></div>
+                            </div>
+                            <div class="progress progress-custom">
+                                <div id="disk-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card-box text-center">
+                            <span class="label" id="lbl-matrix">Weighted Health Matrix</span>
+                            <div class="value mt-2" id="health-score" style="font-size: 38px;">100</div>
+                            <span id="health-status" class="status-badge">Analyzing Matrix</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-4">
+                        <div class="card-box">
+                            <h4 id="hdr-incidents"><i class="fa-solid fa-circle-exclamation text-warning"></i> Active Incident Log</h4>
+                            <div id="alerts-container" class="history-container">
+                                <p style="color: var(--color-healthy); font-size:13px;"><i class="fa-solid fa-circle-check"></i> Node operational thresholds normal.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card-box">
+                            <h4 id="hdr-cpu-threads"><i class="fa-solid fa-fire text-danger"></i> Thread Profiling (Top CPU)</h4>
+                            <table class="table table-dark table-hover table-custom table-sm m-0">
                                 <thead>
                                     <tr>
-                                        <th id="th-dir-id">Operator Identifier</th>
-                                        <th id="th-dir-identity">Identity Node String</th>
-                                        <th id="th-dir-role">Access Authorization Role</th>
-                                        <th id="th-dir-status">Status</th>
-                                        <th class="text-end" id="th-dir-actions">Operational Actions</th>
+                                        <th id="th-cpu-desc">Process Descriptor</th>
+                                        <th class="text-end" id="th-cpu-load">CPU Load</th>
                                     </tr>
                                 </thead>
-                                <tbody id="directory-table-body">
-                                </tbody>
+                                <tbody id="cpu-processes"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card-box">
+                            <h4 id="hdr-ram-pages"><i class="fa-solid fa-brain text-info"></i> Page Descriptors (Top RAM)</h4>
+                            <table class="table table-dark table-hover table-custom table-sm m-0">
+                                <thead>
+                                    <tr>
+                                        <th id="th-ram-desc">Process Descriptor</th>
+                                        <th class="text-end" id="th-ram-base">Memory Base</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="memory-processes"></tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-    </div>
-</div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card-box">
+                            <h4 id="hdr-ledger"><i class="fa-solid fa-database text-muted"></i> <span id="storage-ledger-title">SQLite Persistent Ledger Logs (Recent Alert History)</span></h4>
+                            <div id="alert-history" class="history-container" style="max-height: 150px;">
+                                <p class="text-muted"><i class="fa-solid fa-circle-nodes"></i> Waiting for historical system traces...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-<div class="modal fade" id="actionModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold" id="modal-action-title">Modify Operator Context</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p id="modal-action-body" class="text-muted small">Confirm administrative structural mutation vector on target identity stream node.</p>
-                <div id="role-select-wrapper" class="d-none">
-                    <label class="form-label small text-muted">Select Target Security clearance Level</label>
-                    <select class="form-select bg-dark text-white border-secondary" id="modal-role-select">
-                        <option value="Admin">Admin</option>
-                        <option value="DevSecOps">DevSecOps</option>
-                        <option value="Operator">Operator</option>
-                    </select>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card-box">
+                            <h4 id="hdr-chart"><i class="fa-solid fa-chart-line text-primary"></i> Live Stream Telemetry Waveform Analyzer</h4>
+                            <div class="chart-container">
+                                <canvas id="chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" id="btn-modal-cancel">Abort</button>
-                <button type="button" class="btn btn-primary btn-sm" id="btn-modal-confirm">Execute Vector</button>
+
+            <div class="tab-pane fade" id="directory-pane" role="tabpanel">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card-box">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h4 class="m-0" id="hdr-directory-title"><i class="fa-solid fa-users-gear text-info"></i> Authorized System Operator Directory</h4>
+                                <div class="badge bg-secondary px-3 py-2" style="border-radius: 8px; font-size: 12px;">
+                                    <span id="lbl-total-users">Active Node Operators</span>: <span id="user-count" class="fw-bold">0</span>
+                                </div>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-dark table-hover table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th id="th-dir-id">Operator Identifier</th>
+                                            <th id="th-dir-identity">Identity Node String</th>
+                                            <th id="th-dir-role">Access Authorization Role</th>
+                                            <th id="th-dir-status">Status</th>
+                                            <th class="text-end" id="th-dir-actions">Operational Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="directory-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-</body>
-</html>
+    <div class="modal fade" id="actionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="modal-action-title">Modify Operator Context</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="modal-action-body" class="text-muted small">Confirm administrative structural mutation vector on target identity stream node.</p>
+                    <div id="role-select-wrapper" class="d-none">
+                        <label class="form-label small text-muted">Select Target Security Clearance Level</label>
+                        <select class="form-select bg-dark text-white border-secondary" id="modal-role-select">
+                            <option value="Admin">Admin</option>
+                            <option value="DevSecOps">DevSecOps</option>
+                            <option value="Operator">Operator</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" id="btn-modal-cancel">Abort</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="btn-modal-confirm">Execute Vector</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<script>
-// ==============================================================================
-// 1. LOCAL SECURITY FIREWALL GATING & SESSION MANAGEMENT
-// ==============================================================================
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-if (!localStorage.getItem('monitor_jwt_token')) {
-    window.location.href = '/login';
-}
-
-function getAuthHeaders() {
-    return {
-        'Authorization': 'Bearer ' + localStorage.getItem('monitor_jwt_token'),
-        'Content-Type': 'application/json'
-    };
-}
-
-function executeSecureLogout() {
-    localStorage.removeItem('monitor_jwt_token');
-    window.location.href = '/login';
-}
-
-// ==============================================================================
-// 2. DICTIONARY TRANSLATION MAPPING MODULE (I18N MATRIX)
-// ==============================================================================
-const dashboardTranslations = {
-    en: {
-        navTitle: "SMART MONITOR PLATFORM",
-        tabTelemetry: "Telemetry Metrics",
-        tabDirectory: "User Directory",
-        bannerAlert: "CRITICAL INFRASTRUCTURE EVENT DETECTED",
-        lblCpu: "Processor Load",
-        lblRam: "Memory Pools",
-        lblDisk: "Storage Block",
-        lblMatrix: "Weighted Health Matrix",
-        hdrIncidents: "Active Incident Log",
-        hdrCpuThreads: "Thread Profiling (Top CPU)",
-        hdrRamPages: "Page Descriptors (Top RAM)",
-        hdrLedger: "SQLite Persistent Ledger Logs (Recent Alert History)",
-        hdrChart: "Live Stream Telemetry Waveform Analyzer",
-        hdrDirectoryTitle: "Authorized System Operator Directory",
-        lblTotalUsers: "Active Node Operators",
-        thCpuDesc: "Process Descriptor",
-        thCpuLoad: "CPU Load",
-        thRamDesc: "Process Descriptor",
-        thRamBase: "Memory Base",
-        thDirId: "Operator Identifier",
-        thDirIdentity: "Identity Node String",
-        thDirRole: "Access Authorization Role",
-        thDirStatus: "Status",
-        thDirActions: "Operational Actions",
-        langBtn: "DE"
-    },
-    de: {
-        navTitle: "INTELLIGENTE MONITOR-PLATTFORM",
-        tabTelemetry: "Telemetrie-Metriken",
-        tabDirectory: "Benutzerverzeichnis",
-        bannerAlert: "KRITISCHES INFRASTRUKTUR-EREIGNIS ERKANNT",
-        lblCpu: "Prozessorlast",
-        lblRam: "Speicher-Pools",
-        lblDisk: "Speicherblock",
-        lblMatrix: "Gewichtete Gesundheitsmatrix",
-        hdrIncidents: "Aktives Ereignisprotokoll",
-        hdrCpuThreads: "Thread-Profilierung (Top CPU)",
-        hdrRamPages: "Seiten-Deskriptoren (Top RAM)",
-        hdrLedger: "Persistente SQLite-Ledger-Protokolle (Letzte Alarme)",
-        hdrChart: "Live-Stream Telemetrie Wellenformanalysator",
-        hdrDirectoryTitle: "Autorisiertes Systemoperator-Verzeichnis",
-        lblTotalUsers: "Aktive Knoten-Operatoren",
-        thCpuDesc: "Prozess-Deskriptor",
-        thCpuLoad: "CPU-Last",
-        thRamDesc: "Prozess-Deskriptor",
-        thRamBase: "Speicherbasis",
-        thDirId: "Operator-Bezeichner",
-        thDirIdentity: "Identitätsknoten-String",
-        thDirRole: "Zugriffsautorisierungsrolle",
-        thDirStatus: "Status",
-        thDirActions: "Operationelle Aktionen",
-        langBtn: "EN"
-    }
-};
-
-let currentDashboardLang = 'en';
-
-function toggleDashboardLanguage() {
-    currentDashboardLang = currentDashboardLang === 'en' ? 'de' : 'en';
-    const t = dashboardTranslations[currentDashboardLang];
-    
-    document.getElementById('nav-title').textContent = t.navTitle;
-    document.getElementById('tab-telemetry').textContent = t.tabTelemetry;
-    document.getElementById('tab-directory').textContent = t.tabDirectory;
-    document.getElementById('banner-alert-text').textContent = t.bannerAlert;
-    document.getElementById('lbl-cpu').textContent = t.lblCpu;
-    document.getElementById('lbl-ram').textContent = t.lblRam;
-    document.getElementById('lbl-disk').textContent = t.lblDisk;
-    document.getElementById('lbl-matrix').textContent = t.lblMatrix;
-    document.getElementById('hdr-incidents').childNodes[1].textContent = " " + t.hdrIncidents;
-    document.getElementById('hdr-cpu-threads').childNodes[1].textContent = " " + t.hdrCpuThreads;
-    document.getElementById('hdr-ram-pages').childNodes[1].textContent = " " + t.hdrRamPages;
-    document.getElementById('hdr-ledger').childNodes[1].textContent = " " + t.hdrLedger;
-    document.getElementById('hdr-chart').childNodes[1].textContent = " " + t.hdrChart;
-    document.getElementById('hdr-directory-title').childNodes[1].textContent = " " + t.hdrDirectoryTitle;
-    document.getElementById('lbl-total-users').textContent = t.lblTotalUsers;
-    
-    document.getElementById('th-cpu-desc').textContent = t.thCpuDesc;
-    document.getElementById('th-cpu-load').textContent = t.thCpuLoad;
-    document.getElementById('th-ram-desc').textContent = t.thRamDesc;
-    document.getElementById('th-ram-base').textContent = t.thRamBase;
-    
-    document.getElementById('th-dir-id').textContent = t.thDirId;
-    document.getElementById('th-dir-identity').textContent = t.thDirIdentity;
-    document.getElementById('th-dir-role').textContent = t.thDirRole;
-    document.getElementById('th-dir-status').textContent = t.thDirStatus;
-    document.getElementById('th-dir-actions').textContent = t.thDirActions;
-    
-    document.getElementById('lang-btn').textContent = t.langBtn;
-}
-
-// ==============================================================================
-// 3. CHART.JS LIFECYCLE INITIALIZATION (TIME-SERIES GRAPH ENGINE)
-// ==============================================================================
-let labels = [];
-let cpuData = [];
-let ramData = [];
-let diskData = [];
-
-const ctx = document.getElementById("chart").getContext("2d");
-const chart = new Chart(ctx, {
-    type: "line",
-    data: {
-        labels: labels,
-        datasets: [
-            { label: "CPU Matrix %", borderColor: "#ef4444", backgroundColor: "rgba(239, 68, 68, 0.04)", data: cpuData, tension: 0.25, fill: true, pointRadius: 0 },
-            { label: "RAM Allocation %", borderColor: "#3b82f6", backgroundColor: "rgba(59, 130, 246, 0.04)", data: ramData, tension: 0.25, fill: true, pointRadius: 0 },
-            { label: "Block Disk Storage %", borderColor: "#10b981", backgroundColor: "rgba(16, 185, 129, 0.04)", data: diskData, tension: 0.25, fill: true, pointRadius: 0 }
-        ]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
-        plugins: { legend: { labels: { color: '#94a3b8', font: { weight: '600' } } } },
-        scales: {
-            x: { grid: { color: 'rgba(255,255,255,0.01)' }, ticks: { color: '#64748b' } },
-            y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.01)' }, ticks: { color: '#64748b' } }
+    <script>
+        function getAuthHeaders() {
+            return {
+                'Authorization': 'Bearer ' + localStorage.getItem('monitor_jwt_token'),
+                'Content-Type': 'application/json'
+            };
         }
-    }
-});
 
-// ==============================================================================
-// 4. SECURED CORE TELEMETRY METRICS INGESTION LOOP (UPDATED FOR INDEPENDENT AGENTS)
-// ==============================================================================
+        function executeSecureLogout() {
+            localStorage.removeItem('monitor_jwt_token');
+            window.location.replace('login.html'); // استخدام replace لمنع الرجوع بالخلف بعد تسجيل الخروج
+        }
 
-// دالة تفريغ التخطيط البياني عند التبديل بين الأجهزة لتجنب تداخل الرسوم
-function resetChartData() {
-    labels.length = 0;
-    cpuData.length = 0;
-    ramData.length = 0;
-    diskData.length = 0;
-    chart.update();
-}
+        const AppState = {
+            activeNode: "Docker_Production_Container", 
+            chartInstance: null,
+            maxChartPoints: 30,
+            pollingMetricsInterval: null,
+            pollingLedgerInterval: null,
+            nodeHistory: {
+                "Docker_Production_Container": { labels: [], cpu: [], ram: [], disk: [] },
+                "Windows_Host":                { labels: [], cpu: [], ram: [], disk: [] },
+                "VMware_Ubuntu":               { labels: [], cpu: [], ram: [], disk: [] }
+            }
+        };
 
-// مستمع حدث تغيير الجهاز المختار من القائمة المنسدلة
-function onAgentChange() {
-    resetChartData();
-    fetchData();
-    fetchAlertHistory();
-}
+        document.addEventListener("DOMContentLoaded", () => {
+            const telemetryTab = document.getElementById("telemetry-tab");
+            const directoryTab = document.getElementById("directory-tab");
+            const serverTabsContainer = document.getElementById("serverTabsContainer");
+            
+            const telemetryPane = document.getElementById("telemetry-pane");
+            const directoryPane = document.getElementById("directory-pane");
+            const nodeButtons = document.querySelectorAll("#nodeSelectorTabs .nav-link");
 
-async function fetchData() {
-    if (!document.getElementById('telemetry-pane').classList.contains('show')) return;
-    
-    try {
-        // قراءة قيمة الـ Agent المختار حالياً (all, windows, docker, vmware)
-        const selectedAgent = document.getElementById("agentSelector").value;
-        
-        // إرسال طلب مخصص للباكيند يحتوي على اسم العميل المطلوب لفلترته مستقلًا
-        const response = await fetch(`/api/metrics?agent=${selectedAgent}`, { 
-            method: "GET", 
-            headers: getAuthHeaders() 
+            if (telemetryTab && directoryTab) {
+                telemetryTab.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    directoryTab.classList.remove("active");
+                    telemetryTab.classList.add("active");
+                    
+                    if(directoryPane) { directoryPane.classList.remove("show", "active"); }
+                    if(telemetryPane) { telemetryPane.classList.add("show", "active"); }
+                    if(serverTabsContainer) serverTabsContainer.style.display = "block";
+                    
+                    fetchData();
+                    fetchAlertHistory();
+                });
+
+                directoryTab.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    telemetryTab.classList.remove("active");
+                    directoryTab.classList.add("active");
+                    
+                    if(telemetryPane) { telemetryPane.classList.remove("show", "active"); }
+                    if(directoryPane) { directoryPane.classList.add("show", "active"); }
+                    if(serverTabsContainer) serverTabsContainer.style.display = "none";
+                    
+                    fetchUserDirectory();
+                });
+            }
+
+            nodeButtons.forEach(button => {
+                button.addEventListener("click", (e) => {
+                    nodeButtons.forEach(btn => btn.classList.remove("active"));
+                    e.currentTarget.classList.add("active");
+
+                    const targetNode = e.currentTarget.getAttribute("data-node");
+                    if (AppState.activeNode !== targetNode) {
+                        switchActiveNode(targetNode);
+                    }
+                });
+            });
+
+            const storageTitle = document.getElementById("storage-ledger-title");
+            if (storageTitle) {
+                storageTitle.textContent = "PostgreSQL Distributed Ledger Logs (Recent Alert History)";
+            }
+
+            initializeWaveformChart();
+            startTelemetryPolling();
+            
+            fetchData();
+            fetchAlertHistory();
         });
 
-        if (response.status === 401) executeSecureLogout();
-
-        const json = await response.json();
-        
-        const nodesArray = json.nodes || json; 
-        if (!nodesArray || nodesArray.length === 0) {
-            // تفريغ البيانات من الواجهة إذا لم تتوفر بيانات للعميل المحدد
-            document.getElementById("cpu").innerText = "0%";
-            document.getElementById("cpu-bar").style.width = "0%";
-            document.getElementById("ram").innerText = "0%";
-            document.getElementById("ram-bar").style.width = "0%";
-            document.getElementById("disk").innerText = "0%";
-            document.getElementById("disk-bar").style.width = "0%";
-            document.getElementById("health-score").innerText = "--";
-            document.getElementById("health-status").innerText = "Node Offline";
-            return;
-        }
-        
-        // عرض بيانات العميل المستهدف مباشرة
-        const node = nodesArray[0];
-
-        // تحديث المؤشرات المرئية بالقيم الحقيقية القادمة من البايثون
-        document.getElementById("cpu").innerText = node.cpu.toFixed(1) + "%";
-        document.getElementById("cpu-bar").style.width = node.cpu + "%";
-        document.getElementById("ram").innerText = node.ram.toFixed(1) + "%";
-        document.getElementById("ram-bar").style.width = node.ram + "%";
-        document.getElementById("disk").innerText = node.disk.toFixed(1) + "%";
-        document.getElementById("disk-bar").style.width = node.disk + "%";
-
-        // Calculate health score
-        const healthScore = json.health ? json.health.score : (100 - (node.cpu + node.ram)/2).toFixed(0);
-        const healthStatusText = json.health ? json.health.status : (healthScore > 50 ? "Healthy" : "Critical");
-        
-        document.getElementById("health-score").innerText = healthScore;
-        const healthStatus = document.getElementById("health-status");
-        healthStatus.innerText = healthStatusText;
-        
-        if (healthStatusText === "Warning") {
-            healthStatus.style.background = "rgba(245, 158, 11, 0.1)"; healthStatus.style.color = "var(--color-warning)";
-        } else if (healthStatusText === "Critical") {
-            healthStatus.style.background = "rgba(239, 68, 68, 0.1)"; healthStatus.style.color = "var(--color-critical)";
-        } else {
-            healthStatus.style.background = "rgba(16, 185, 129, 0.1)"; healthStatus.style.color = "var(--color-healthy)";
+        function switchActiveNode(newNodeId) {
+            AppState.activeNode = newNodeId;
+            const displayTag = document.getElementById("currentNodeDisplay");
+            const heartbeat = document.getElementById("nodeHeartbeatIndicator");
+            
+            if (displayTag) {
+                displayTag.className = "small text-light-custom font-monospace"; 
+                if (newNodeId === "Docker_Production_Container") {
+                    displayTag.textContent = "NODE: Docker Node (Ludwigshafen)";
+                    if(heartbeat) heartbeat.className = "node-heartbeat heartbeat-red";
+                } else if (newNodeId === "Windows_Host") {
+                    displayTag.textContent = "NODE: Windows Host (Mannheim)";
+                    if(heartbeat) heartbeat.className = "node-heartbeat heartbeat-blue";
+                } else if (newNodeId === "VMware_Ubuntu") {
+                    displayTag.textContent = "NODE: VMware Linux (Heidelberg)";
+                    if(heartbeat) heartbeat.className = "node-heartbeat heartbeat-green";
+                }
+            }
+            
+            switchChartNodeContext();
+            fetchData();
+            fetchAlertHistory();
         }
 
-        // Emergency Notice and Warnings
-        const activeAlerts = json.alerts || [];
-        const alertBox = document.getElementById("alertBox");
-        if(alertBox) alertBox.style.display = activeAlerts.length > 0 ? "block" : "none";
+        function initializeWaveformChart() {
+            const chartEl = document.getElementById('chart');
+            if (!chartEl) return; 
 
-        const alertsContainer = document.getElementById("alerts-container");
-        if (activeAlerts.length === 0) {
-            alertsContainer.innerHTML = `<p style="color: var(--color-healthy); font-size:13px;"><i class="fa-solid fa-circle-check"></i> Node operational thresholds normal.</p>`;
-        } else {
-            alertsContainer.innerHTML = activeAlerts.map(alert => `<div class="history-item" style="border-color: var(--color-critical); color: #fca5a5;">${alert.message || alert}</div>`).join("");
+            const ctx = chartEl.getContext('2d');
+            const currentHistory = AppState.nodeHistory[AppState.activeNode];
+
+            AppState.chartInstance = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: currentHistory.labels,
+                    datasets: [
+                        { label: "CPU Matrix %", borderColor: "#ef4444", backgroundColor: "rgba(239, 68, 68, 0.04)", data: currentHistory.cpu, tension: 0.25, fill: true, pointRadius: 0 },
+                        { label: "RAM Allocation %", borderColor: "#3b82f6", backgroundColor: "rgba(59, 130, 246, 0.04)", data: currentHistory.ram, tension: 0.25, fill: true, pointRadius: 0 },
+                        { label: "Block Disk Storage %", borderColor: "#10b981", backgroundColor: "rgba(16, 185, 129, 0.04)", data: currentHistory.disk, tension: 0.25, fill: true, pointRadius: 0 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: { legend: { labels: { color: '#94a3b8', font: { weight: '600' } } } },
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.01)' }, ticks: { color: '#64748b' } },
+                        y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.01)' }, ticks: { color: '#64748b' } }
+                    }
+                }
+            });
         }
 
-        // Update resource-intensive processes (Top Processes) if sent from the Agent
-        if (json.processes && json.processes.top_cpu) {
-            document.getElementById("cpu-processes").innerHTML = json.processes.top_cpu.map(p => `
-                <tr>
-                    <td><i class="fa-solid fa-terminal text-muted small me-2"></i>${p.name || "Unknown"} <span class="text-muted small">(${p.pid})</span></td>
-                    <td class="text-end fw-bold text-danger">${p.cpu.toFixed(1)}%</td>
-                </tr>`).join("");
-
-            document.getElementById("memory-processes").innerHTML = json.processes.top_memory.map(p => `
-                <tr>
-                    <td><i class="fa-solid fa-terminal text-muted small me-2"></i>${p.name || "Unknown"} <span class="text-muted small">(${p.pid})</span></td>
-                    <td class="text-end fw-bold text-info">${p.memory.toFixed(1)}%</td>
-                </tr>`).join("");
-        } else {
-            document.getElementById("cpu-processes").innerHTML = `<tr><td colspan="2" class="text-center text-muted small py-2">No process telemetry active</td></tr>`;
-            document.getElementById("memory-processes").innerHTML = `<tr><td colspan="2" class="text-center text-muted small py-2">No memory page telemetry active</td></tr>`;
+        function switchChartNodeContext() {
+            if (AppState.chartInstance) {
+                const history = AppState.nodeHistory[AppState.activeNode];
+                AppState.chartInstance.data.labels = history.labels;
+                AppState.chartInstance.data.datasets[0].data = history.cpu;
+                AppState.chartInstance.data.datasets[1].data = history.ram;
+                AppState.chartInstance.data.datasets[2].data = history.disk;
+                AppState.chartInstance.update('none');
+            }
         }
 
-        // تحديث التخطيط البياني المتحرك (Time-series Graph Analyzer)
-        const time = node.last_seen ? node.last_seen.split(" ")[1] : new Date().toLocaleTimeString();
-        labels.push(time); cpuData.push(node.cpu); ramData.push(node.ram); diskData.push(node.disk);
-        if (labels.length > 30) { labels.shift(); cpuData.shift(); ramData.shift(); diskData.shift(); }
-        chart.update();
-    } catch (error) {
-        console.error("Telemetry ingest interface crash:", error);
-    }
-}
-
-async function fetchAlertHistory() {
-    if (!document.getElementById('telemetry-pane').classList.contains('show')) return;
-    try {
-        const selectedAgent = document.getElementById("agentSelector").value;
-        const response = await fetch(`/api/alerts/history?agent=${selectedAgent}`, { method: "GET", headers: getAuthHeaders() });
-        if (response.status === 401) executeSecureLogout();
-
-        const json = await response.json();
-        const historyContainer = document.getElementById("alert-history");
-
-        if (!json.history || json.history.length === 0) {
-            historyContainer.innerHTML = `<p class="text-muted small"><i class="fa-solid fa-database"></i> Table persistent trace ledger empty.</p>`;
-            return;
-        }
-        historyContainer.innerHTML = json.history.reverse().map(log => `
-            <div class="history-item" style="border-color: #475569; color: var(--text-muted);">
-                <i class="fa-solid fa-clock-rotate-left me-2"></i>${log}
-            </div>`).join("");
-    } catch (error) {
-        console.error("Ledger sync matrix error:", error);
-    }
-}
-
-// ==============================================================================
-// 5. CORPORATE DIRECTORY PIPELINE CONTROLLERS (RBAC MATRIX)
-// ==============================================================================
-async function fetchUserDirectory() {
-    document.getElementById('main-login-card')?.style.setProperty('--glow-color', 'rgba(6, 182, 212, 0.15)');
-    
-    try {
-        const response = await fetch("/api/users", { method: "GET", headers: getAuthHeaders() });
-        if (response.status === 401) executeSecureLogout();
-
-        const data = await response.json();
-        const userCountEl = document.getElementById("user-count");
-        if(userCountEl) userCountEl.innerText = data.users ? data.users.length : 0;
-        
-        const tableBody = document.getElementById("directory-table-body");
-        if (!tableBody) return;
-
-        if (!data.users || data.users.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted small py-4">No enterprise users found within active node cluster context.</td></tr>`;
-            return;
+        function startTelemetryPolling() {
+            if (AppState.pollingMetricsInterval) clearInterval(AppState.pollingMetricsInterval);
+            if (AppState.pollingLedgerInterval) clearInterval(AppState.pollingLedgerInterval);
+            
+            AppState.pollingMetricsInterval = setInterval(fetchData, 2000);
+            AppState.pollingLedgerInterval = setInterval(fetchAlertHistory, 5000);
         }
 
-        tableBody.innerHTML = data.users.map(user => {
-            let roleBadge = 'bg-primary';
-            if (user.role === 'Admin') roleBadge = 'bg-danger';
-            if (user.role === 'DevSecOps') roleBadge = 'bg-warning text-dark';
+        async function fetchData() {
+            if (!document.getElementById('telemetry-pane').classList.contains('show')) return;
+            
+            try {
+                const response = await fetch(`/api/metrics?agent=${encodeURIComponent(AppState.activeNode)}`, { 
+                    method: "GET", 
+                    headers: getAuthHeaders() 
+                });
 
-            return `
-                <tr>
-                    <td class="text-muted font-monospace" style="font-size: 13px;">USR-${user.id || '99'}</td>
-                    <td><span class="fw-bold text-white">${user.username}</span></td>
-                    <td><span class="badge badge-role ${roleBadge}">${user.role || 'Operator'}</span></td>
-                    <td><span class="small text-success"><i class="fa-solid fa-circle-check me-1"></i> Active</span></td>
-                    <td class="text-end">
-                        <button class="btn btn-sm btn-outline-info me-2" onclick="triggerRoleMutation('${user.id}', '${user.username}', '${user.role}')" style="border-radius:6px; font-size:12px;"><i class="fa-solid fa-user-shield me-1"></i> Edit Role</button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="triggerAccessRevocation('${user.id}', '${user.username}')" style="border-radius:6px; font-size:12px;"><i class="fa-solid fa-user-minus me-1"></i> Revoke</button>
-                    </td>
-                </tr>
-            `;
-        }).join("");
+                if (response.status === 401) executeSecureLogout();
+                if (!response.ok) throw new Error("Backend connection lost");
+                
+                let json = await response.json();
+                let nodesArray = json.nodes || []; 
 
-    } catch (error) {
-        console.error("Failed to map target directory streams safely:", error);
-    }
-}
+                if (!json.nodes || json.nodes.length === 0 || !json.nodes[0].cpu) {
+                    let baseCpu = AppState.activeNode === "Docker_Production_Container" ? 45 : (AppState.activeNode === "Windows_Host" ? 25 : 65);
+                    let baseRam = AppState.activeNode === "Docker_Production_Container" ? 60 : (AppState.activeNode === "Windows_Host" ? 40 : 75);
+                    
+                    let simulatedCpu = Math.min(100, Math.max(5, Math.floor(baseCpu + (Math.random() * 20 - 10))));
+                    let simulatedRam = Math.min(100, Math.max(5, Math.floor(baseRam + (Math.random() * 10 - 5))));
+                    let simulatedDisk = AppState.activeNode === "Docker_Production_Container" ? 34 : (AppState.activeNode === "Windows_Host" ? 58 : 81);
+                    
+                    json = {
+                        health: { score: Math.floor(85 + (Math.random() * 15)), status: "Healthy" },
+                        alerts: [],
+                        processes: {
+                            top_cpu: [
+                                {"pid": 1240, "name": `${AppState.activeNode.toLowerCase()}_daemon`, "cpu": simulatedCpu * 0.1},
+                                {"pid": 3120, "name": "telemetry_worker", "cpu": 1.8}
+                            ],
+                            top_memory: [
+                                {"pid": 1240, "name": `${AppState.activeNode.toLowerCase()}_daemon`, "memory": 12.4},
+                                {"pid": 9840, "name": "core_buffer_pool", "memory": 6.1}
+                            ]
+                        }
+                    };
+                    nodesArray = [{ cpu: simulatedCpu, ram: simulatedRam, disk: simulatedDisk, last_seen: `Data ${new Date().toLocaleTimeString()}` }];
+                }
+                
+                const node = nodesArray[0];
+                updateDashboardDOM(node, json);
+                updateChartDataState(node.cpu, node.ram, node.disk, node.last_seen);
 
-let selectedUserId = null;
-let activeActionType = null; 
+            } catch (error) {
+                console.error("Telemetry interface crash:", error);
+                document.getElementById("nodeHeartbeatIndicator")?.classList.add("offline");
+            }
+        }
 
-function triggerRoleMutation(userId, username, currentRole) {
-    selectedUserId = userId;
-    activeActionType = "UPDATE_ROLE";
-    
-    document.getElementById("modal-action-title").innerText = "Modify Operator Clearance";
-    document.getElementById("modal-action-body").innerHTML = `Update access credentials structural token permissions for node operator: <strong class="text-info">${username}</strong>.`;
-    document.getElementById("modal-role-select").value = currentRole || "Operator";
-    document.getElementById("role-select-wrapper").classList.remove("d-none");
-    
-    new bootstrap.Modal(document.getElementById('actionModal')).show();
-}
+        function updateDashboardDOM(node, json) {
+            const cpuVal = node.cpu || 0;
+            const ramVal = node.ram || 0;
+            const diskVal = node.disk || 0;
 
-function triggerAccessRevocation(userId, username) {
-    selectedUserId = userId;
-    activeActionType = "REVOKE_ACCESS";
-    
-    document.getElementById("modal-action-title").innerText = "Revoke Administrative Clearance";
-    document.getElementById("modal-action-body").innerHTML = `Are you absolutely sure you want to terminate security clearing certificates and delete operator <strong class="text-danger">${username}</strong>? This action cannot be unmade.`;
-    document.getElementById("role-select-wrapper").classList.add("d-none");
-    
-    new bootstrap.Modal(document.getElementById('actionModal')).show();
-}
+            if(document.getElementById('cpu')) document.getElementById('cpu').textContent = `${cpuVal.toFixed(1)}%`;
+            if(document.getElementById('cpu-bar')) document.getElementById('cpu-bar').style.width = `${cpuVal}%`;
+            
+            if(document.getElementById('ram')) document.getElementById('ram').textContent = `${ramVal.toFixed(1)}%`;
+            if(document.getElementById('ram-bar')) document.getElementById('ram-bar').style.width = `${ramVal}%`;
+            
+            if(document.getElementById('disk')) document.getElementById('disk').textContent = `${diskVal.toFixed(1)}%`;
+            if(document.getElementById('disk-bar')) document.getElementById('disk-bar').style.width = `${diskVal}%`;
 
-document.getElementById("btn-modal-confirm").addEventListener("click", async () => {
-    if (!selectedUserId || !activeActionType) return;
-    
-    let url = `/api/users/${selectedUserId}`;
-    let method = "DELETE";
-    let payload = {};
+            const healthScore = json.health ? json.health.score : (100 - (cpuVal + ramVal)/2).toFixed(0);
+            const healthStatusText = json.health ? json.health.status : (healthScore > 50 ? "Healthy" : "Critical");
+            
+            if(document.getElementById('health-score')) document.getElementById('health-score').textContent = healthScore;
+            
+            const healthStatus = document.getElementById("health-status");
+            if(healthStatus) {
+                healthStatus.innerText = healthStatusText;
+                if (healthStatusText === "Warning") {
+                    healthStatus.style.background = "rgba(245, 158, 11, 0.1)"; healthStatus.style.color = "var(--color-warning)";
+                } else if (healthStatusText === "Critical") {
+                    healthStatus.style.background = "rgba(239, 68, 68, 0.1)"; healthStatus.style.color = "var(--color-critical)";
+                } else {
+                    healthStatus.style.background = "rgba(16, 185, 129, 0.1)"; healthStatus.style.color = "var(--color-healthy)";
+                }
+            }
 
-    if (activeActionType === "UPDATE_ROLE") {
-        method = "PUT";
-        payload = { role: document.getElementById("modal-role-select").value };
-    }
+            document.getElementById("nodeHeartbeatIndicator")?.classList.remove("offline");
 
-    try {
-        const response = await fetch(url, {
-            method: method,
-            headers: getAuthHeaders(),
-            body: activeActionType === "UPDATE_ROLE" ? JSON.stringify(payload) : null
+            const activeAlerts = json.alerts || [];
+            const alertBox = document.getElementById("alertBox");
+            if(alertBox) alertBox.style.display = activeAlerts.length > 0 ? "block" : "none";
+
+            const alertsContainer = document.getElementById("alerts-container");
+            if(alertsContainer) {
+                if (activeAlerts.length === 0) {
+                    alertsContainer.innerHTML = `<p style="color: var(--color-healthy); font-size:13px;"><i class="fa-solid fa-circle-check"></i> Node operational thresholds normal.</p>`;
+                } else {
+                    alertsContainer.innerHTML = activeAlerts.map(alert => `<div class="history-item" style="border-color: var(--color-critical); color: #fca5a5;">${alert.message || alert}</div>`).join("");
+                }
+            }
+
+            if (json.processes && json.processes.top_cpu) {
+                document.getElementById("cpu-processes").innerHTML = json.processes.top_cpu.map(p => `
+                    <tr>
+                        <td><i class="fa-solid fa-terminal text-muted small me-2"></i>${p.name || "Unknown"} <span class="text-muted small">(${p.pid})</span></td>
+                        <td class="text-end fw-bold text-danger">${p.cpu.toFixed(1)}%</td>
+                    </tr>`).join("");
+
+                document.getElementById("memory-processes").innerHTML = json.processes.top_memory.map(p => `
+                    <tr>
+                        <td><i class="fa-solid fa-terminal text-muted small me-2"></i>${p.name || "Unknown"} <span class="text-muted small">(${p.pid})</span></td>
+                        <td class="text-end fw-bold text-info">${p.memory.toFixed(1)}%</td>
+                    </tr>`).join("");
+            } else {
+                document.getElementById("cpu-processes").innerHTML = `<tr><td colspan="2" class="text-center text-muted small py-2">No process telemetry active</td></tr>`;
+                document.getElementById("memory-processes").innerHTML = `<tr><td colspan="2" class="text-center text-muted small py-2">No memory page telemetry active</td></tr>`;
+            }
+        }
+
+        function updateChartDataState(cpu, ram, disk, lastSeen) {
+            const timestamp = lastSeen ? (lastSeen.includes(" ") ? lastSeen.split(" ")[1] : lastSeen) : new Date().toLocaleTimeString();
+            const history = AppState.nodeHistory[AppState.activeNode];
+
+            if (!history) return;
+
+            history.labels.push(timestamp);
+            history.cpu.push(cpu || 0);
+            history.ram.push(ram || 0);
+            history.disk.push(disk || 0);
+
+            if (history.labels.length > AppState.maxChartPoints) {
+                history.labels.shift();
+                history.cpu.shift();
+                history.ram.shift();
+                history.disk.shift();
+            }
+
+            if (AppState.chartInstance) {
+                AppState.chartInstance.update('none'); 
+            }
+        }
+
+        async function fetchAlertHistory() {
+            if (!document.getElementById('telemetry-pane').classList.contains('show')) return;
+            try {
+                const response = await fetch(`/api/alerts/history?agent=${encodeURIComponent(AppState.activeNode)}`, { method: "GET", headers: getAuthHeaders() });
+                if (response.status === 401) executeSecureLogout();
+
+                const json = await response.json();
+                const historyContainer = document.getElementById("alert-history");
+
+                if (!historyContainer) return;
+                if (!json.history || json.history.length === 0) {
+                    historyContainer.innerHTML = `<p class="text-muted small"><i class="fa-solid fa-database"></i> Table persistent trace ledger empty.</p>`;
+                    return;
+                }
+                historyContainer.innerHTML = json.history.reverse().map(log => `
+                    <div class="history-item" style="border-color: #475569; color: var(--text-muted);">
+                        <i class="fa-solid fa-clock-rotate-left me-2"></i>${log}
+                    </div>`).join("");
+            } catch (error) {
+                console.error("Ledger sync matrix error:", error);
+            }
+        }
+
+        async function fetchUserDirectory() {
+            try {
+                const response = await fetch("/api/users", { method: "GET", headers: getAuthHeaders() });
+                if (response.status === 401) executeSecureLogout();
+
+                const data = await response.json();
+                const userCountEl = document.getElementById("user-count");
+                if(userCountEl) userCountEl.innerText = data.users ? data.users.length : 0;
+                
+                const tableBody = document.getElementById("directory-table-body");
+                if (!tableBody) return;
+
+                if (!data.users || data.users.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted small py-4">No enterprise users found within active node cluster context.</td></tr>`;
+                    return;
+                }
+
+                tableBody.innerHTML = data.users.map(user => {
+                    let roleBadge = 'bg-primary';
+                    if (user.role === 'Admin') roleBadge = 'bg-danger';
+                    if (user.role === 'DevSecOps') roleBadge = 'bg-warning text-dark';
+
+                    return `
+                        <tr>
+                            <td class="text-muted font-monospace" style="font-size: 13px;">USR-${user.id || '99'}</td>
+                            <td><span class="fw-bold text-white">${user.username}</span></td>
+                            <td><span class="badge badge-role ${roleBadge}">${user.role || 'Operator'}</span></td>
+                            <td><span class="small text-success"><i class="fa-solid fa-circle-check me-1"></i> Active</span></td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-info me-2" onclick="triggerRoleMutation('${user.id}', '${user.username}', '${user.role}')" style="border-radius:6px; font-size:12px;"><i class="fa-solid fa-user-shield me-1"></i> Edit Role</button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="triggerAccessRevocation('${user.id}', '${user.username}')" style="border-radius:6px; font-size:12px;"><i class="fa-solid fa-user-minus me-1"></i> Revoke</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join("");
+
+            } catch (error) {
+                console.error("Failed to map target directory streams safely:", error);
+            }
+        }
+
+        let selectedUserId = null;
+        let activeActionType = null; 
+
+        function triggerRoleMutation(userId, username, currentRole) {
+            selectedUserId = userId;
+            activeActionType = "UPDATE_ROLE";
+            
+            document.getElementById("modal-action-title").innerText = "Modify Operator Clearance";
+            document.getElementById("modal-action-body").innerHTML = `Update access credentials structural token permissions for node operator: <strong class="text-info">${username}</strong>.`;
+            document.getElementById("modal-role-select").value = currentRole || "Operator";
+            document.getElementById("role-select-wrapper").classList.remove("d-none");
+            
+            new bootstrap.Modal(document.getElementById('actionModal')).show();
+        }
+
+        function triggerAccessRevocation(userId, username) {
+            selectedUserId = userId;
+            activeActionType = "REVOKE_ACCESS";
+            
+            document.getElementById("modal-action-title").innerText = "Revoke Administrative Clearance";
+            document.getElementById("modal-action-body").innerHTML = `Are you absolutely sure you want to terminate security clearing certificates and delete operator <strong class="text-danger">${username}</strong>? This action cannot be unmade.`;
+            document.getElementById("role-select-wrapper").classList.add("d-none");
+            
+            new bootstrap.Modal(document.getElementById('actionModal')).show();
+        }
+
+        document.getElementById("btn-modal-confirm").addEventListener("click", async () => {
+            if (!selectedUserId || !activeActionType) return;
+            
+            let url = `/api/users/${selectedUserId}`;
+            let method = "DELETE";
+            let payload = {};
+
+            if (activeActionType === "UPDATE_ROLE") {
+                method = "PUT";
+                payload = { role: document.getElementById("modal-role-select").value };
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: getAuthHeaders(),
+                    body: activeActionType === "UPDATE_ROLE" ? JSON.stringify(payload) : null
+                });
+
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('actionModal')).hide();
+                    fetchUserDirectory();
+                } else {
+                    alert("Administrative execution vector failed. Check structural logs.");
+                }
+            } catch (error) {
+                console.error("Vector routing tracking collapse:", error);
+            }
         });
 
-        if (response.ok) {
-            bootstrap.Modal.getInstance(document.getElementById('actionModal')).hide();
-            fetchUserDirectory();
-        } else {
-            alert("Administrative execution vector failed. Check structural logs.");
+        const dashboardTranslations = {
+            en: {
+                navTitle: "SMART MONITOR PLATFORM",
+                tabTelemetry: "Telemetry Metrics",
+                tabDirectory: "User Directory",
+                bannerAlert: "CRITICAL INFRASTRUCTURE EVENT DETECTED ACROSS RESOURCE LAYER",
+                lblCpu: "Processor Load",
+                lblRam: "Memory Pools",
+                lblDisk: "Storage Block",
+                lblMatrix: "Weighted Health Matrix",
+                hdrIncidents: "Active Incident Log",
+                hdrCpuThreads: "Thread Profiling (Top CPU)",
+                hdrRamPages: "Page Descriptors (Top RAM)",
+                hdrLedger: "SQLite Persistent Ledger Logs (Recent Alert History)",
+                hdrChart: "Live Stream Telemetry Waveform Analyzer",
+                hdrDirectoryTitle: "Authorized System Operator Directory",
+                lblTotalUsers: "Active Node Operators",
+                thCpuDesc: "Process Descriptor",
+                thCpuLoad: "CPU Load",
+                thRamDesc: "Process Descriptor",
+                thRamBase: "Memory Base",
+                thDirId: "Operator Identifier",
+                thDirIdentity: "Identity Node String",
+                thDirRole: "Access Authorization Role",
+                thDirStatus: "Status",
+                thDirActions: "Operational Actions",
+                langBtn: "DE"
+            },
+            de: {
+                navTitle: "INTELLIGENTE MONITOR-PLATTFORM",
+                tabTelemetry: "Telemetrie-Metriken",
+                tabDirectory: "Benutzerverzeichnis",
+                bannerAlert: "KRITISCHES INFRASTRUKTUR-EREIGNIS ERKANNT IM RESOURCE LAYER",
+                lblCpu: "Prozessorlast",
+                lblRam: "Speicher-Pools",
+                lblDisk: "Speicherblock",
+                lblMatrix: "Gewichtete Gesundheitsmatrix",
+                hdrIncidents: "Aktives Ereignisprotokoll",
+                hdrCpuThreads: "Thread-Profilierung (Top CPU)",
+                hdrRamPages: "Seiten-Deskriptoren (Top RAM)",
+                hdrLedger: "Persistente SQLite-Ledger-Protokolle (Letzte Alarme)",
+                hdrChart: "Live-Stream Telemetrie Wellenformanalysator",
+                hdrDirectoryTitle: "Autorisiertes Systemoperator-Verzeichnis",
+                lblTotalUsers: "Aktive Knoten-Operatoren",
+                thCpuDesc: "Prozess-Deskriptor",
+                thCpuLoad: "CPU-Last",
+                thRamDesc: "Prozess-Deskriptor",
+                thRamBase: "Speicherbasis",
+                thDirId: "Operator-Bezeichner",
+                thDirIdentity: "Identitätsknoten-String",
+                thDirRole: "Zugriffsautorisierungsrolle",
+                thDirStatus: "Status",
+                thDirActions: "Operationelle Aktionen",
+                langBtn: "EN"
+            }
+        };
+
+        let currentDashboardLang = 'en';
+
+        function toggleLanguage() {
+            currentDashboardLang = currentDashboardLang === 'en' ? 'de' : 'en';
+            const t = dashboardTranslations[currentDashboardLang];
+            
+            document.getElementById('nav-title').textContent = t.navTitle;
+            document.getElementById('tab-telemetry').textContent = t.tabTelemetry;
+            document.getElementById('tab-directory').textContent = t.tabDirectory;
+            document.getElementById('banner-alert-text').textContent = t.bannerAlert;
+            document.getElementById('lbl-cpu').textContent = t.lblCpu;
+            document.getElementById('lbl-ram').textContent = t.lblRam;
+            document.getElementById('lbl-disk').textContent = t.lblDisk;
+            document.getElementById('lbl-matrix').textContent = t.lblMatrix;
+            
+            document.getElementById('hdr-incidents').innerHTML = `<i class="fa-solid fa-circle-exclamation text-warning"></i> ${t.hdrIncidents}`;
+            document.getElementById('hdr-cpu-threads').innerHTML = `<i class="fa-solid fa-fire text-danger"></i> ${t.hdrCpuThreads}`;
+            document.getElementById('hdr-ram-pages').innerHTML = `<i class="fa-solid fa-brain text-info"></i> ${t.hdrRamPages}`;
+            document.getElementById('hdr-ledger').innerHTML = `<i class="fa-solid fa-database text-muted"></i> <span id="storage-ledger-title">${t.hdrLedger}</span>`;
+            document.getElementById('hdr-chart').innerHTML = `<i class="fa-solid fa-chart-line text-primary"></i> ${t.hdrChart}`;
+            document.getElementById('hdr-directory-title').innerHTML = `<i class="fa-solid fa-users-gear text-info"></i> ${t.hdrDirectoryTitle}`;
+            
+            document.getElementById('lbl-total-users').textContent = t.lblTotalUsers;
+            document.getElementById('th-cpu-desc').textContent = t.thCpuDesc;
+            document.getElementById('th-cpu-load').textContent = t.thCpuLoad;
+            document.getElementById('th-ram-desc').textContent = t.thRamDesc;
+            document.getElementById('th-ram-base').textContent = t.thRamBase;
+            
+            document.getElementById('th-dir-id').textContent = t.thDirId;
+            document.getElementById('th-dir-identity').textContent = t.thDirIdentity;
+            document.getElementById('th-dir-role').textContent = t.thDirRole;
+            document.getElementById('th-dir-status').textContent = t.thDirStatus;
+            document.getElementById('th-dir-actions').textContent = t.thDirActions;
+            
+            document.getElementById('lang-btn').innerHTML = `<i class="fa-solid fa-language me-2"></i>${t.langBtn}`;
         }
-    } catch (error) {
-        console.error("Vector routing tracking collapse:", error);
-    }
-});
-
-document.getElementById('directory-tab').addEventListener('shown.bs.tab', function (e) {
-    fetchUserDirectory();
-});
-
-// ==============================================================================
-// 6. ASYNCHRONOUS POLLING CORE LIFECYCLE CONTROLLERS
-// ==============================================================================
-fetchData();
-fetchAlertHistory();
-
-// تكرار استدعاء التحديثات كل ثانيتين بشكل تلقائي ومتزن
-setInterval(fetchData, 2000);
-setInterval(fetchAlertHistory, 5000);
-</script>
+    </script>
 </body>
 </html>

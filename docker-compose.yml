@@ -39,6 +39,7 @@ services:
       - POSTGRES_DB=monitor_db
       - POSTGRES_PORT=5432
       - JWT_SECRET_KEY=super_secure_telemetry_secret_key_2026
+      - RUNNING_IN_DOCKER=true # Ticket 7 : add Dynamic Environment Variables
     depends_on:
       - db
     networks:
