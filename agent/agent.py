@@ -7,12 +7,37 @@
 # ==============================================================================
 
 import os
+import json
 import time
 import sys
 import socket
 import logging
 import psutil
 import requests
+
+# ===================================================================================================
+# [Ticket 9 - Configuration Externalization]: Load Environment Variables
+# ===================================================================================================
+# Reads configurations directly from the hosting OS environment or Docker ENV containers
+CENTRAL_SERVER_URL = os.environ.get("CENTRAL_SERVER_URL", "http://localhost:5000/api/metrics/receiver")
+NODE_ID = os.environ.get("NODE_ID", "Docker_Production_Container")
+NODE_LOCATION = os.environ.get("NODE_LOCATION", "Ludwigshafen")
+
+print(f"📡 Agent initialized for Node: [{NODE_ID}] at ({NODE_LOCATION})")
+print(f"🔗 Target Ingestion API: {CENTRAL_SERVER_URL}")
+# ===================================================================================================
+# Here the script completes its original function to send data (reading psutil and sending payload)
+# Just make sure your payload uses the new variables like this:
+# payload = {
+# "name": NODE_ID,
+# "location": NODE_LOCATION,
+# "cpu": psutil.cpu_percent(interval=1),
+# ...
+# }
+#====================================================================================================
+
+
+
 
 # CONFIGURATION MATRIX & ENVIRONMENT BINDING
 CENTRAL_SERVER_URL = os.getenv("CENTRAL_SERVER_URL", "http://localhost:5000/api/metrics/receiver") #Ticket 2 : add receiver endpoint to the URL
