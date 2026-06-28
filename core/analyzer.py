@@ -82,8 +82,8 @@ class SystemAnalyzer:
         mitigated_incidents: List[Dict[str, Any]] = []
 
         # Trigger mitigation sequence if either CPU or RAM breach the safety margin of 95%
-        # if current_cpu >= 95.0 or current_ram >= 95.0:
-        if current_cpu >= 10.0 or current_ram >= 10.0: # for test
+        if current_cpu >= 95.0 or current_ram >= 95.0:
+        # if current_cpu >= 10.0 or current_ram >= 10.0: # for test
             log_warning(f"[TICKET 5 ANTI-FREEZE]: Resource emergency triggered on {server_name}. CPU: {current_cpu}%, RAM: {current_ram}%")
             
             # Extract top resource hogs

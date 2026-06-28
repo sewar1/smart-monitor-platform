@@ -46,7 +46,7 @@ RUNNING_IN_DOCKER = os.getenv("RUNNING_IN_DOCKER", "false") == "true"
 # ==============================================================================
 # SUBSYSTEM ARCHITECTURE INTEGRATIONS & DATA ACCELERATION LAYERS
 # ==============================================================================
-from core.alerts import check_alerts
+# from core.alerts import check_alerts
 from core.analyzer import calculate_health_score, get_health_status, check_and_mitigate_freezes # Ticket 5: added check_and_mitigate_freezes for anti-freeze guard
 from core.logger import log_info, log_warning, log_error
 #===============================================================================
@@ -75,11 +75,11 @@ except Exception as db_import_error:
     def get_alert_history(*args, **kwargs): return []
     def verify_user(*args, **kwargs): return False
 #================================================================================
-from core.mailer import mailer_service
+# from core.mailer import mailer_service
 from core.security import security_gate, limit_login_attempts
 import requests
 import smtplib
-from email.mime.text import MIMEText
+# from email.mime.text import MIMEText
 
 # ==============================================================================
 # APPLICATION BOOTSTRAPPING & SECURITY SCHEMA VALIDATION
@@ -269,27 +269,32 @@ def receive_agent_telemetry():
             return jsonify({"status": "rejected", "reason": "Missing or corrupted JSON payload"}), 400
         
         # Extraction of telemetry metrics matrix keys from streaming agent input
-        server_name = payload.get("name") # Refactored from 'server' to 'name' to align with agent payload signatures
+        # server_name = payload.get("name") # Refactored from 'server' to 'name' to align with agent payload signatures
+        node_id = payload.get("node_id")
         location = payload.get("location", "Ludwigshafen") 
-        cpu_stat = payload.get("cpu")
-        ram_stat = payload.get("ram")
-        disk_stat = payload.get("disk")
-        
+        # cpu_stat = payload.get("cpu")
+        cpu_stat = payload.get("cpu_usage")
+        # ram_stat = payload.get("ram")
+        ram_stat = payload.get("ram_usage")
+        # disk_stat = payload.get("disk")
+        disk_stat = payload.get("disk_usage")
         # [Ticket 4]: Extracted top_processes array to comply with updated persistence signatures
         top_processes = payload.get("top_processes", []) 
 
         # Validation Guard: Block incomplete packets to prevent corrupted db inserts
-        if None in (server_name, cpu_stat, ram_stat, disk_stat):
+        # if None in (server_name, cpu_stat, ram_stat, disk_stat):
+        if None in (node_id, cpu_stat, ram_stat, disk_stat):
             return jsonify({"status": "rejected", "reason": "Incomplete telemetry parameters"}), 400
         #================================================================
         # Ticket 8: [Heartbeat Update]: Safely track live state timestamp 
-        if server_name in nodes_heartbeats:
-            nodes_heartbeats[server_name] = time.time()
+        if node_id in nodes_heartbeats:
+            nodes_heartbeats[node_id] = time.time()
         #================================================================
         try: 
             # [Ticket 4]: Invoking save_metrics with serialized process array parameter
             save_metrics(
-                server_name,
+                # server_name,
+                node_id,
                 location,
                 float(cpu_stat),
                 float(ram_stat),
@@ -302,11 +307,12 @@ def receive_agent_telemetry():
             return jsonify({"status": "fault", "reason": "Database ingestion error"}), 500 
             
         # Compile temporary runtime memory state layout
-        current_node_state = [{"name": server_name, "location": location, "cpu": cpu_stat, "ram": ram_stat, "disk": disk_stat}]
-        
+        #current_node_state = [{"name": server_name, "location": location, "cpu": cpu_stat, "ram": ram_stat, "disk": disk_stat}]
+        current_node_state = [{"node_id": node_id, "location": location, "cpu_usage": cpu_stat, "ram_usage": ram_stat, "disk_usage": disk_stat}]
+
         # [Ticket 5]: Active Reactive Mitigation Loop (Anti-Freeze Guard Protection)
         try:
-            incidents = check_and_mitigate_freezes(float(cpu_stat), float(ram_stat), server_name, location) 
+            incidents = check_and_mitigate_freezes(float(cpu_stat), float(ram_stat), node_id, location) 
             for incident in incidents:
                 # [Ticket 5]: Persist decoupled freeze mitigation records for auditing history
                 save_alert(
@@ -317,19 +323,20 @@ def receive_agent_telemetry():
                 )
         except Exception as mitigation_fault:
             log_error(f"Anti-Freeze Guard Initialization Failed: {mitigation_fault}")
-            return jsonify({"status": "fault", "reason": "Freeze mitigation error"}), 500
+
+            return jsonify({"status": "fault", "reason": str(ingestion_fault)}), 500
 
         # Anomaly threshold analysis engine pass
         active_alerts = check_alerts(current_node_state)
 
         if active_alerts:
             # [Ticket 4]: Contextual routing enriched with regional location injection
-            alert_message = f"Host Node: [{server_name}] in ({location}) Anomaly Report:\n" + "\n".join(active_alerts) 
-            log_warning(f"Incident mitigation initialized for active threats on {server_name}: {alert_message}")
+            alert_message = f"Host Node: [{node_id}] in ({location}) Anomaly Report:\n" + "\n".join(active_alerts) # server_name -> node_id
+            log_warning(f"Incident mitigation initialized for active threats on {node_id}: {alert_message}") # server_name -> node_id
 
             for alert in active_alerts:
                 try: 
-                    save_alert(server=server_name, location=location, message=alert, level="WARNING")
+                    save_alert(server=node_id, location=location, message=alert, level="WARNING") # server_name -> node_id
                 except Exception as db_err: 
                     log_error(f"Failed to persist incident logs from PostgreSQL cluster: {db_err}")
 
@@ -337,11 +344,11 @@ def receive_agent_telemetry():
             send_telegram_alert(alert_message)
             send_email_alert(alert_message)
 
-        return jsonify({"status": "synchronized", "node": server_name, "location": location}), 201
+        return jsonify({"status": "synchronized", "node": node_id, "location": location}), 201 # server_name -> node_id
         
     except Exception as ingestion_fault:
         # [Ticket 4]: Extended visibility into internal fault vectors for easier traceback inspection
-        log_error(f"Failed to persist Agent metrics to PostgreSQL cluster: {ingestion_fault}") 
+        log_error(f"Failed to persist Agent metrics: {ingestion_fault}") 
         return jsonify({"status": "fault", "reason": str(ingestion_fault)}), 500 
 
 
@@ -380,11 +387,13 @@ def get_dashboard_metrics():
     """
     try:
         # [Ticket 4 - Checklist 2]: Extract target environment query boundary param
-        selected_agent = request.args.get('agent', 'all')
-        
+        # selected_agent = request.args.get('agent', 'all')
+        selected_node = request.args.get('node_id', 'all')
+
+
         # Scoped structural filtering based on selected navigation boundary
-        cluster_nodes = get_latest_cluster_metrics(agent=selected_agent)
-        raw_alerts = get_alert_history(limit=20, agent=selected_agent)
+        cluster_nodes = get_latest_cluster_metrics(agent=selected_node)
+        raw_alerts = get_alert_history(limit=20, agent=selected_node)
         
         formatted_alerts = []
         for alert in raw_alerts:
@@ -419,35 +428,48 @@ def get_dashboard_metrics():
                 node["status"] = "Online"  # Resilient fallback default
     
         # Re-calculate overarching system metrics health indexes using retrieved dataset
+        #if cluster_nodes: 
+        #    avg_cpu = sum(node['cpu'] for node in cluster_nodes) / len(cluster_nodes)
+        #    avg_ram = sum(node['ram'] for node in cluster_nodes) / len(cluster_nodes)
+        #    global_score = calculate_health_score(avg_cpu, avg_ram, 0)
+        #    active_status = get_health_status(global_score)
+
+            node["cpu_usage"] = float(node.get("cpu", 0.0))
+            node["ram_usage"] = float(node.get("ram", 0.0))
+            node["disk_usage"] = float(node.get("disk", 0.0))
+
+
+            # Populate process array tables dynamically wrapped to target environment contexts
+            node["top_processes"] = [
+                {
+                    "pid": 1240, 
+                    "name": f"{selected_node}_daemon" if selected_node != 'all' else "postgres_engine", 
+                    "cpu": 4.2,
+                    "memory": 12.4
+                },
+                {
+                    "pid": 3120, 
+                    "name": "telemetry_worker", 
+                    "cpu": 1.8,
+                    "memory": 2.1
+                }
+            ]
+
+            # Formatting last_seen as string timestamp for the downstream UI consumption pipeline
+            if isinstance(last_seen, datetime):
+                node["last_seen"] = last_seen.strftime("%Y-%m-%d %H:%M:%S")
+    
+        # Re-calculate overarching system metrics health indexes using retrieved dataset
         if cluster_nodes: 
-            avg_cpu = sum(node['cpu'] for node in cluster_nodes) / len(cluster_nodes)
-            avg_ram = sum(node['ram'] for node in cluster_nodes) / len(cluster_nodes)
+            avg_cpu = sum(node['cpu_usage'] for node in cluster_nodes) / len(cluster_nodes)
+            avg_ram = sum(node['ram_usage'] for node in cluster_nodes) / len(cluster_nodes)
             global_score = calculate_health_score(avg_cpu, avg_ram, 0)
             active_status = get_health_status(global_score)
 
-        # Populate process array tables dynamically wrapped to target environment contexts
-        mock_processes = {
-            "top_cpu": [
-                {
-                    "pid": 1024, 
-                    "name": f"{selected_agent}_service" if selected_agent != 'all' else "postgres_engine", 
-                    "cpu": 4.2
-                } 
-            ],
-            "top_memory": [
-                {
-                    "pid": 1024, 
-                    "name": f"{selected_agent}_service" if selected_agent != 'all' else "postgres_engine", 
-                    "memory": 12.5
-                } 
-            ]
-        }
-
         return jsonify({
-            "health": {"score": global_score, "status": active_status},
+            "health": {"score": int(global_score), "status": active_status},
             "nodes": cluster_nodes,
-            "alerts": formatted_alerts,
-            "processes": mock_processes  
+            "alerts": formatted_alerts
         }), 200
         
     except Exception as api_fault:
@@ -461,8 +483,8 @@ def alert_history():
     """Fetches full tabular alert event listings mapped to contextual filter constraints."""
     try:
         # Extract targeted agent variable to bound database retrieval scopes
-        selected_agent = request.args.get('agent', 'all')
-        rows = get_alert_history(limit=20, agent=selected_agent)
+        selected_node = request.args.get('node_id', 'all')# selected_agent -> selected_node
+        rows = get_alert_history(limit=20, agent=selected_node) # selected_agent -> selected_node
         
         history = [f"{r[0].strftime('%Y-%m-%d %H:%M:%S') if r[0] else ''} | {r[1]} ({r[2]}) | {r[3]} | {r[4]}" for r in rows]
         return jsonify({"history": history}), 200
@@ -489,14 +511,20 @@ def index():
 @app.route("/api/users", methods=["GET"])
 @token_required
 def get_all_users():
+    """
+    Fetches the full tabular user registry from the relational database 
+    to serve identity directories within the administrative UI context.
+    """
     try:
         users_list = []
         with _db_orchestrator._get_connection() as conn:
             with conn.cursor() as cursor:
-                cursor.execute("SELECT id, username, role FROM users ORDER BY id ASC")
+                # [Unified Code Compliance]: Fetch email alongside internal identifiers for complete profile maps
+                cursor.execute("SELECT id, username, role, email FROM users ORDER BY id ASC")
                 rows = cursor.fetchall()
                 for r in rows:
-                    users_list.append({"id": r[0], "username": r[1], "role": r[2]})
+                    users_list.append({"id": r[0], "username": r[1], "role": r[2],
+                                       "email": r[3] if len(r) > 3 and r[3] else ""})
         return jsonify({"users": users_list}), 200
     except Exception as e:
         log_error(f"Database read failure on user directory index: {e}")
@@ -507,6 +535,10 @@ def get_all_users():
 @token_required  
 @admin_required  
 def create_user():
+    """
+    Handles secure administrative provisioning workflow for new operators and accounts,
+    enforcing explicit credential validation and secure password hashing.
+    """
     try:
         data = request.get_json() or {}
         new_username = data.get("username", "").strip()
@@ -522,39 +554,48 @@ def create_user():
 
         with _db_orchestrator._get_connection() as conn:
             with conn.cursor() as cursor:
-                cursor.execute("SELECT id FROM users WHERE username = %s", (new_username,))
+                # Check for pre-existing unique structural identities inside the data cluster
+                cursor.execute("SELECT id FROM users WHERE username = %s OR email = %s", (new_username, recipient_email))
                 if cursor.fetchone():
-                    return jsonify({"error": "Identity signature already exists inside cluster database."}), 409
+                    return jsonify({"error": "Identity signature or email already exists inside cluster database."}), 409
                 
+                # [Unified Code Compliance]: Include 'email' inside the persistence execution statement
                 cursor.execute("""
-                    INSERT INTO users (username, password_hash, role, is_verified)
-                    VALUES (%s, %s, %s, TRUE)
-                """, (new_username, hashed_password, new_role))
+                    INSERT INTO users (username, password_hash, role, email, is_verified)
+                    VALUES (%s, %s, %s, %s, TRUE)
+                """, (new_username, hashed_password, new_role, recipient_email))
                 conn.commit()
 
-        log_info(f"[USER PROVISIONING] Identity [{new_username}] initialized under role [{new_role}].")
+        log_info(f"[USER PROVISIONING] Identity [{new_username}] initialized under role [{new_role}]and mapped to [{recipient_email}].")
         return jsonify({"message": f"User initialized successfully under role {new_role}."}), 201
 
     except Exception as e:
         log_error(f"User provisioning fault: {e}")
         return jsonify({"error": "Internal security node allocation failure."}), 500
 
-
-@app.route("/api/users/<user_id>", methods=["PUT"])
+# ?ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+@app.route("/api/users/<int:user_id>", methods=["PUT"])
 @token_required
 @admin_required
 def update_user_role(user_id):
+    """
+    Mutates the clearance tier (role) of a targeted user node.
+    Enforces rigid constraints to ensure the root administrator is unalterable.
+    """
     try:
         data = request.get_json() or {}
         target_role = data.get("role", "Viewer").strip()
 
         with _db_orchestrator._get_connection() as conn:
             with conn.cursor() as cursor:
+                # Resolve user identity to enforce core immutability constraints
                 cursor.execute("SELECT username FROM users WHERE id = %s", (user_id,))
                 user_row = cursor.fetchone()
+                
                 if user_row and user_row[0] == "admin":
                     return jsonify({"error": "Root administrator authorization structure is unalterable."}), 400
 
+                # Execute administrative mutation statement over targeted cluster resource
                 cursor.execute("UPDATE users SET role = %s WHERE id = %s RETURNING id", (target_role, user_id))
                 if not cursor.fetchone():
                     return jsonify({"error": "Target identity profile not found within node cluster."}), 404
@@ -562,23 +603,31 @@ def update_user_role(user_id):
 
         log_info(f"[USER MUTATION] Identity ID [{user_id}] mutated clearance to [{target_role}].")
         return jsonify({"message": f"Identity clearance updated to {target_role} successfully."}), 200
+        
     except Exception as e:
         log_error(f"User mutation vector failed: {e}")
         return jsonify({"error": "Internal role shifting allocation anomaly."}), 500
 
 
-@app.route("/api/users/<user_id>", methods=["DELETE"])
+@app.route("/api/users/<int:user_id>", methods=["DELETE"])
 @token_required
 @admin_required
 def delete_user(user_id):
+    """
+    Decommissions and purges an identity signature from the database layout.
+    Fails explicitly if a deletion vector targets the core system root.
+    """
     try:
         with _db_orchestrator._get_connection() as conn:
             with conn.cursor() as cursor:
+                # Safeguard checkpoint: verify target isn't the protected ledger root
                 cursor.execute("SELECT username FROM users WHERE id = %s", (user_id,))
                 user_row = cursor.fetchone()
+                
                 if user_row and user_row[0] == "admin":
                     return jsonify({"error": "Critical Safeguard: Root administrator identity cannot be purged."}), 400
 
+                # Perform hard delete action and capture execution confirmation via RETURNING
                 cursor.execute("DELETE FROM users WHERE id = %s RETURNING id", (user_id,))
                 if not cursor.fetchone():
                     return jsonify({"error": "Target identity profile not found."}), 404
@@ -590,8 +639,8 @@ def delete_user(user_id):
     except Exception as e:
         log_error(f"User deletion execution fault: {e}")
         return jsonify({"error": "Failed to purge identity mapping from core storage."}), 500
-
-
+    
+    
 # import subprocess
 # subprocess.Popen(["sleep","3600"]) # Ticket 5 Checklist 3: Temporary added a sleep command to keep the Flask server running for testing purposes, can be removed in production
 
