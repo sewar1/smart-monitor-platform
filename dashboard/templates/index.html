@@ -834,9 +834,10 @@ async function fetchNodeTelemetry() {
 
 function updateDashboardDOM(data) {
     // Graceful fallback execution to guarantee view operations don't freeze on runtime nil variables
-    const cpuVal = data.cpu_percent || 0;
-    const ramVal = data.ram_percent || 0;
-    const diskVal = data.disk_percent || 0;
+    // [Ticket 4 Unified Mapping]: Match the exact injected keys from app.py
+    const cpuVal = data.cpu_usage || 0; // cpu_percent => cpu_usage _________________________________
+    const ramVal = data.ram_usage || 0; // ram_percent => ram_usage__________________________________
+    const diskVal = data.disk_usage || 0; // disk_percent => disk_usage _____________________________
 
     // Direct interface injection via safely extracted variable data payloads
     if(document.getElementById('cpu')) document.getElementById('cpu').textContent = `${cpuVal}%`;
@@ -856,10 +857,17 @@ function updateDashboardDOM(data) {
         heartbeat.classList.remove("offline");
     }
 
-    // Populate active dynamic kernel process listing queues
-    renderProcessTable('cpu-processes', data.top_cpu_processes);
-    renderProcessTable('memory-processes', data.top_ram_processes);
+// Populate active dynamic kernel process listing queues using unified key
+    const processesList = data.top_processes || [];
+    
+    if(document.getElementById('cpu-processes')) {
+        renderProcessTable('cpu-processes', processesList);
+    }
+    if(document.getElementById('memory-processes')) {
+        renderProcessTable('memory-processes', processesList);
+    }
 }
+
 
 function updateChartDataState(cpu, ram) {
     const timestamp = new Date().toLocaleTimeString();

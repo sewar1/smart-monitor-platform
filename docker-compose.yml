@@ -56,13 +56,13 @@ services:
     container_name: smart_monitor_agent_docker
     restart: always
     environment:
-      # - CENTRAL_SERVER_URL=http://dashboard:5000/api/metrics/receiver # Ticket 2 : Routes traffic through internal Docker network DNS & adds the receiver endpoint to the URL
-      - CENTRAL_SERVER_URL=http://localhost:5000/api/metrics/receiver
+      - CENTRAL_SERVER_URL=http://dashboard:5000/api/metrics/receiver # Ticket 2 : Routes traffic through internal Docker network DNS & adds the receiver endpoint to the URL
+      # - CENTRAL_SERVER_URL=http://localhost:5000/api/metrics/receiver
       - STREAM_INTERVAL_SECONDS=5
-      # - NODE_ID=Docker_Production_Container # Ticket 3 : Unique node identifier for distributed deployments
-      - NODE_ID=windows-host
-      - LOCATION=Ludwigshafen # Ticket 3 : Location identifier for distributed deployments
-    depends_on:
+      - NODE_ID=Docker_Production_Container # Ticket 3 : Unique node identifier for distributed deployments
+      # - NODE_ID=windows-host
+      - NODE_LOCATION=Ludwigshafen # Ticket 3 : Location identifier for distributed deployments
+    depends_on: 
       - dashboard
     networks:
       - monitor_network

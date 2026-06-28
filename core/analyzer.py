@@ -74,7 +74,7 @@ class SystemAnalyzer:
     
 
 
-    def execute_anti_freeze_guard(self, current_cpu: float, current_ram: float, server_name: str = "Local_Node", location: str = "Ludwigshafen") -> List [Dict[str, Any]]:
+    def execute_anti_freeze_guard(self, current_cpu: float, current_ram: float, node_id: str = "Local_Node", location: str = "Ludwigshafen") -> List [Dict[str, Any]]:
         """
         [Ticket 5]: Inspects current resource capacity. If thresholds exceed 95%, categorized high-heavy
         non-critical processes are targeted, whitelists are checked, and a graceful or forced termination sequence is fired.
@@ -84,7 +84,7 @@ class SystemAnalyzer:
         # Trigger mitigation sequence if either CPU or RAM breach the safety margin of 95%
         if current_cpu >= 95.0 or current_ram >= 95.0:
         # if current_cpu >= 10.0 or current_ram >= 10.0: # for test
-            log_warning(f"[TICKET 5 ANTI-FREEZE]: Resource emergency triggered on {server_name}. CPU: {current_cpu}%, RAM: {current_ram}%")
+            log_warning(f"[TICKET 5 ANTI-FREEZE]: Resource emergency triggered on {node_id}. CPU: {current_cpu}%, RAM: {current_ram}%")
             
             # Extract top resource hogs
             profiles = self.get_top_consuming_processes(limit=10)
@@ -116,10 +116,10 @@ class SystemAnalyzer:
                     else:
                         proc_to_kill.send_signal(signal.SIGTERM)
                         
-                    alert_msg = f"Anti-Freeze Guard automatically terminated process '{name}' (PID: {pid}) consuming CPU: {offender['cpu']}%, RAM: {offender['memory']}% on node: {server_name}"
+                    alert_msg = f"Anti-Freeze Guard automatically terminated process '{name}' (PID: {pid}) consuming CPU: {offender['cpu']}%, RAM: {offender['memory']}% on node: {node_id}"
                     
                     mitigated_incidents.append({
-                        "server": server_name,
+                        "server": node_id,
                         "location": location,
                         "message": alert_msg,
                         "level": "CRITICAL"

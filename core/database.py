@@ -57,11 +57,18 @@ class DatabaseManager:
         if conn:
             self._connection_pool.putconn(conn)
 
-    def save_metrics(self, server_name: str, location: str, cpu_stat: float, ram_stat: float, disk_stat: float, top_processes_json: str = "[]") -> None:
+    def save_metrics(self, node_id : str, location: str, cpu_stat: float, ram_stat: float, disk_stat: float, top_processes_json: str = "[]") -> None:
         """
         [Ticket 4 Update]: Overhauls and persists dynamic multi-node telemetry and high-frequency 
         process maps (JSONB) into the PostgreSQL cluster with a dedicated tracking timestamp.
         """
+        # =========================================================================
+        # Safe Type Guard: If the backend sends a raw list/dict instead of string, serialize it dynamically
+        # =========================================================================
+        if not isinstance(top_processes_json, str):
+            top_processes_json = json.dumps(top_processes_json)
+        # =========================================================================
+
         connection = None
         cursor = None
         try:
@@ -73,7 +80,7 @@ class DatabaseManager:
 
             # [Ticket 4]: The top_processes_json parameter is now included in the insert query to store the top processes data as a JSONB field in the metrics table, and add os_type to the insert query for telemetry ingestion
             insert_query ="""
-                INSERT INTO metrics (server_name, location, os_type, cpu_usage, ram_usage, disk_usage, top_processes, timestamp)
+                INSERT INTO metrics (node_id, location, os_type, cpu_usage, ram_usage, disk_usage, top_processes, timestamp)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
             """
 
@@ -82,7 +89,7 @@ class DatabaseManager:
             detected_os = "Linux/Docker" # Ticket 4: OS type is now hardcoded for telemetry ingestion, can be extended to dynamic detection if needed
             cursor.execute(
                     insert_query,
-                    (server_name, location, detected_os, float(cpu_stat), float(ram_stat), float(disk_stat), top_processes_json, current_timestamp) # Ticket 4: os_type added to the insert query for telemetry ingestion
+                    (node_id, location, detected_os, float(cpu_stat), float(ram_stat), float(disk_stat), top_processes_json, current_timestamp) # Ticket 4: os_type added to the insert query for telemetry ingestion
             )
 
             connection.commit() # Commit the transaction to persist the metrics data
@@ -145,9 +152,9 @@ class DatabaseManager:
         try:
             conn = self._get_pooled_connection()
             with conn.cursor() as cursor:
-                # [Ticket 4 Update]: Column alignments standardized to server_name context
+                # [Ticket 4 Update]: Column alignments standardized to node_id (past server_name) context
                 cursor.execute("""
-                    INSERT INTO alerts (server_name, location, alert_type, message, timestamp)
+                    INSERT INTO alerts (node_id, location, alert_type, message, timestamp)
                     VALUES (%s, %s, %s, %s, %s)
                 """, (server, location, level, message, datetime.now(timezone.utc)))
                 conn.commit()
@@ -164,15 +171,15 @@ class DatabaseManager:
             with conn.cursor() as cursor:
                 if agent_name and agent_name.lower() != 'all':
                     cursor.execute("""
-                        SELECT timestamp, server_name, location, message, alert_type
+                        SELECT timestamp, node_id, location, message, alert_type
                         FROM alerts
-                        WHERE LOWER(server_name) = LOWER(%s)
+                        WHERE LOWER(node_id) = LOWER(%s)
                         ORDER BY id DESC
                         LIMIT %s
                     """, (agent_name, limit))
                 else:
                     cursor.execute("""
-                        SELECT timestamp, server_name, location, message, alert_type
+                        SELECT timestamp, node_id, location, message, alert_type
                         FROM alerts
                         ORDER BY id DESC
                         LIMIT %s
@@ -216,16 +223,18 @@ class DatabaseManager:
                 # [Ticket 4]: Dynamic agent filtering for multi-node deployments. If agent_name is provided, filter by that agent; otherwise, return all nodes.
                 if agent_name and agent_name.lower() != 'all':
                     cursor.execute("""
-                        SELECT DISTINCT ON (server_name) server_name, location, cpu_usage, ram_usage, disk_usage, timestamp
+                        SELECT node_id, location, cpu_usage, ram_usage, disk_usage, timestamp, top_processes
                         FROM metrics
-                        WHERE LOWER(server_name) = LOWER(%s)
-                        ORDER BY server_name, id DESC
+                        WHERE LOWER(node_id) = LOWER(%s)
+                        ORDER BY timestamp DESC
+                        LIMIT 1
                     """, (agent_name,))
                 else:
+                    # Fetches the latest single record for every tracking node in parallel
                     cursor.execute("""
-                        SELECT DISTINCT ON (server_name) server_name, location, cpu_usage, ram_usage, disk_usage, timestamp
+                        SELECT DISTINCT ON (node_id) node_id, location, cpu_usage, ram_usage, disk_usage, timestamp, top_processes
                         FROM metrics
-                        ORDER BY server_name, id DESC
+                        ORDER BY node_id, id DESC
                     """)
                 rows = cursor.fetchall()
                 
@@ -238,14 +247,16 @@ class DatabaseManager:
                         "ram": float(row[3]),
                         "disk": float(row[4]),
                         # [Ticket 4]: Preserves the raw timestamp object for timezone-aware calculations in the dashboard layer.
-                        "last_seen": row[5]
+                        "last_seen": row[5],
+                        "top_processes": row[6] # Injected to support the real-time process list container
                     })
                 return cluster_nodes
         except Exception as query_fault:
             log_error(f"Failed to parse global cluster status metrics: {query_fault}")
             return []
         finally:
-            self._release_pooled_connection(conn)
+            if conn:
+                self._release_pooled_connection(conn)
 
     def authenticate_user_credentials(self, username: str, plain_password: str) -> bool:
         """Evaluates identity structures safely against cryptographic side-channel vector threats."""
@@ -280,7 +291,7 @@ class DatabaseManager:
             connection = self._get_pooled_connection()
             cursor = connection.cursor()
 
-            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24) # Tichet 6 : c
+            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24) # Tichet 6 :
 
             purge_query ="""
                 DELETE FROM metrics 
