@@ -22,8 +22,16 @@ load_dotenv()
 # ==============================================================================
 # CONFIGURATION MATRIX & ENVIRONMENT BINDING (Ticket 9 & Unified Nomenclature)
 # ==============================================================================
-CENTRAL_SERVER_URL = os.getenv("CENTRAL_SERVER_URL", "http://localhost:5000/api/metrics/receiver")
+
+RAW_SERVER_URL = os.getenv("CENTRAL_SERVER_URL", "http://127.0.0.1:5000/api/metrics/receiver")
+CENTRAL_SERVER_URL = RAW_SERVER_URL.replace("http:///", "http://")
+
+
+# CENTRAL_SERVER_URL = os.getenv("CENTRAL_SERVER_URL", "http:///127.0.0.1:5000/api/metrics/receiver")
 STREAM_INTERVAL_SECONDS = int(os.getenv("STREAM_INTERVAL_SECONDS", "5"))
+
+
+
 
 # Unified Node ID mapping (falls back to hardware hostname if env is missing)
 NODE_ID = os.getenv("NODE_ID", f"node-{socket.gethostname().lower()}")
@@ -74,14 +82,23 @@ def collect_system_metrics() -> dict:
     except Exception:
         disk_percent = psutil.disk_usage('/').percent
 
-    # ✅ FIXED: node_id is now natively used as the JSON key and correctly references the config variable
+    # Dynamically determine the operating system type to send with the package
+    current_os = 'Windows' if sys.platform.startswith('win') else 'Linux'
+
+    # Extract the fresh state array
+    raw_processes = get_top_processes()
+
+    
+    # FIXED: node_id is now natively used as the JSON key and correctly references the config variable
+    # Activated json.dumps() to serialize the process tree into a string for strict JSONB insertion
     return {
         "node_id": NODE_ID,        # Matches backend receiver layout perfectly
         "location": NODE_LOCATION,
-        "cpu": psutil.cpu_percent(interval=None),
-        "ram": psutil.virtual_memory().percent,
-        "disk": disk_percent,
-        "top_processes": get_top_processes()
+        "os_type": current_os,     # In order to work on the operating system
+        "cpu_usage": psutil.cpu_percent(interval=None), # cpu => cpu_usage
+        "ram_usage": psutil.virtual_memory().percent, # ram => ram_usage
+        "disk_usage": disk_percent, # disk => disk_usage
+        "top_processes": json.dumps(raw_processes) # Activated json module to avoid 400 Bad Request
     }
 
 
@@ -103,7 +120,8 @@ def stream_telemetry_loop():
                 if response.status_code in [200, 201]:
                     logger.info(
                         f"Telemetry synchronized | Node: {payload['node_id']} ({payload['location']}) -> "
-                        f"CPU: {payload['cpu']}% | RAM: {payload['ram']}% | Top Processes Cached: {len(payload['top_processes'])}"
+                        f"CPU: {payload['cpu_usage']}% | RAM: {payload['ram_usage']}%"
+                        # Top Processes Cached: {len(payload['top_processes'])}"
                     )
                 else:
                     logger.warning(f"Central Server rejected payload with status code: {response.status_code}")

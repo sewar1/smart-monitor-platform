@@ -58,7 +58,7 @@ sudo systemctl start smart-monitor
 ```bash
 server {
     listen 80;
-    server_name _;
+    node_id _;
 
     location / {
         proxy_pass http://127.0.0.1:5000;
