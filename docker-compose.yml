@@ -69,8 +69,28 @@ services:
     pid: "host" # Ticket 5
     privileged: true # Ticket 5
 
+
+# ==============================================================================
+  # Ticket 11 (Container 4: Simulated Linux Node Agent (Heidelberg Server Context))
   # ==============================================================================
-  # Container 4: Enterprise Nginx Reverse Proxy Server (Frontend Boundary)
+  agent_heidelberg:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    container_name: smart_monitor_agent_heidelberg
+    restart: always
+    environment:
+      - CENTRAL_SERVER_URL=http://dashboard:5000/api/metrics/receiver
+      - STREAM_INTERVAL_SECONDS=5
+      - NODE_ID=VMware_Ubuntu # Synchronization with the third node in the codec
+      - NODE_LOCATION=Heidelberg
+    depends_on: 
+      - dashboard
+    networks:
+      - monitor_network
+
+  # ==============================================================================
+  # Container 5: Enterprise Nginx Reverse Proxy Server (Frontend Boundary)
   # ==============================================================================
   proxy_server:
     image: nginx:alpine

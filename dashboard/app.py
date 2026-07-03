@@ -517,14 +517,17 @@ def get_all_users():
     """
     try:
         users_list = []
-        with _db_orchestrator._get_connection() as conn:
+        with _db_orchestrator.get_connection() as conn:
             with conn.cursor() as cursor:
                 # [Unified Code Compliance]: Fetch email alongside internal identifiers for complete profile maps
-                cursor.execute("SELECT id, username, role, email FROM users ORDER BY id ASC")
+                cursor.execute("SELECT id, username, role FROM users ORDER BY id ASC") # Removed "email"
                 rows = cursor.fetchall()
                 for r in rows:
-                    users_list.append({"id": r[0], "username": r[1], "role": r[2],
-                                       "email": r[3] if len(r) > 3 and r[3] else ""})
+                    users_list.append({"id": r[0],
+                                       "username": r[1],
+                                       "role": r[2],
+                                       # "email": r[3] if len(r) > 3 and r[3] else ""
+                                       })
         return jsonify({"users": users_list}), 200
     except Exception as e:
         log_error(f"Database read failure on user directory index: {e}")
@@ -552,7 +555,7 @@ def create_user():
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), salt).decode('utf-8')
 
-        with _db_orchestrator._get_connection() as conn:
+        with _db_orchestrator.get_connection() as conn:
             with conn.cursor() as cursor:
                 # Check for pre-existing unique structural identities inside the data cluster
                 cursor.execute("SELECT id FROM users WHERE username = %s OR email = %s", (new_username, recipient_email))
@@ -586,7 +589,7 @@ def update_user_role(user_id):
         data = request.get_json() or {}
         target_role = data.get("role", "Viewer").strip()
 
-        with _db_orchestrator._get_connection() as conn:
+        with _db_orchestrator.get_connection() as conn:
             with conn.cursor() as cursor:
                 # Resolve user identity to enforce core immutability constraints
                 cursor.execute("SELECT username FROM users WHERE id = %s", (user_id,))
@@ -618,7 +621,7 @@ def delete_user(user_id):
     Fails explicitly if a deletion vector targets the core system root.
     """
     try:
-        with _db_orchestrator._get_connection() as conn:
+        with _db_orchestrator.get_connection() as conn:
             with conn.cursor() as cursor:
                 # Safeguard checkpoint: verify target isn't the protected ledger root
                 cursor.execute("SELECT username FROM users WHERE id = %s", (user_id,))
@@ -640,7 +643,7 @@ def delete_user(user_id):
         log_error(f"User deletion execution fault: {e}")
         return jsonify({"error": "Failed to purge identity mapping from core storage."}), 500
     
-    
+
 # import subprocess
 # subprocess.Popen(["sleep","3600"]) # Ticket 5 Checklist 3: Temporary added a sleep command to keep the Flask server running for testing purposes, can be removed in production
 
