@@ -31,7 +31,7 @@ services:
     container_name: smart_monitor_dashboard
     restart: always
     ports:
-      - "5000:5000"
+      - "5001:5000"
     environment:
       - POSTGRES_HOST=db
       - POSTGRES_USER=postgres_admin

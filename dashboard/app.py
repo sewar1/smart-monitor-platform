@@ -31,6 +31,7 @@ from datetime import datetime, timedelta, timezone # ticket 4: added timezone fo
 from functools import wraps
 from flask import Flask, render_template, jsonify, request
 from dotenv import load_dotenv
+from core.alerts import check_alerts
 
 # Inject hidden environment configurations from local .env space into the OS execution kernel
 load_dotenv()
@@ -530,8 +531,11 @@ def get_all_users():
                                        })
         return jsonify({"users": users_list}), 200
     except Exception as e:
-        log_error(f"Database read failure on user directory index: {e}")
-        return jsonify({"error": "Failed to fetch internal identity ledger."}), 500
+	# Print the full, actual error in the terminal to identify the engineering problem
+        print(f"CRITICAL DATABASE ERROR: {e}")
+	log_error(f"Database read failure on user directory index: {e}")
+	# Returning an empty list instead of error 500 prevents browser tabs from crashing
+        return jsonify({"users": []}), 500
 
 
 @app.route("/api/users/create", methods=["POST"])
