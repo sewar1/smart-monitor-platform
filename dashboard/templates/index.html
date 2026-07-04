@@ -768,9 +768,17 @@ function initializeWaveformChart() {
     const chartEl = document.getElementById('chart');
     if (!chartEl) return; // Prevent breaking if DOM structure shifts
 
+    // ADMINISTRATIVE SAFETY VECTOR: Destroy existing Chart instance if registered in global state
+    // This prevents the "Canvas is already in use" runtime collision that freezes execution context
+    if (AppState.chartInstance && typeof AppState.chartInstance.destroy === 'function') {
+        AppState.chartInstance.destroy();
+        AppState.chartInstance = null;
+    }
+
     const ctx = chartEl.getContext('2d');
     const historicalData = AppState.nodeHistory[AppState.activeNode] || { labels: [], cpu: [], ram: [] };
 
+    // Initialize clean Chart instance onto the targeted DOM context
     AppState.chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
