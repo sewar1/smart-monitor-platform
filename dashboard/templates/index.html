@@ -775,12 +775,11 @@ function initializeWaveformChart() {
         AppState.chartInstance = null;
     }
 
-    // NEW DETONATION BUFFER: Directly query the DOM element for legacy canvas bindings
-    // This catches "orphan" chart instances that escaped the AppState lifecycle tracker
-    const existingChart = Chart.getChart(chartEl); 
-    if (existingChart) {
-        existingChart.destroy();
-    }
+    // Burn and rebuild the Canvas element in the DOM
+    // Replace the element with a completely empty copy to break any hidden association with Chart.js.
+    const newChartEl = chartEl.cloneNode(true);
+    chartEl.parentNode.replaceChild(newChartEl, chartEl);
+    chartEl = newChartEl; // Redirecting the reference to the new, clean element
 
     const ctx = chartEl.getContext('2d');
     const historicalData = AppState.nodeHistory[AppState.activeNode] || { labels: [], cpu: [], ram: [] };
