@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-// @ts-check
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -365,17 +364,17 @@
             <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
                 <ul class="nav nav-pills nav-tabs-custom" id="nodeSelectorTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link node-btn active" id="tab-docker" data-node="Docker_Production_Container" type="button" role="tab"> // Add node-btn
+                        <button class="nav-link node-btn active" id="tab-docker" data-node="Docker_Production_Container" type="button" role="tab"> <!--Add node-btn--> 
                             <i class="fab fa-docker me-2"></i>Docker Node
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link node-btn" id="tab-windows" data-node="Windows_Host" type="button" role="tab"> // Add node-btn
+                        <button class="nav-link node-btn" id="tab-windows" data-node="Windows_Host" type="button" role="tab"> <!--Add node-btn--> 
                             <i class="fab fa-windows me-2"></i>Windows Host
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link node-btn" id="tab-vmware" data-node="VMware_Ubuntu" type="button" role="tab"> // Add node-btn
+                        <button class="nav-link node-btn" id="tab-vmware" data-node="VMware_Ubuntu" type="button" role="tab"> <!--Add node-btn--> 
                             <i class="fab fa-linux me-2"></i>VMware Linux
                         </button>
                     </li>
@@ -408,192 +407,190 @@
 
     </div>
 
-    <div class="tab-content" id="dashboardTabsContent">
-        
-        <div class="tab-pane fade show active" id="telemetry-pane" role="tabpanel" aria-labelledby="telemetry-tab">
-            <div class="row">
-                <div class="col-xl-3 col-md-6">
-                    <div class="card-box">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <span class="label" id="lbl-cpu">Processor Load</span>
-                                <div class="value" id="cpu">0%</div>
+ <div class="tab-content" id="dashboardTabsContent">
+            
+            <div class="tab-pane fade show active" id="telemetry-pane" role="tabpanel" aria-labelledby="telemetry-tab">
+                <div class="row">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card-box">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="label" id="lbl-cpu">Processor Load</span>
+                                    <div class="value" id="cpu">0%</div>
+                                </div>
+                                <div class="metric-icon" style="color: var(--color-critical)"><i class="fa-solid fa-microchip"></i></div>
                             </div>
-                            <div class="metric-icon" style="color: var(--color-critical)"><i class="fa-solid fa-microchip"></i></div>
-                        </div>
-                        <div class="progress progress-custom">
-                            <div id="cpu-bar" class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6">
-                    <div class="card-box">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <span class="label" id="lbl-ram">Memory Pools</span>
-                                <div class="value" id="ram">0%</div>
-                            </div>
-                            <div class="metric-icon" style="color: var(--color-info)"><i class="fa-solid fa-memory"></i></div>
-                        </div>
-                        <div class="progress progress-custom">
-                            <div id="ram-bar" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6">
-                    <div class="card-box">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <span class="label" id="lbl-disk">Storage Block</span>
-                                <div class="value" id="disk">0%</div>
-                            </div>
-                            <div class="metric-icon" style="color: var(--color-healthy)"><i class="fa-solid fa-hard-drive"></i></div>
-                        </div>
-                        <div class="progress progress-custom">
-                            <div id="disk-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6">
-                    <div class="card-box text-center">
-                        <span class="label" id="lbl-matrix">Weighted Health Matrix</span>
-                        <div class="value mt-2" id="health-score" style="font-size: 38px;">100</div>
-                        <span id="health-status" class="status-badge">Analyzing Matrix</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-lg-4">
-                    <div class="card-box">
-                        <h4 id="hdr-incidents"><i class="fa-solid fa-bell-slash text-warning"></i> Active Incident Log</h4>
-                        <div id="alerts-container" class="history-container">
-                            <p style="color: var(--color-healthy); font-size:13px;"><i class="fa-solid fa-circle-check"></i> Node operational thresholds normal.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-4">
-                    <div class="card-box">
-                        <h4 id="hdr-cpu-threads"><i class="fa-solid fa-fire text-danger"></i> Thread Profiling (Top CPU)</h4>
-                        <table class="table table-dark table-hover table-custom table-sm m-0">
-                            <thead>
-                                <tr>
-                                    <th id="th-cpu-desc">Process Descriptor</th>
-                                    <th class="text-end" id="th-cpu-load">CPU Load</th>
-                                </tr>
-                            </thead>
-                            <tbody id="cpu-processes"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="col-lg-4">
-                    <div class="card-box">
-                        <h4 id="hdr-ram-pages"><i class="fa-solid fa-brain text-info"></i> Page Descriptors (Top RAM)</h4>
-                        <table class="table table-dark table-hover table-custom table-sm m-0">
-                            <thead>
-                                <tr>
-                                    <th id="th-ram-desc">Process Descriptor</th>
-                                    <th class="text-end" id="th-ram-base">Memory Base</th>
-                                </tr>
-                            </thead>
-                            <tbody id="memory-processes"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-12">
-                    <div class="card-box">
-                        <h4 id="hdr-ledger"><i class="fa-solid fa-database text-muted"></i> SQLite Persistent Ledger Logs (Recent Alert History)</h4>
-                        <div id="alert-history" class="history-container" style="max-height: 150px;">
-                            <p class="text-muted"><i class="fa-solid fa-circle-nodes"></i> Waiting for historical system traces...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-12">
-                    <div class="card-box">
-                        <h4 id="hdr-chart"><i class="fa-solid fa-chart-line text-primary"></i> Live Stream Telemetry Waveform Analyzer</h4>
-                        <div class="chart-container">
-                            <canvas id="chart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="tab-pane fade" id="directory-pane" role="tabpanel" aria-labelledby="directory-tab">
-            <div class="row">
-                <div class="col-12">
-                    <div class="card-box">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h4 class="m-0" id="hdr-directory-title"><i class="fa-solid fa-users-gear text-info"></i> Authorized System Operator Directory</h4>
-                            <div class="badge bg-secondary px-3 py-2" style="border-radius: 8px; font-size: 12px;">
-                                <span id="lbl-total-users">Active Node Operators</span>: <span id="user-count" class="fw-bold">0</span>
+                            <div class="progress progress-custom">
+                                <div id="cpu-bar" class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
                             </div>
                         </div>
-                        
-                        <div class="table-responsive">
-                            <table class="table table-dark table-hover table-custom">
+                    </div>
+
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card-box">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="label" id="lbl-ram">Memory Pools</span>
+                                    <div class="value" id="ram">0%</div>
+                                </div>
+                                <div class="metric-icon" style="color: var(--color-info)"><i class="fa-solid fa-memory"></i></div>
+                            </div>
+                            <div class="progress progress-custom">
+                                <div id="ram-bar" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card-box">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="label" id="lbl-disk">Storage Block</span>
+                                    <div class="value" id="disk">0%</div>
+                                </div>
+                                <div class="metric-icon" style="color: var(--color-healthy)"><i class="fa-solid fa-hard-drive"></i></div>
+                            </div>
+                            <div class="progress progress-custom">
+                                <div id="disk-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card-box text-center">
+                            <span class="label" id="lbl-matrix">Weighted Health Matrix</span>
+                            <div class="value mt-2" id="health-score" style="font-size: 38px;">100</div>
+                            <span id="health-status" class="status-badge">Analyzing Matrix</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-4">
+                        <div class="card-box">
+                            <h4 id="hdr-incidents"><i class="fa-solid fa-bell-slash text-warning"></i> Active Incident Log</h4>
+                            <div id="alerts-container" class="history-container">
+                                <p style="color: var(--color-healthy); font-size:13px;"><i class="fa-solid fa-circle-check"></i> Node operational thresholds normal.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card-box">
+                            <h4 id="hdr-cpu-threads"><i class="fa-solid fa-fire text-danger"></i> Thread Profiling (Top CPU)</h4>
+                            <table class="table table-dark table-hover table-custom table-sm m-0">
                                 <thead>
                                     <tr>
-                                        <th id="th-dir-id">Operator Identifier</th>
-                                        <th id="th-dir-identity">Identity Node String</th>
-                                        <th id="th-dir-role">Access Authorization Role</th>
-                                        <th id="th-dir-status">Status</th>
-                                        <th class="text-end" id="th-dir-actions">Operational Actions</th>
+                                        <th id="th-cpu-desc">Process Descriptor</th>
+                                        <th class="text-end" id="th-cpu-load">CPU Load</th>
                                     </tr>
                                 </thead>
-                                <tbody id="directory-table-body">
-                                </tbody>
+                                <tbody id="cpu-processes"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card-box">
+                            <h4 id="hdr-ram-pages"><i class="fa-solid fa-brain text-info"></i> Page Descriptors (Top RAM)</h4>
+                            <table class="table table-dark table-hover table-custom table-sm m-0">
+                                <thead>
+                                    <tr>
+                                        <th id="th-ram-desc">Process Descriptor</th>
+                                        <th class="text-end" id="th-ram-base">Memory Base</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="memory-processes"></tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-    </div>
-</div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card-box">
+                            <h4 id="hdr-ledger"><i class="fa-solid fa-database text-muted"></i> (Recent Alert History)</h4>
+                            <div id="alert-history" class="history-container" style="max-height: 150px;">
+                                <p class="text-muted"><i class="fa-solid fa-circle-nodes"></i> Waiting for historical system traces...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-<div class="modal fade" id="actionModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold" id="modal-action-title">Modify Operator Context</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p id="modal-action-body" class="text-muted small">Confirm administrative structural mutation vector on target identity stream node.</p>
-                <div id="role-select-wrapper" class="d-none">
-                    <label class="form-label small text-muted">Select Target Security clearance Level</label>
-                    <select class="form-select bg-dark text-white border-secondary" id="modal-role-select">
-                        <option value="Admin">Admin</option>
-                        <option value="DevSecOps">DevSecOps</option>
-                        <option value="Operator">Operator</option>
-                    </select>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card-box">
+                            <h4 id="hdr-chart"><i class="fa-solid fa-chart-line text-primary"></i> Live Stream Telemetry Waveform Analyzer</h4>
+                            <div class="chart-container">
+                                <canvas id="chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" id="btn-modal-cancel">Abort</button>
-                <button type="button" class="btn btn-primary btn-sm" id="btn-modal-confirm">Execute Vector</button>
+
+            <div class="tab-pane fade" id="directory-pane" role="tabpanel" aria-labelledby="directory-tab">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card-box">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h4 class="m-0" id="hdr-directory-title"><i class="fa-solid fa-users-gear text-info"></i> Authorized System Operator Directory</h4>
+                                <div class="badge bg-secondary px-3 py-2" style="border-radius: 8px; font-size: 12px;">
+                                    <span id="lbl-total-users">Active Node Operators</span>: <span id="user-count" class="fw-bold">0</span>
+                                </div>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-dark table-hover table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th id="th-dir-id">Operator Identifier</th>
+                                            <th id="th-dir-identity">Identity Node String</th>
+                                            <th id="th-dir-role">Access Authorization Role</th>
+                                            <th id="th-dir-status">Status</th>
+                                            <th class="text-end" id="th-dir-actions">Operational Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="directory-table-body">
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div> </div> <div class="modal fade" id="actionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="modal-action-title">Modify Operator Context</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="modal-action-body" class="text-muted small">Confirm administrative structural mutation vector on target identity stream node.</p>
+                    <div id="role-select-wrapper" class="d-none">
+                        <label class="form-label small text-muted">Select Target Security clearance Level</label>
+                        <select class="form-select bg-dark text-white border-secondary" id="modal-role-select">
+                            <option value="Admin">Admin</option>
+                            <option value="DevSecOps">DevSecOps</option>
+                            <option value="Operator">Operator</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" id="btn-modal-cancel">Abort</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="btn-modal-confirm">Execute Vector</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 </body>
 </html>
 
 <script>
+    // @ts-check
 // ==============================================================================
 // 1. LOCAL SECURITY FIREWALL GATING & SESSION MANAGEMENT
 // ==============================================================================
@@ -783,7 +780,7 @@ function initializeWaveformChart() {
 // ==============================================================================
 function startTelemetryPolling() {
     if (AppState.pollingInterval) clearInterval(AppState.pollingInterval);
-    AppState.pollingInterval = setInterval(fetchNodeTelemetry, 3000);
+    AppState.pollingInterval = setInterval(fetchNodeTelemetry, 5000);
 }
 
 async function fetchNodeTelemetry() {
@@ -1317,8 +1314,8 @@ fetchData();
 fetchAlertHistory();
 
 // Dynamic interval loops to guarantee load balancing and asynchronous updates
-setInterval(fetchData, 2000);
-setInterval(fetchAlertHistory, 5000);
+setInterval(fetchData, 5000);
+setInterval(fetchAlertHistory, 10000);
 </script>
 </body>
 </html>
