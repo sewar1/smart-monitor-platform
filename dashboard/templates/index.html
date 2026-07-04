@@ -629,44 +629,79 @@ const AppState = {
 // 3. MULTI-NODE TAB EVENT LISTENERS & ROUTING [Ticket 7]
 // ==============================================================================
 document.addEventListener("DOMContentLoaded", () => {
+    // @ts-check
+
     // Primary Tab Elements (Telemetry vs User Directory)
     const telemetryTab = document.getElementById("telemetry-tab");
     const directoryTab = document.getElementById("directory-tab");
+    const telemetryPane = document.getElementById("telemetry-pane"); // currect: telementry => telemetry
+    const directoryPane = document.getElementById("directory-pane");
     const serverTabsContainer = document.getElementById("serverTabsContainer");
     
-    const telemetryPane = document.getElementById("telementry-tab"); // currect telementry
-    const directoryPane = document.getElementById("directory-pane");
 
 
-  // Primary Tab Navigation Controller (Telemetry vs User Directory Switching)
+
+    // Primary Tab Navigation Controller (Telemetry vs User Directory Switching)
     if (telemetryTab && directoryTab) {
+        
+        // 1️⃣ Telemetry Metrics Tab Click Handler
+        // FIX: Passed the event object 'e' into the arrow function to support preventDefault()
         telemetryTab.addEventListener("click", (e) => {
             e.preventDefault();
+            
             // Toggle primary navigation tabs active states
             directoryTab.classList.remove("active");
             telemetryTab.classList.add("active");
             
-            // Toggle Content Panes visibility
-            if(directoryPane) { directoryPane.classList.remove("show", "active"); }
-            if(telemetryPane) { telemetryPane.classList.add("show", "active"); }
+            // Toggle Content Panes visibility using standard Bootstrap styles
+            // FIX: Enforced strict display override to guarantee proper container isolation
+            if(directoryPane) { 
+                directoryPane.classList.remove("show", "active"); 
+                directoryPane.style.display = "none";
+            }
+            if(telemetryPane) { 
+                telemetryPane.classList.add("show", "active"); 
+                telemetryPane.style.display = "block";
+            }
             
+            // Show secondary server navigation nodes (Docker, Windows, Linux)
             if(serverTabsContainer) serverTabsContainer.style.display = "block";
-            fetchNodeTelemetry();
+            
+            // Trigger automatic telemetry refresh sequence
+            if (typeof fetchNodeTelemetry === "function") {
+                fetchNodeTelemetry();
+            }
         });
 
+        // 2️⃣ User Directory Tab Click Handler
         directoryTab.addEventListener("click", (e) => {
             e.preventDefault();
+            
             // Toggle primary navigation tabs active states
             telemetryTab.classList.remove("active");
             directoryTab.classList.add("active");
             
-            // Toggle Content Panes visibility
-            if(telemetryPane) { telemetryPane.classList.remove("show", "active"); }
-            if(directoryPane) { directoryPane.classList.add("show", "active"); }
+            // Toggle Content Panes visibility using standard Bootstrap styles
+            // FIX: Enforced strict display override to prevent DOM view overlaps
+            if(telemetryPane) { 
+                telemetryPane.classList.remove("show", "active"); 
+                telemetryPane.style.display = "none";
+            }
+            if(directoryPane) { 
+                directoryPane.classList.add("show", "active"); 
+                directoryPane.style.display = "block";
+            }
             
+            // Hide secondary server navigation nodes since they do not belong to the user registry view
             if(serverTabsContainer) serverTabsContainer.style.display = "none";
+            
+            // FETCH VECTOR HOOK: Populate the administrative user directory registry table
+            if (typeof fetchUserDirectory === "function") {
+                fetchUserDirectory();
+            }
         });
     }
+});
 
 
     const nodeButtons = document.querySelectorAll(".node-btn"); // Add node-btn
@@ -692,7 +727,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Initialize application runtime engines
     initializeWaveformChart();
     startTelemetryPolling();
-});
+
 
 function switchActiveNode(newNodeId) {
     AppState.activeNode = newNodeId;
