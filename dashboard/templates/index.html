@@ -365,17 +365,17 @@
             <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
                 <ul class="nav nav-pills nav-tabs-custom" id="nodeSelectorTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="tab-docker" data-node="Docker_Production_Container" type="button" role="tab">
+                        <button class="nav-link node-btn active" id="tab-docker" data-node="Docker_Production_Container" type="button" role="tab"> // Add node-btn
                             <i class="fab fa-docker me-2"></i>Docker Node
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="tab-windows" data-node="Windows_Host" type="button" role="tab">
+                        <button class="nav-link node-btn" id="tab-windows" data-node="Windows_Host" type="button" role="tab"> // Add node-btn
                             <i class="fab fa-windows me-2"></i>Windows Host
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="tab-vmware" data-node="VMware_Ubuntu" type="button" role="tab">
+                        <button class="nav-link node-btn" id="tab-vmware" data-node="VMware_Ubuntu" type="button" role="tab"> // Add node-btn
                             <i class="fab fa-linux me-2"></i>VMware Linux
                         </button>
                     </li>
@@ -637,7 +637,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const directoryTab = document.getElementById("directory-tab");
     const serverTabsContainer = document.getElementById("serverTabsContainer");
     
-    const telemtryPane = document.getElementById("telementry-tab");
+    const telemetryPane = document.getElementById("telementry-tab"); // currect telementry
     const directoryPane = document.getElementById("directory-pane");
 
 
@@ -671,6 +671,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+
+    const nodeButtons = document.querySelectorAll(".node-btn"); // Add node-btn
     // Secondary Tab Server Node Selector Controller
     nodeButtons.forEach(button => {
         button.addEventListener("click", (e) => {

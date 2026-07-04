@@ -533,9 +533,9 @@ def get_all_users():
     except Exception as e:
 	# Print the full, actual error in the terminal to identify the engineering problem
         print(f"CRITICAL DATABASE ERROR: {e}")
-	log_error(f"Database read failure on user directory index: {e}")
+        log_error(f"Database read failure on user directory index: {e}")
 	# Returning an empty list instead of error 500 prevents browser tabs from crashing
-        return jsonify({"users": []}), 500
+        return jsonify({"users": []}), 200
 
 
 @app.route("/api/users/create", methods=["POST"])
