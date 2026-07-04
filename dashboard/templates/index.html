@@ -775,6 +775,13 @@ function initializeWaveformChart() {
         AppState.chartInstance = null;
     }
 
+    // NEW DETONATION BUFFER: Directly query the DOM element for legacy canvas bindings
+    // This catches "orphan" chart instances that escaped the AppState lifecycle tracker
+    const existingChart = Chart.getChart(chartEl); 
+    if (existingChart) {
+        existingChart.destroy();
+    }
+
     const ctx = chartEl.getContext('2d');
     const historicalData = AppState.nodeHistory[AppState.activeNode] || { labels: [], cpu: [], ram: [] };
 
