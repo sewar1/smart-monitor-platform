@@ -1,37 +1,31 @@
-# Python
+# ==========================================
+# Python & Cache
+# ==========================================
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.pytest_cache/
 
-# Virtual environment
-venv/
-.env/
-
-# Logs & runtime data
-logs/*.log
-logs/*.db
-*.log
-
-# System
-.DS_Store
-
-# IDE
-.vscode/
-.idea/
-
-
-# تجاهل البيئات الافتراضية
+# ==========================================
+# Environments & Virtual Envs (Security)
+# ==========================================
+.env
+agent/.env
 venv/
 .venv/
+.env/
 
-# تجاهل ملف الإعدادات السرية
-.env
-
-# تجاهل سجلات وقاعدة بيانات SQLite المحلية
+# ==========================================
+# Logs & Database Runtime
+# ==========================================
 logs/
+*.log
 *.db
 
-# تجاهل ملفات بايثون المؤقتة
-__pycache__/
-*.pyc
+# ==========================================
+# IDEs & OS System Files
+# ==========================================
+.vscode/
+.idea/
+.DS_Store
