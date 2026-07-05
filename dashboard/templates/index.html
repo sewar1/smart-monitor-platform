@@ -765,26 +765,42 @@ function switchActiveNode(newNodeId) {
 // 4. CHART.JS WAVEFORM ANALYZER INITIALIZATION
 // ==============================================================================
 function initializeWaveformChart() {
-    let chartEl = document.getElementById('chart');
-    if (!chartEl) return; // Prevent breaking if DOM structure shifts
+    /**
+     * @constant {HTMLElement|null} chartWrapper - Targeted parent container for canvas lifecycle isolation.
+     * Fallback queries parent element if legacy hardcoded ID context exists.
+     */
+    const chartWrapper = document.querySelector('.chart-container') || document.getElementById('chart').parentNode;
+    if (!chartWrapper) return;
 
-    // ADMINISTRATIVE SAFETY VECTOR: Destroy existing Chart instance if registered in global state
-    // This prevents the "Canvas is already in use" runtime collision that freezes execution context
+    /**
+     * ADMINISTRATIVE SAFETY VECTOR: Memory Allocation Sanitation.
+     * Explicitly detaches and purges legacy chart instance references from the global application state management.
+     * Prevents internal memory leaks and object ghosting within the JavaScript engine context.
+     */
     if (AppState.chartInstance && typeof AppState.chartInstance.destroy === 'function') {
         AppState.chartInstance.destroy();
         AppState.chartInstance = null;
     }
 
-    // Burn and rebuild the Canvas element in the DOM
-    // Replace the element with a completely empty copy to break any hidden association with Chart.js.
-    const newChartEl = chartEl.cloneNode(true);
-    chartEl.parentNode.replaceChild(newChartEl, chartEl);
-    chartEl = newChartEl; // Redirecting the reference to the new, clean element
+    /**
+     * CONCURRENCY & DOM RESILIENCE LAYER: Dynamic ID Allocation Strategy.
+     * Replaces the DOM node with a pristine, uniquely timestamped canvas element.
+     * Completely bypasses async race conditions, stale browser caching, and Chart.js 
+     * 'Canvas is already in use' ID reuse runtime collisions.
+     */
+    const uniqueId = `chart_${Date.now()}`;
+    chartWrapper.innerHTML = `<canvas id="${uniqueId}"></canvas>`;
 
+    // Extract newly instantiated DOM rendering node context
+    const chartEl = document.getElementById(uniqueId);
     const ctx = chartEl.getContext('2d');
+    
+    // Fetch historical data pipeline context or fallback to empty baseline structures
     const historicalData = AppState.nodeHistory[AppState.activeNode] || { labels: [], cpu: [], ram: [] };
 
-    // Initialize clean Chart instance onto the targeted DOM context
+    /**
+     * Instantiate clean real-time Chart telemetry layout onto the dedicated context workspace.
+     */
     AppState.chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
