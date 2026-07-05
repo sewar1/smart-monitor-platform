@@ -765,7 +765,7 @@ function switchActiveNode(newNodeId) {
 // 4. CHART.JS WAVEFORM ANALYZER INITIALIZATION
 // ==============================================================================
 function initializeWaveformChart() {
-    const chartEl = document.getElementById('chart');
+    let chartEl = document.getElementById('chart');
     if (!chartEl) return; // Prevent breaking if DOM structure shifts
 
     // ADMINISTRATIVE SAFETY VECTOR: Destroy existing Chart instance if registered in global state
