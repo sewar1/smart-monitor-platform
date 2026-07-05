@@ -330,82 +330,83 @@
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-custom">
-        <div class="container-fluid">
-            <span class="navbar-brand navbar-brand-custom">
-                <i class="fa-solid fa-shield-halved text-primary glow-icon"></i>
-                <span>SMART MONITOR PLATFORM</span>
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle badge-role">v2.0-Cluster</span>
-            </span>
-            
-            <ul class="nav nav-tabs nav-tabs-custom ms-auto" id="dashboardTabs" role="tablist">
+<nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container-fluid">
+        <span class="navbar-brand navbar-brand-custom">
+            <i class="fa-solid fa-shield-halved text-primary glow-icon"></i>
+            <span id="nav-title">SMART MONITOR PLATFORM</span>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle badge-role">v2.0-Cluster</span>
+        </span>
+        
+        <ul class="nav nav-tabs nav-tabs-custom ms-auto" id="dashboardTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="telemetry-tab" type="button" role="tab">
+                    <i class="fa-solid fa-chart-line me-2"></i><span id="tab-telemetry">Telemetry Metrics</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="directory-tab" type="button" role="tab">
+                    <i class="fa-solid fa-users-gear me-2"></i><span id="tab-directory">User Directory</span>
+                </button>
+            </li>
+        </ul>
+
+        <div class="ms-3 d-flex gap-2 align-items-center">
+            <button class="lang-btn" id="lang-btn" onclick="toggleDashboardLanguage()"><i class="fa-solid fa-language me-2"></i>DE</button>
+            <button class="btn btn-sm btn-outline-danger" onclick="executeSecureLogout()" style="border-radius: 8px; height: 38px;"><i class="fa-solid fa-power-off"></i></button>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-4 py-3">
+    
+    <div id="serverTabsContainer" class="mb-3" style="display: block;">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
+            <ul class="nav nav-pills nav-tabs-custom" id="nodeSelectorTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="telemetry-tab" data-bs-toggle="tab" data-bs-target="#telemetry-pane" type="button" role="tab" aria-selected="true">
-                        <i class="fa-solid fa-chart-line me-2"></i><span id="tab-telemetry">Telemetry Metrics</span>
+                    <button class="nav-link node-btn active" id="tab-docker" data-node="Docker_Production_Container" type="button" role="tab">
+                        <i class="fab fa-docker me-2"></i>Docker Node
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="directory-tab" data-bs-toggle="tab" data-bs-target="#directory-pane" type="button" role="tab" aria-selected="false">
-                        <i class="fa-solid fa-users-gear me-2"></i><span id="tab-directory">User Directory</span>
+                    <button class="nav-link node-btn" id="tab-windows" data-node="Windows_Host" type="button" role="tab">
+                        <i class="fab fa-windows me-2"></i>Windows Host
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link node-btn" id="tab-vmware" data-node="VMware_Ubuntu" type="button" role="tab">
+                        <i class="fab fa-linux me-2"></i>VMware Linux
                     </button>
                 </li>
             </ul>
-
-            <div class="ms-3 d-flex gap-2 align-items-center">
-                <button class="lang-btn" onclick="toggleLanguage()"><i class="fa-solid fa-language me-2"></i>Ar / En</button>
-                <button class="btn btn-sm btn-outline-danger" onclick="executeSecureLogout()" style="border-radius: 8px; height: 38px;"><i class="fa-solid fa-power-off"></i></button>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container-fluid px-4 py-3">
-        
-        <div id="serverTabsContainer" class="mb-3">
-            <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
-                <ul class="nav nav-pills nav-tabs-custom" id="nodeSelectorTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link node-btn active" id="tab-docker" data-node="Docker_Production_Container" type="button" role="tab"> <!--Add node-btn--> 
-                            <i class="fab fa-docker me-2"></i>Docker Node
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link node-btn" id="tab-windows" data-node="Windows_Host" type="button" role="tab"> <!--Add node-btn--> 
-                            <i class="fab fa-windows me-2"></i>Windows Host
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link node-btn" id="tab-vmware" data-node="VMware_Ubuntu" type="button" role="tab"> <!--Add node-btn--> 
-                            <i class="fab fa-linux me-2"></i>VMware Linux
-                        </button>
-                    </li>
-                </ul>
-                
-                <div class="d-flex align-items-center gap-2">
-                    <span class="small text-muted font-monospace" id="currentNodeDisplay">NODE: Docker_Production_Container</span>
-                    <span id="nodeHeartbeatIndicator" class="node-heartbeat"></span>
-                </div>
-            </div>
-        </div>
-
-        <div id="alertBox" class="alert-banner mb-4">
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center gap-3">
-                    <i class="fa-solid fa-triangle-exclamation fa-fade fa-lg"></i>
-                    <span id="banner-alert-text">CRITICAL INFRASTRUCTURE EVENT DETECTED ACROSS RESOURCE LAYER</span>
-                </div>
-                <span id="alertTimestamp" class="badge bg-black bg-opacity-20 text-white font-monospace">00:00:00</span>
-            </div>
-        </div>
-
-        <div class="tab-content" id="dashboardTabContent">
-            <div class="tab-pane fade show active" id="telemetry-pane" role="tabpanel" aria-labelledby="telemetry-tab">
-                </div>
             
-            <div class="tab-pane fade" id="directory-pane" role="tabpanel" aria-labelledby="directory-tab">
-                </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="small text-muted font-monospace" id="currentNodeDisplay">NODE: Docker Node (Ludwigshafen)</span>
+                <div id="nodeHeartbeatIndicator" class="node-heartbeat heartbeat-red"></div>
+            </div>
         </div>
-
     </div>
+
+    <div id="alertBox" class="alert-banner mb-4" style="display: none;">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+                <i class="fa-solid fa-triangle-exclamation fa-fade fa-lg"></i>
+                <span id="banner-alert-text">CRITICAL INFRASTRUCTURE EVENT DETECTED</span>
+            </div>
+            <span id="alertTimestamp" class="badge bg-black bg-opacity-20 text-white font-monospace">00:00:00</span>
+        </div>
+    </div>
+
+    <div class="tab-content" id="dashboardTabContent">
+        
+        <div class="tab-pane fade show active" id="telemetry-pane" role="tabpanel" style="display: block;">
+            </div>
+        
+        <div class="tab-pane fade" id="directory-pane" role="tabpanel" style="display: none;">
+            </div>
+        
+    </div>
+</div>
 
  <div class="tab-content" id="dashboardTabsContent">
             
@@ -590,7 +591,7 @@
 </html>
 
 <script>
-    // @ts-check
+// @ts-check
 // ==============================================================================
 // 1. LOCAL SECURITY FIREWALL GATING & SESSION MANAGEMENT
 // ==============================================================================
@@ -598,6 +599,10 @@ if (!localStorage.getItem('monitor_jwt_token')) {
     window.location.href = '/login';
 }
 
+/**
+ * Generates security-compliant authorization headers using the persistent JWT token bearer.
+ * @returns {Object} Security headers matrix
+ */
 function getAuthHeaders() {
     return {
         'Authorization': 'Bearer ' + localStorage.getItem('monitor_jwt_token'),
@@ -605,6 +610,9 @@ function getAuthHeaders() {
     };
 }
 
+/**
+ * Invalidates local session claims and forcefully purges state context before routing to login.
+ */
 function executeSecureLogout() {
     localStorage.removeItem('monitor_jwt_token');
     window.location.href = '/login';
@@ -618,6 +626,7 @@ const AppState = {
     chartInstance: null,
     maxChartPoints: 30,
     pollingInterval: null,
+    alertInterval: null,
     nodeHistory: {
         "Docker_Production_Container": { labels: [], cpu: [], ram: [], disk: [] },
         "Windows_Host":                { labels: [], cpu: [], ram: [], disk: [] },
@@ -626,35 +635,28 @@ const AppState = {
 };
 
 // ==============================================================================
-// 3. MULTI-NODE TAB EVENT LISTENERS & ROUTING [Ticket 7]
+// 3. MULTI-NODE TAB EVENT LISTENERS & ROUTING [Ticket 7] + GLOBAL DOM LIFECYCLE
 // ==============================================================================
 document.addEventListener("DOMContentLoaded", () => {
-    // @ts-check
-
     // Primary Tab Elements (Telemetry vs User Directory)
     const telemetryTab = document.getElementById("telemetry-tab");
     const directoryTab = document.getElementById("directory-tab");
-    const telemetryPane = document.getElementById("telemetry-pane"); // currect: telementry => telemetry
+    const telemetryPane = document.getElementById("telemetry-pane"); 
     const directoryPane = document.getElementById("directory-pane");
     const serverTabsContainer = document.getElementById("serverTabsContainer");
-    
-
-
+    const nodeButtons = document.querySelectorAll(".node-btn");
+    const btnModalConfirm = document.getElementById("btn-modal-confirm");
 
     // Primary Tab Navigation Controller (Telemetry vs User Directory Switching)
     if (telemetryTab && directoryTab) {
         
         // 1️⃣ Telemetry Metrics Tab Click Handler
-        // FIX: Passed the event object 'e' into the arrow function to support preventDefault()
         telemetryTab.addEventListener("click", (e) => {
             e.preventDefault();
             
-            // Toggle primary navigation tabs active states
             directoryTab.classList.remove("active");
             telemetryTab.classList.add("active");
             
-            // Toggle Content Panes visibility using standard Bootstrap styles
-            // FIX: Enforced strict display override to guarantee proper container isolation
             if(directoryPane) { 
                 directoryPane.classList.remove("show", "active"); 
                 directoryPane.style.display = "none";
@@ -664,10 +666,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 telemetryPane.style.display = "block";
             }
             
-            // Show secondary server navigation nodes (Docker, Windows, Linux)
             if(serverTabsContainer) serverTabsContainer.style.display = "block";
             
-            // Trigger automatic telemetry refresh sequence
             if (typeof fetchNodeTelemetry === "function") {
                 fetchNodeTelemetry();
             }
@@ -677,12 +677,9 @@ document.addEventListener("DOMContentLoaded", () => {
         directoryTab.addEventListener("click", (e) => {
             e.preventDefault();
             
-            // Toggle primary navigation tabs active states
             telemetryTab.classList.remove("active");
             directoryTab.classList.add("active");
             
-            // Toggle Content Panes visibility using standard Bootstrap styles
-            // FIX: Enforced strict display override to prevent DOM view overlaps
             if(telemetryPane) { 
                 telemetryPane.classList.remove("show", "active"); 
                 telemetryPane.style.display = "none";
@@ -692,20 +689,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 directoryPane.style.display = "block";
             }
             
-            // Hide secondary server navigation nodes since they do not belong to the user registry view
             if(serverTabsContainer) serverTabsContainer.style.display = "none";
             
-            // FETCH VECTOR HOOK: Populate the administrative user directory registry table
             if (typeof fetchUserDirectory === "function") {
                 fetchUserDirectory();
             }
         });
     }
-});
 
-
-    const nodeButtons = document.querySelectorAll(".node-btn"); // Add node-btn
-    // Secondary Tab Server Node Selector Controller
+    // Secondary Tab Server Node Selector Controller Registry
     nodeButtons.forEach(button => {
         button.addEventListener("click", (e) => {
             nodeButtons.forEach(btn => btn.classList.remove("active"));
@@ -718,29 +710,71 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Update PostgreSQL title element in the DOM upon load
+    // Secure Bootstrap for dynamic RBAC modal confirmation button
+    if (btnModalConfirm) {
+        btnModalConfirm.addEventListener("click", async () => {
+            if (!selectedUserId || !activeActionType) return;
+            
+            let url = `/api/users/${selectedUserId}`;
+            let method = "DELETE";
+            let payload = {};
+
+            if (activeActionType === "UPDATE_ROLE") {
+                method = "PUT";
+                payload = { role: document.getElementById("modal-role-select").value };
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: getAuthHeaders(),
+                    body: activeActionType === "UPDATE_ROLE" ? JSON.stringify(payload) : null
+                });
+
+                if (response.ok) {
+                    const modalEl = document.getElementById('actionModal');
+                    if(modalEl) bootstrap.Modal.getInstance(modalEl).hide();
+                    fetchUserDirectory();
+                } else {
+                    alert("Administrative execution vector failed. Check structural logs.");
+                }
+            } catch (error) {
+                console.error("Vector routing tracking collapse:", error);
+            }
+        });
+    }
+
+    // Bootstrap tab native listener linkage to trigger enterprise profile directory mapping
+    if (directoryTab) {
+        directoryTab.addEventListener('shown.bs.tab', function () {
+            fetchUserDirectory();
+        });
+    }
+
+    // Update PostgreSQL title element securely upon verified DOM compilation
     const storageTitle = document.getElementById("storage-ledger-title");
     if (storageTitle) {
         storageTitle.textContent = "PostgreSQL Distributed Ledger Logs (Recent Alert History)";
     }
 
-    // Initialize application runtime engines
+    // 🔥 SECURE LIFECYCLE INITIALIZATION ENGINE START
     initializeWaveformChart();
     startTelemetryPolling();
+});
 
-
+/**
+ * Handles active context-switching across heterogeneous server nodes.
+ * @param {string} newNodeId - Selected server identifier token
+ */
 function switchActiveNode(newNodeId) {
     AppState.activeNode = newNodeId;
     
-    // Update textual display meta definitions and dynamic regional blinking triggers
     const displayTag = document.getElementById("currentNodeDisplay");
     const heartbeat = document.getElementById("nodeHeartbeatIndicator");
     
     if (displayTag) {
-        // Apply light styling to fix contrast against dark grey layout background
         displayTag.className = "small text-light-custom font-monospace"; 
         
-        // Reset and inject customized server labels alongside localized dynamic nodes
         if (newNodeId === "Docker_Production_Container") {
             displayTag.textContent = "NODE: Docker Node (Ludwigshafen)";
             if(heartbeat) heartbeat.className = "node-heartbeat heartbeat-red";
@@ -753,45 +787,39 @@ function switchActiveNode(newNodeId) {
         }
     }
     
-    if (AppState.chartInstance) {
-        AppState.chartInstance.destroy();
-        AppState.chartInstance = null;
-    }
-    
+    // Trigger unified re-render sequence
     initializeWaveformChart();
     fetchNodeTelemetry();
 }
+
 // ==============================================================================
 // 4. CHART.JS WAVEFORM ANALYZER INITIALIZATION
 // ==============================================================================
 
 /**
- * Robustly initializes or updates the unified time-series telemetry chart.
- * Resolves 'Canvas is already in use' runtime exceptions by updating the active 
- * Chart.js instance datasets dynamically instead of triggering duplicate instantiations.
+ * Manages the layout configuration for the unified three-line telemetry time-series graph.
+ * Dynamically updates the active data arrays to avoid 'Canvas is already in use' collisions.
  */
 function initializeWaveformChart() {
     const chartEl = document.getElementById("chart");
-    if (!chartEl) return; // Fail-safe to prevent runtime crashes if DOM shifts during tab routing
+    if (!chartEl) return; 
 
-    // Fetch node telemetry historical tracking context or fallback to empty baseline arrays
     const currentHistory = AppState.nodeHistory[AppState.activeNode] || { labels: [], cpu: [], ram: [], disk: [] };
 
     /**
-     * 🔥 CORE SECURITY VECTOR: Thread-Safe State Interception
-     * If an active chart object is mapped in the state machine, directly push new 
-     * matrix references to datasets and perform a silent viewport update.
+     * THREAD-SAFE STATE INTERCEPTION MATRIX
+     * Directly feeds updated 3-line structural arrays to avoid canvas object destruction footprint leakage.
      */
     if (AppState.chartInstance) {
         AppState.chartInstance.data.labels = currentHistory.labels || [];
         AppState.chartInstance.data.datasets[0].data = currentHistory.cpu || [];
         AppState.chartInstance.data.datasets[1].data = currentHistory.ram || [];
         AppState.chartInstance.data.datasets[2].data = currentHistory.disk || [];
-        AppState.chartInstance.update('none'); // Update smoothly with zero animation performance overhead
+        AppState.chartInstance.update('none'); 
         return;
     }
 
-    // Initialize clean, first-time 3-Line telemetry chart securely onto the target DOM canvas reference
+    // Allocate clean 3-Line telemetry chart context workspace (CPU, RAM, Storage Block)
     const ctx = chartEl.getContext("2d");
     AppState.chartInstance = new Chart(ctx, {
         type: "line",
@@ -821,66 +849,77 @@ function initializeWaveformChart() {
 // ==============================================================================
 
 /**
- * Context-switching mechanism to dynamically reload data structure without memory leakage.
- * Safely wraps the execution target into the unified initialization wrapper.
+ * Route context switching queries directly into the robust initialization lifecycle layer.
  */
 function switchChartNodeContext() {
     initializeWaveformChart();
 }
 
 /**
- * Global interface handler triggered by dynamic tab element router matrix.
- * Dispatches async telemetry fetching routines safely without blocking core UI rendering loops.
+ * Dispatches multi-agent telemetry state switches safely without interrupting browser thread rendering tasks.
+ * @param {string} targetNodeId - Unique destination node key
  */
 function onAgentChange(targetNodeId) {
     AppState.activeNode = targetNodeId;
     switchChartNodeContext();
     
-    // Check execution pipeline availability before firing async state operations
     if (typeof fetchData === 'function') fetchData();
     if (typeof fetchAlertHistory === 'function') fetchAlertHistory();
 }
 
-// 🔥 BOOTSTRAP INITIALIZATION LAYER: Replaces unstable global-scope evaluation
-// Fires initial render cleanly once the script context successfully loads
-document.addEventListener("DOMContentLoaded", () => {
-    initializeWaveformChart();
-});
-
-
 // ==============================================================================
 // 6. FETCH API LAYER WITH URL PARAMETERS [Ticket 7]
 // ==============================================================================
+
+/**
+ * Ignites asynchronous automated metric pooling loops calibrated to strict intervals.
+ */
 function startTelemetryPolling() {
+    // Initial fetch to load dashboard interface contents instantly
+    fetchNodeTelemetry();
+    fetchAlertHistory();
+
     if (AppState.pollingInterval) clearInterval(AppState.pollingInterval);
+    if (AppState.alertInterval) clearInterval(AppState.alertInterval);
+
     AppState.pollingInterval = setInterval(fetchNodeTelemetry, 5000);
+    AppState.alertInterval = setInterval(fetchAlertHistory, 10000);
 }
 
+/**
+ * Consumes continuous system diagnostic telemetry directly from the live multi-agent backend framework.
+ */
 async function fetchNodeTelemetry() {
+    // Safety check to avoid polling logs if telemetry pane is out of operational view focus
+    const pane = document.getElementById('telemetry-pane');
+    if (pane && !pane.classList.contains('show')) return;
+
     try {
-        // const response = await fetch(`/api/metrics?agent=${encodeURIComponent(AppState.activeNode)}`, {
         const response = await fetch(`/api/metrics?node_id=${encodeURIComponent(AppState.activeNode)}`, {
             method: 'GET',
             headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
         });
+
+        if (response.status === 401) {
+            executeSecureLogout();
+            return;
+        }
 
         if (!response.ok) throw new Error("Backend pipeline error");
         let data = await response.json();
 
         const nodesArray = data.nodes || data;
  
-        // Generate strict single keys if the database is empty.
+        // Fallback Mock Engine: Automatically fires structural data layers if the active database pipeline ledger is blank.
         if (!nodesArray || nodesArray.length === 0 || !nodesArray[0].cpu_usage) {
-            // Correcting the values ​​check for matching identifiers (docker-agent, windows-host, ubuntu-vm)
-            let baseCpu = AppState.activeNode === "docker-agent" ? 45 : (AppState.activeNode === "windows-host" ? 25 : 65);
-            let baseRam = AppState.activeNode === "docker-agent" ? 60 : (AppState.activeNode === "windows-host" ? 40 : 75);
+            let baseCpu = AppState.activeNode === "Windows_Host" ? 25 : (AppState.activeNode === "VMware_Ubuntu" ? 65 : 45);
+            let baseRam = AppState.activeNode === "Windows_Host" ? 40 : (AppState.activeNode === "VMware_Ubuntu" ? 75 : 60);
             
-            // Unifying the data structure and keys exactly as received from the server.
             const mockNode = {
                 node_id: AppState.activeNode,
                 cpu_usage: Math.min(100, Math.max(5, Math.floor(baseCpu + (Math.random() * 20 - 10)))),
                 ram_usage: Math.min(100, Math.max(5, Math.floor(baseRam + (Math.random() * 10 - 5)))),
-                disk_usage: AppState.activeNode === "docker-agent" ? 34 : (AppState.activeNode === "windows-host" ? 58 : 81),
+                disk_usage: AppState.activeNode === "Windows_Host" ? 58 : (AppState.activeNode === "VMware_Ubuntu" ? 81 : 34),
                 top_processes: [
                     {"pid": 1240, "name": `${AppState.activeNode}_daemon`, "cpu": 4.2, "memory": 12.4},
                     {"pid": 3120, "name": "telemetry_worker", "cpu": 1.8, "memory": 2.1}
@@ -896,7 +935,6 @@ async function fetchNodeTelemetry() {
             };
         }
 
-        // Passing unified data to DOM subfunctions and updating
         updateDashboardWithStandardData(data);
 
     } catch (error) {
@@ -904,14 +942,15 @@ async function fetchNodeTelemetry() {
     }
 }
 
+/**
+ * Binds active payload items onto the targeted markup interface components.
+ * @param {Object} data - Unified incoming metrics wrapper
+ */
 function updateDashboardDOM(data) {
-    // Graceful fallback execution to guarantee view operations don't freeze on runtime nil variables
-    // [Ticket 4 Unified Mapping]: Match the exact injected keys from app.py
-    const cpuVal = data.cpu_usage || 0; // cpu_percent => cpu_usage _________________________________
-    const ramVal = data.ram_usage || 0; // ram_percent => ram_usage__________________________________
-    const diskVal = data.disk_usage || 0; // disk_percent => disk_usage _____________________________
+    const cpuVal = data.cpu_usage || 0; 
+    const ramVal = data.ram_usage || 0; 
+    const diskVal = data.disk_usage || 0; 
 
-    // Direct interface injection via safely extracted variable data payloads
     if(document.getElementById('cpu')) document.getElementById('cpu').textContent = `${cpuVal}%`;
     if(document.getElementById('cpu-bar')) document.getElementById('cpu-bar').style.width = `${cpuVal}%`;
     
@@ -923,13 +962,11 @@ function updateDashboardDOM(data) {
 
     if(document.getElementById('health-score')) document.getElementById('health-score').textContent = data.health_score || "N/A";
     
-    // Reinstate normal visual properties signifying active runtime system connection (Online state)
     const heartbeat = document.getElementById("nodeHeartbeatIndicator");
     if (heartbeat) {
         heartbeat.classList.remove("offline");
     }
 
-// Populate active dynamic kernel process listing queues using unified key
     const processesList = data.top_processes || [];
     
     if(document.getElementById('cpu-processes')) {
@@ -940,25 +977,28 @@ function updateDashboardDOM(data) {
     }
 }
 
-
-function updateChartDataState(cpu, ram) {
+/**
+ * Feeds localized state history structures and flushes ancient metrics to mitigate memory leaks.
+ * Evaluates full three-line layout schemas (CPU, RAM, Disk).
+ */
+function updateChartDataState(cpu, ram, disk) {
     const timestamp = new Date().toLocaleTimeString();
     const history = AppState.nodeHistory[AppState.activeNode];
 
-    if (!history) return; // Prevent unexpected mutations if keys mismatch
+    if (!history) return; 
 
     history.labels.push(timestamp);
     history.cpu.push(cpu || 0);
     history.ram.push(ram || 0);
+    history.disk.push(disk || 0);
 
-    // Evict trailing metrics arrays values using shift sequences to block processing space spikes
     if (history.labels.length > AppState.maxChartPoints) {
         history.labels.shift();
         history.cpu.shift();
         history.ram.shift();
+        history.disk.shift();
     }
 
-    // Direct mutation command telling Chart.js engine to paint canvas changes immediately without stutter animations
     if (AppState.chartInstance) {
         AppState.chartInstance.update('none'); 
     }
@@ -974,7 +1014,7 @@ function renderProcessTable(elementId, processes) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${p.name} <span class="text-muted font-monospace small">(${p.pid})</span></td>
-            <td class="text-end fw-bold">${p.value}</td>
+            <td class="text-end fw-bold">${p.value || "0.0"}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -1076,22 +1116,23 @@ function toggleDashboardLanguage() {
     document.getElementById('lang-btn').textContent = t.langBtn;
 }
 
-
 // ==============================================================================
 // 8. SECURED CORE TELEMETRY METRICS INGESTION LOOP (STATEFUL UPDATE MULTI-AGENT)
 // ==============================================================================
 async function fetchData() {
-    if (!document.getElementById('telemetry-pane').classList.contains('show')) return;
+    const pane = document.getElementById('telemetry-pane');
+    if (pane && !pane.classList.contains('show')) return;
     
     try {
-        // Appending standard parameter tracking directly from localized memory matrix state
-        // const response = await fetch(`/api/metrics?agent=${AppState.activeNode}`, {
         const response = await fetch(`/api/metrics?node_id=${AppState.activeNode}`, { 
             method: "GET", 
             headers: getAuthHeaders() 
         });
 
-        if (response.status === 401) executeSecureLogout();
+        if (response.status === 401) {
+            executeSecureLogout();
+            return;
+        }
 
         const json = await response.json();
         const nodesArray = json.nodes || json; 
@@ -1123,14 +1164,15 @@ async function fetchData() {
         
         document.getElementById("health-score").innerText = healthScore;
         const healthStatus = document.getElementById("health-status");
-        healthStatus.innerText = healthStatusText;
-        
-        if (healthStatusText === "Warning") {
-            healthStatus.style.background = "rgba(245, 158, 11, 0.1)"; healthStatus.style.color = "var(--color-warning)";
-        } else if (healthStatusText === "Critical") {
-            healthStatus.style.background = "rgba(239, 68, 68, 0.1)"; healthStatus.style.color = "var(--color-critical)";
-        } else {
-            healthStatus.style.background = "rgba(16, 185, 129, 0.1)"; healthStatus.style.color = "var(--color-healthy)";
+        if (healthStatus) {
+            healthStatus.innerText = healthStatusText;
+            if (healthStatusText === "Warning") {
+                healthStatus.style.background = "rgba(245, 158, 11, 0.1)"; healthStatus.style.color = "var(--color-warning)";
+            } else if (healthStatusText === "Critical") {
+                healthStatus.style.background = "rgba(239, 68, 68, 0.1)"; healthStatus.style.color = "var(--color-critical)";
+            } else {
+                healthStatus.style.background = "rgba(16, 185, 129, 0.1)"; healthStatus.style.color = "var(--color-healthy)";
+            }
         }
 
         document.getElementById("nodeHeartbeatIndicator")?.classList.remove("offline");
@@ -1140,30 +1182,35 @@ async function fetchData() {
         if(alertBox) alertBox.style.display = activeAlerts.length > 0 ? "block" : "none";
 
         const alertsContainer = document.getElementById("alerts-container");
-        if (activeAlerts.length === 0) {
-            alertsContainer.innerHTML = `<p style="color: var(--color-healthy); font-size:13px;"><i class="fa-solid fa-circle-check"></i> Node operational thresholds normal.</p>`;
-        } else {
-            alertsContainer.innerHTML = activeAlerts.map(alert => `<div class="history-item" style="border-color: var(--color-critical); color: #fca5a5;">${alert.message || alert}</div>`).join("");
+        if (alertsContainer) {
+            if (activeAlerts.length === 0) {
+                alertsContainer.innerHTML = `<p style="color: var(--color-healthy); font-size:13px;"><i class="fa-solid fa-circle-check"></i> Node operational thresholds normal.</p>`;
+            } else {
+                alertsContainer.innerHTML = activeAlerts.map(alert => `<div class="history-item" style="border-color: var(--color-critical); color: #fca5a5;">${alert.message || alert}</div>`).join("");
+            }
         }
 
-        // if (json.processes && json.processes.top_cpu) {
         if (node.top_processes && node.top_processes.length > 0) {
-            // document.getElementById("cpu-processes").innerHTML = json.processes.top_cpu.map(p => `
-           document.getElementById("cpu-processes").innerHTML = node.top_processes.map(p => `
-                <tr>
-                    <td><i class="fa-solid fa-terminal text-muted small me-2"></i>${p.name || "Unknown"} <span class="text-muted small">(${p.pid})</span></td>
-                    <td class="text-end fw-bold text-danger">${p.cpu ? p.cpu.toFixed(1) : "0.0"}%</td>
-                </tr>`).join("");
+            const cpuProcEl = document.getElementById("cpu-processes");
+            if (cpuProcEl) {
+                cpuProcEl.innerHTML = node.top_processes.map(p => `
+                    <tr>
+                        <td><i class="fa-solid fa-terminal text-muted small me-2"></i>${p.name || "Unknown"} <span class="text-muted small">(${p.pid})</span></td>
+                        <td class="text-end fw-bold text-danger">${p.cpu ? p.cpu.toFixed(1) : "0.0"}%</td>
+                    </tr>`).join("");
+            }
 
-            // document.getElementById("memory-processes").innerHTML = json.processes.top_memory.map(p => `
-            document.getElementById("memory-processes").innerHTML = node.top_processes.map(p => `
-                <tr>
-                    <td><i class="fa-solid fa-terminal text-muted small me-2"></i>${p.name || "Unknown"} <span class="text-muted small">(${p.pid})</span></td>
-                    <td class="text-end fw-bold text-info">${p.mempry ? p.memory.toFixed(1) : "0.0"}%</td>
-                </tr>`).join("");
+            const memProcEl = document.getElementById("memory-processes");
+            if (memProcEl) {
+                memProcEl.innerHTML = node.top_processes.map(p => `
+                    <tr>
+                        <td><i class="fa-solid fa-terminal text-muted small me-2"></i>${p.name || "Unknown"} <span class="text-muted small">(${p.pid})</span></td>
+                        <td class="text-end fw-bold text-info">${p.memory ? p.memory.toFixed(1) : "0.0"}%</td>
+                    </tr>`).join("");
+            }
         } else {
-            document.getElementById("cpu-processes").innerHTML = `<tr><td colspan="2" class="text-center text-muted small py-2">No process telemetry active</td></tr>`;
-            document.getElementById("memory-processes").innerHTML = `<tr><td colspan="2" class="text-center text-muted small py-2">No memory page telemetry active</td></tr>`;
+            if(document.getElementById("cpu-processes")) document.getElementById("cpu-processes").innerHTML = `<tr><td colspan="2" class="text-center text-muted small py-2">No process telemetry active</td></tr>`;
+            if(document.getElementById("memory-processes")) document.getElementById("memory-processes").innerHTML = `<tr><td colspan="2" class="text-center text-muted small py-2">No memory page telemetry active</td></tr>`;
         }
 
         const history = AppState.nodeHistory[AppState.activeNode];
@@ -1173,17 +1220,17 @@ async function fetchData() {
             history.labels.push(time); 
             history.cpu.push(node.cpu_usage); 
             history.ram.push(node.ram_usage); 
-            history.disk.push(node.disk_usage);
+            history.disk.push(node.disk_usage); 
         
             if (history.labels.length > AppState.maxChartPoints) { 
-            history.labels.shift(); 
-            history.cpu.shift(); 
-            history.ram.shift(); 
-            history.disk.shift(); 
+                history.labels.shift(); 
+                history.cpu.shift(); 
+                history.ram.shift(); 
+                history.disk.shift(); 
             }
         
             if (AppState.chartInstance) {
-            AppState.chartInstance.update();
+                AppState.chartInstance.update();
             }
         }
     } catch (error) {
@@ -1192,34 +1239,40 @@ async function fetchData() {
     }
 }
 
+/**
+ * Maps ingestion flow cleanly to prevent duplications.
+ */
 function updateDashboardWithStandardData(data) {
+    if (!data || !data.nodes || data.nodes.length === 0) return;
     const node = data.nodes[0];
-    // Update the live chart status instantly from the Fallback or Real Pipeline
-    if(typeof updateChartDataState === 'function') {
-        updateChartDataState(node.cpu_usage, node.ram_usage);
-    }
-    // Securing the Live DOM Update
-    const nodesArray = data.nodes;
-    // You can call your global DOM update function here to avoid duplicate drawing code
+    updateChartDataState(node.cpu_usage, node.ram_usage, node.disk_usage);
+    updateDashboardDOM(node);
 }
 
 async function fetchAlertHistory() {
-    if (!document.getElementById('telemetry-pane').classList.contains('show')) return;
+    const pane = document.getElementById('telemetry-pane');
+    if (pane && !pane.classList.contains('show')) return;
+
     try {
         const response = await fetch(`/api/alerts/history?agent=${AppState.activeNode}`, { method: "GET", headers: getAuthHeaders() });
-        if (response.status === 401) executeSecureLogout();
+        if (response.status === 401) {
+            executeSecureLogout();
+            return;
+        }
 
         const json = await response.json();
         const historyContainer = document.getElementById("alert-history");
 
-        if (!json.history || json.history.length === 0) {
-            historyContainer.innerHTML = `<p class="text-muted small"><i class="fa-solid fa-database"></i> Table persistent trace ledger empty.</p>`;
-            return;
+        if (historyContainer) {
+            if (!json.history || json.history.length === 0) {
+                historyContainer.innerHTML = `<p class="text-muted small"><i class="fa-solid fa-database"></i> Table persistent trace ledger empty.</p>`;
+                return;
+            }
+            historyContainer.innerHTML = json.history.reverse().map(log => `
+                <div class="history-item" style="border-color: #475569; color: var(--text-muted);">
+                    <i class="fa-solid fa-clock-rotate-left me-2"></i>${log}
+                </div>`).join("");
         }
-        historyContainer.innerHTML = json.history.reverse().map(log => `
-            <div class="history-item" style="border-color: #475569; color: var(--text-muted);">
-                <i class="fa-solid fa-clock-rotate-left me-2"></i>${log}
-            </div>`).join("");
     } catch (error) {
         console.error("Ledger sync matrix error:", error);
     }
@@ -1233,7 +1286,10 @@ async function fetchUserDirectory() {
     
     try {
         const response = await fetch("/api/users", { method: "GET", headers: getAuthHeaders() });
-        if (response.status === 401) executeSecureLogout();
+        if (response.status === 401) {
+            executeSecureLogout();
+            return;
+        }
 
         const data = await response.json();
         const userCountEl = document.getElementById("user-count");
@@ -1296,50 +1352,6 @@ function triggerAccessRevocation(userId, username) {
     
     new bootstrap.Modal(document.getElementById('actionModal')).show();
 }
-
-document.getElementById("btn-modal-confirm").addEventListener("click", async () => {
-    if (!selectedUserId || !activeActionType) return;
-    
-    let url = `/api/users/${selectedUserId}`;
-    let method = "DELETE";
-    let payload = {};
-
-    if (activeActionType === "UPDATE_ROLE") {
-        method = "PUT";
-        payload = { role: document.getElementById("modal-role-select").value };
-    }
-
-    try {
-        const response = await fetch(url, {
-            method: method,
-            headers: getAuthHeaders(),
-            body: activeActionType === "UPDATE_ROLE" ? JSON.stringify(payload) : null
-        });
-
-        if (response.ok) {
-            bootstrap.Modal.getInstance(document.getElementById('actionModal')).hide();
-            fetchUserDirectory();
-        } else {
-            alert("Administrative execution vector failed. Check structural logs.");
-        }
-    } catch (error) {
-        console.error("Vector routing tracking collapse:", error);
-    }
-});
-
-document.getElementById('directory-tab').addEventListener('shown.bs.tab', function (e) {
-    fetchUserDirectory();
-});
-
-// ==============================================================================
-// 10. ASYNCHRONOUS POLLING CORE LIFECYCLE CONTROLLERS
-// ==============================================================================
-fetchData();
-fetchAlertHistory();
-
-// Dynamic interval loops to guarantee load balancing and asynchronous updates
-setInterval(fetchData, 5000);
-setInterval(fetchAlertHistory, 10000);
 </script>
 </body>
 </html>
