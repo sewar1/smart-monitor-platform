@@ -764,84 +764,92 @@ function switchActiveNode(newNodeId) {
 // ==============================================================================
 // 4. CHART.JS WAVEFORM ANALYZER INITIALIZATION
 // ==============================================================================
+
+/**
+ * Robustly initializes or updates the unified time-series telemetry chart.
+ * Resolves 'Canvas is already in use' runtime exceptions by updating the active 
+ * Chart.js instance datasets dynamically instead of triggering duplicate instantiations.
+ */
 function initializeWaveformChart() {
-    /**
-     * @constant {HTMLElement|null} chartWrapper - Targeted parent container for canvas lifecycle isolation.
-     * Fallback queries parent element if legacy hardcoded ID context exists.
-     */
-    const chartWrapper = document.querySelector('.chart-container') || document.getElementById('chart').parentNode;
-    if (!chartWrapper) return;
+    const chartEl = document.getElementById("chart");
+    if (!chartEl) return; // Fail-safe to prevent runtime crashes if DOM shifts during tab routing
+
+    // Fetch node telemetry historical tracking context or fallback to empty baseline arrays
+    const currentHistory = AppState.nodeHistory[AppState.activeNode] || { labels: [], cpu: [], ram: [], disk: [] };
 
     /**
-     * ADMINISTRATIVE SAFETY VECTOR: Memory Allocation Sanitation.
-     * Explicitly detaches and purges legacy chart instance references from the global application state management.
-     * Prevents internal memory leaks and object ghosting within the JavaScript engine context.
+     * 🔥 CORE SECURITY VECTOR: Thread-Safe State Interception
+     * If an active chart object is mapped in the state machine, directly push new 
+     * matrix references to datasets and perform a silent viewport update.
      */
-    if (AppState.chartInstance && typeof AppState.chartInstance.destroy === 'function') {
-        AppState.chartInstance.destroy();
-        AppState.chartInstance = null;
+    if (AppState.chartInstance) {
+        AppState.chartInstance.data.labels = currentHistory.labels || [];
+        AppState.chartInstance.data.datasets[0].data = currentHistory.cpu || [];
+        AppState.chartInstance.data.datasets[1].data = currentHistory.ram || [];
+        AppState.chartInstance.data.datasets[2].data = currentHistory.disk || [];
+        AppState.chartInstance.update('none'); // Update smoothly with zero animation performance overhead
+        return;
     }
 
-    /**
-     * CONCURRENCY & DOM RESILIENCE LAYER: Dynamic ID Allocation Strategy.
-     * Replaces the DOM node with a pristine, uniquely timestamped canvas element.
-     * Completely bypasses async race conditions, stale browser caching, and Chart.js 
-     * 'Canvas is already in use' ID reuse runtime collisions.
-     */
-    const uniqueId = `chart_${Date.now()}`;
-    chartWrapper.innerHTML = `<canvas id="${uniqueId}"></canvas>`;
-
-    // Extract newly instantiated DOM rendering node context
-    const chartEl = document.getElementById(uniqueId);
-    const ctx = chartEl.getContext('2d');
-    
-    // Fetch historical data pipeline context or fallback to empty baseline structures
-    const historicalData = AppState.nodeHistory[AppState.activeNode] || { labels: [], cpu: [], ram: [] };
-
-    /**
-     * Instantiate clean real-time Chart telemetry layout onto the dedicated context workspace.
-     */
+    // Initialize clean, first-time 3-Line telemetry chart securely onto the target DOM canvas reference
+    const ctx = chartEl.getContext("2d");
     AppState.chartInstance = new Chart(ctx, {
-        type: 'line',
+        type: "line",
         data: {
-            labels: historicalData.labels,
+            labels: currentHistory.labels,
             datasets: [
-                {
-                    label: 'CPU Load (%)',
-                    data: historicalData.cpu,
-                    borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.05)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true
-                },
-                {
-                    label: 'RAM Usage (%)',
-                    data: historicalData.ram,
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.05)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true
-                }
+                { label: "CPU Matrix %", borderColor: "#ef4444", backgroundColor: "rgba(239, 68, 68, 0.04)", data: currentHistory.cpu, tension: 0.25, fill: true, pointRadius: 0 },
+                { label: "RAM Allocation %", borderColor: "#3b82f6", backgroundColor: "rgba(59, 130, 246, 0.04)", data: currentHistory.ram, tension: 0.25, fill: true, pointRadius: 0 },
+                { label: "Block Disk Storage %", borderColor: "#10b981", backgroundColor: "rgba(16, 185, 129, 0.04)", data: currentHistory.disk, tension: 0.25, fill: true, pointRadius: 0 }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: false,
+            plugins: { legend: { labels: { color: '#94a3b8', font: { weight: '600' } } } },
             scales: {
-                y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' } },
-                x: { grid: { display: false } }
-            },
-            plugins: {
-                legend: { labels: { color: '#94a3b8' } }
+                x: { grid: { color: 'rgba(255,255,255,0.01)' }, ticks: { color: '#64748b' } },
+                y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.01)' }, ticks: { color: '#64748b' } }
             }
         }
     });
 }
 
 // ==============================================================================
-// 5. FETCH API LAYER WITH URL PARAMETERS [Ticket 7]
+// 5. CENTRALIZED STATE MANAGEMENT LAYER (TIME-SERIES GRAPH ENGINE)
+// ==============================================================================
+
+/**
+ * Context-switching mechanism to dynamically reload data structure without memory leakage.
+ * Safely wraps the execution target into the unified initialization wrapper.
+ */
+function switchChartNodeContext() {
+    initializeWaveformChart();
+}
+
+/**
+ * Global interface handler triggered by dynamic tab element router matrix.
+ * Dispatches async telemetry fetching routines safely without blocking core UI rendering loops.
+ */
+function onAgentChange(targetNodeId) {
+    AppState.activeNode = targetNodeId;
+    switchChartNodeContext();
+    
+    // Check execution pipeline availability before firing async state operations
+    if (typeof fetchData === 'function') fetchData();
+    if (typeof fetchAlertHistory === 'function') fetchAlertHistory();
+}
+
+// 🔥 BOOTSTRAP INITIALIZATION LAYER: Replaces unstable global-scope evaluation
+// Fires initial render cleanly once the script context successfully loads
+document.addEventListener("DOMContentLoaded", () => {
+    initializeWaveformChart();
+});
+
+
+// ==============================================================================
+// 6. FETCH API LAYER WITH URL PARAMETERS [Ticket 7]
 // ==============================================================================
 function startTelemetryPolling() {
     if (AppState.pollingInterval) clearInterval(AppState.pollingInterval);
@@ -973,7 +981,7 @@ function renderProcessTable(elementId, processes) {
 }
 
 // ==============================================================================
-// 6. DICTIONARY TRANSLATION MAPPING MODULE (I18N MATRIX)
+// 7. DICTIONARY TRANSLATION MAPPING MODULE (I18N MATRIX)
 // ==============================================================================
 const dashboardTranslations = {
     en: {
@@ -1068,55 +1076,6 @@ function toggleDashboardLanguage() {
     document.getElementById('lang-btn').textContent = t.langBtn;
 }
 
-// ==============================================================================
-// 7. CENTRALIZED STATE MANAGEMENT LAYER (TIME-SERIES GRAPH ENGINE)
-// ==============================================================================
-
-
-const ctx = document.getElementById("chart").getContext("2d");
-const currentHistory = AppState.nodeHistory[AppState.activeNode];
-
-AppState.chartInstance = new Chart(ctx, {
-    type: "line",
-    data: {
-        labels: currentHistory.labels,
-        datasets: [
-            { label: "CPU Matrix %", borderColor: "#ef4444", backgroundColor: "rgba(239, 68, 68, 0.04)", data: currentHistory.cpu, tension: 0.25, fill: true, pointRadius: 0 },
-            { label: "RAM Allocation %", borderColor: "#3b82f6", backgroundColor: "rgba(59, 130, 246, 0.04)", data: currentHistory.ram, tension: 0.25, fill: true, pointRadius: 0 },
-            { label: "Block Disk Storage %", borderColor: "#10b981", backgroundColor: "rgba(16, 185, 129, 0.04)", data: currentHistory.disk, tension: 0.25, fill: true, pointRadius: 0 }
-        ]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
-        plugins: { legend: { labels: { color: '#94a3b8', font: { weight: '600' } } } },
-        scales: {
-            x: { grid: { color: 'rgba(255,255,255,0.01)' }, ticks: { color: '#64748b' } },
-            y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.01)' }, ticks: { color: '#64748b' } }
-        }
-    }
-});
-
-// Context-switching mechanism to dynamic reload data structure without memory leakage
-function switchChartNodeContext() {
-    if (AppState.chartInstance) {
-        const history = AppState.nodeHistory[AppState.activeNode];
-        AppState.chartInstance.data.labels = history.labels;
-        AppState.chartInstance.data.datasets[0].data = history.cpu;
-        AppState.chartInstance.data.datasets[1].data = history.ram;
-        AppState.chartInstance.data.datasets[2].data = history.disk;
-        AppState.chartInstance.update();
-    }
-}
-
-// Global interface handler triggered by dynamic tab element router matrix
-function onAgentChange(targetNodeId) {
-    AppState.activeNode = targetNodeId;
-    switchChartNodeContext();
-    fetchData();
-    fetchAlertHistory();
-}
 
 // ==============================================================================
 // 8. SECURED CORE TELEMETRY METRICS INGESTION LOOP (STATEFUL UPDATE MULTI-AGENT)
