@@ -29,8 +29,9 @@ pip install flask psutil requests gunicorn psycopg2-binary python-dotenv PyJWT b
    ``` bash
    python dashboard/app.py
     ```
+
     Production execution via Gunicorn
-    ```bash
+    ``` bash
     gunicorn --bind 0.0.0.0:5000 dashboard.app:app
     ```
 
