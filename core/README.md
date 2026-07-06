@@ -25,12 +25,11 @@ source venv/bin/activate
 pip install flask psutil requests gunicorn psycopg2-binary python-dotenv PyJWT bcrypt
 ```
 **2. Running the Application**
-**2.1. Development mode:**
+- 2.1. Development mode:
 ```bash
 python dashboard/app.py
 ```
-
-**2.2. Production execution via Gunicorn**
+- 2.2. Production execution via Gunicorn
 ```bash
 gunicorn --bind 0.0.0.0:5000 dashboard.app:app
 ```
