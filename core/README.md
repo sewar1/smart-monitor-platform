@@ -14,24 +14,23 @@ The `core` directory serves as the decoupled, underlying business logic backbone
 - **`alerts.py` & `mailer.py`**: Automated alerts orchestration and multi-channel delivery workers
 - **`metrics.py` & `processes.py`**: Telemetry translators converting low-level raw OS kernel sensor states into tabular data mappings
 
----
 
 ## Legacy Native Linux Deployment (Alternative Setup)
 If you wish to deploy directly to bare-metal systemd layers without containers (Simulated on VMware Bare-Metal):
 
 **1. Create virtual environment & dependencies**
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install flask psutil requests gunicorn psycopg2-binary python-dotenv PyJWT bcrypt
-```
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install flask psutil requests gunicorn psycopg2-binary python-dotenv PyJWT bcrypt
+   ```
 **2. Running the Application**
-   Development mode:
+   **2.1. Development mode:**
    ```bash
    python dashboard/app.py
-    ```
+   ```
 
-    Production execution via Gunicorn
+    2.2. Production execution via Gunicorn
     ```bash
     gunicorn --bind 0.0.0.0:5000 dashboard.app:app
     ```
