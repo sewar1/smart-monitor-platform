@@ -18,41 +18,41 @@ The `core` directory serves as the decoupled, underlying business logic backbone
 ## Legacy Native Linux Deployment (Alternative Setup)
 If you wish to deploy directly to bare-metal systemd layers without containers (Simulated on VMware Bare-Metal):
 
-**1. Create virtual environment & dependencies**
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install flask psutil requests gunicorn psycopg2-binary python-dotenv PyJWT bcrypt
-   ```
-**2. Running the Application**
-   **2.1. Development mode:**
-   ```bash
-   python dashboard/app.py
-   ```
+   **1. Create virtual environment & dependencies**
+      ```bash
+      python3 -m venv venv
+      source venv/bin/activate
+      pip install flask psutil requests gunicorn psycopg2-binary python-dotenv PyJWT bcrypt
+      ```
+   **2. Running the Application**
+      **2.1. Development mode:**
+      ```bash
+      python dashboard/app.py
+      ```
 
-    2.2. Production execution via Gunicorn
-    ```bash
-    gunicorn --bind 0.0.0.0:5000 dashboard.app:app
-    ```
+       2.2. Production execution via Gunicorn
+       ```bash
+       gunicorn --bind 0.0.0.0:5000 dashboard.app:app
+       ```
 
-**3. systemd Service Setup** (/etc/systemd/system/smart-monitor.service)
-```bash
-[Unit]
-Description=Smart Monitor Platform Central Core
-After=network.target
+   **3. systemd Service Setup** (/etc/systemd/system/smart-monitor.service)
+      ```bash
+      [Unit]
+      Description=Smart Monitor Platform Central Core
+      After=network.target
 
-[Service]
-User=seka
-WorkingDirectory=/home/seka/smart-monitor-platform
-Environment="PYTHONPATH=/home/seka/smart-monitor-platform"
-ExecStart=/home/seka/smart-monitor-platform/venv/bin/gunicorn --bind 127.0.0.1:5000 dashboard.app:app
-Restart=always
+      [Service]
+      User=seka
+      WorkingDirectory=/home/seka/smart-monitor-platform
+      Environment="PYTHONPATH=/home/seka/smart-monitor-platform"
+      ExecStart=/home/seka/smart-monitor-platform/venv/bin/gunicorn --bind 127.0.0.1:5000 dashboard.app:app
+      Restart=always
 
-[Install]
-WantedBy=multi-user.target
-```
+      [Install]
+      WantedBy=multi-user.target
+      ```
 ### Enable and start service
-``` bash
+```bash
 sudo systemctl daemon-reload
 sudo systemctl enable smart-monitor
 sudo systemctl start smart-monitor
