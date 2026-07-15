@@ -52,8 +52,8 @@ public class MetricService {
      */
     @Scheduled(cron = "0 0 0 * * ?")
     public void purgeHistoricalMetrics() {
-        OffsetDateTime cutoff = OffsetDateTime.now().minusDays(30);
-        log.info("Triggering data retention policy cycle. Cutoff threshold: {}", cutoff);
+        OffsetDateTime cutoff = OffsetDateTime.now().minusDays(7); // Retain only the last 7 days of metrics
+        log.info("Triggering data retention policy cycle. Cutoff threshold (168h): {}", cutoff);
         
         int deletedRows = metricRepository.purgeMetricsOlderThan(cutoff);
         
