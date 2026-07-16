@@ -151,9 +151,9 @@ Open your browser and navigate to: http://localhost (Port 80 Gate).
 
   - Multi-Node State UI Switching: Overhauled JavaScript loops to track active nodes, prevent       canvas memory leaks via clean Chart.js destruction, and dynamically pass node-scoped queries       (/api/metrics?nodeId=) to Spring RestControllers.
 
-  -Live Node Heartbeat Tracking: Established a 60-second threshold evaluation system. Missing agent   transmissions automatically trigger state shifting, rendering red warning badges on the UI.
+  - Live Node Heartbeat Tracking: Established a 60-second threshold evaluation system. Missing agent   transmissions automatically trigger state shifting, rendering red warning badges on the UI.
 
-  -Test-Driven Nomenclature Safeguard: Upgraded test suites to validate payload structures against   code regressions, shielding data ingestion API endpoints.
+  - Test-Driven Nomenclature Safeguard: Upgraded test suites to validate payload structures against   code regressions, shielding data ingestion API endpoints.
 
 - [ ] Sprint 2: Granular Role-Based Access Control (RBAC) Expansion & Security Hardening
 
