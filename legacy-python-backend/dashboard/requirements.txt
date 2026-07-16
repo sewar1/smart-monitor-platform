@@ -1,9 +1,0 @@
-flask
-psutil
-requests
-python-dotenv
-psycopg2-binary
-gunicorn
-pytest 
-PyJWT==2.8.0
-bcrypt==4.1.2
