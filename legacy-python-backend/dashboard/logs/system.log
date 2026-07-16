@@ -1,0 +1,55 @@
+2026-06-27 15:39:00,951 | ERROR | [system] | Failed to establish PostgreSQL Connection Pool: could not translate host name "disables_local_testing" to address: Name or service not known
+
+2026-06-27 16:07:03,261 | ERROR | [system] | Failed to establish PostgreSQL Connection Pool: could not translate host name "disables_local_testing" to address: Name or service not known
+
+2026-06-27 16:07:04,006 | INFO | [system] | Running locally on Windows: Database initialization bypassed to prevent hanging.
+2026-06-27 16:07:04,006 | WARNING | [system] | System initialized with missing or partial environment credentials. Check your .env configuration.
+2026-06-27 16:07:43,690 | WARNING | [system] | [SECURITY AUDIT] Unauthorized login attempt vector targeted user: Admin
+2026-06-27 16:08:16,341 | ERROR | [system] | Database read failure on user directory index: name '_db_orchestrator' is not defined
+2026-06-27 16:16:40,986 | ERROR | [system] | Failed to establish PostgreSQL Connection Pool: could not translate host name "disables_local_testing" to address: Name or service not known
+
+2026-06-27 16:16:41,341 | INFO | [system] | Running locally on Windows: Database initialization bypassed to prevent hanging.
+2026-06-27 16:16:41,342 | WARNING | [system] | System initialized with missing or partial environment credentials. Check your .env configuration.
+2026-06-27 16:20:18,705 | ERROR | [system] | Database read failure on user directory index: name '_db_orchestrator' is not defined
+2026-06-27 16:20:23,162 | ERROR | [system] | Database read failure on user directory index: name '_db_orchestrator' is not defined
+2026-06-27 17:59:04,668 | ERROR | [system] | Failed to establish PostgreSQL Connection Pool: could not translate host name "disables_local_testing" to address: Name or service not known
+
+2026-06-27 17:59:05,040 | INFO | [system] | Running locally on Windows: Database initialization bypassed to prevent hanging.
+2026-06-27 17:59:05,040 | WARNING | [system] | System initialized with missing or partial environment credentials. Check your .env configuration.
+2026-06-27 18:00:25,022 | ERROR | [system] | Database read failure on user directory index: name '_db_orchestrator' is not defined
+2026-06-27 18:00:29,544 | ERROR | [system] | Database read failure on user directory index: name '_db_orchestrator' is not defined
+2026-06-27 18:00:41,039 | ERROR | [system] | Database read failure on user directory index: name '_db_orchestrator' is not defined
+2026-06-27 18:13:45,776 | ERROR | [system] | Database read failure on user directory index: name '_db_orchestrator' is not defined
+2026-06-27 18:14:51,558 | ERROR | [system] | Database read failure on user directory index: name '_db_orchestrator' is not defined
+2026-06-27 18:15:01,345 | ERROR | [system] | Database read failure on user directory index: name '_db_orchestrator' is not defined
+2026-06-27 18:50:54,564 | ERROR | [system] | Failed to establish PostgreSQL Connection Pool: could not translate host name "disables_local_testing" to address: Name or service not known
+
+2026-06-27 18:50:54,902 | INFO | [system] | Running locally on Windows: Database initialization bypassed to prevent hanging.
+2026-06-27 18:50:54,902 | WARNING | [system] | System initialized with missing or partial environment credentials. Check your .env configuration.
+2026-06-27 18:52:41,289 | ERROR | [system] | Database read failure on user directory index: name '_db_orchestrator' is not defined
+2026-06-27 19:15:29,371 | ERROR | [system] | Failed to establish PostgreSQL Connection Pool: could not translate host name "disables_local_testing" to address: Name or service not known
+
+2026-06-27 19:15:29,498 | INFO | [system] | Running locally on Windows: Database initialization bypassed to prevent hanging.
+2026-06-27 19:15:29,498 | WARNING | [system] | System initialized with missing or partial environment credentials. Check your .env configuration.
+2026-06-27 19:16:01,377 | ERROR | [system] | Database read failure on user directory index: name '_db_orchestrator' is not defined
+2026-06-27 19:16:07,711 | ERROR | [system] | Database read failure on user directory index: name '_db_orchestrator' is not defined
+2026-06-27 19:18:15,601 | ERROR | [system] | Failed to establish PostgreSQL Connection Pool: could not translate host name "disables_local_testing" to address: Name or service not known
+
+2026-06-27 19:18:15,719 | INFO | [system] | Running locally on Windows: Database initialization bypassed to prevent hanging.
+2026-06-27 19:18:15,719 | WARNING | [system] | System initialized with missing or partial environment credentials. Check your .env configuration.
+2026-06-27 19:18:50,907 | ERROR | [system] | Database read failure on user directory index: name '_db_orchestrator' is not defined
+2026-06-27 19:32:11,250 | ERROR | [system] | Failed to establish PostgreSQL Connection Pool: could not translate host name "disables_local_testing" to address: Name or service not known
+
+2026-06-27 19:32:11,383 | INFO | [system] | Running locally on Windows: Database initialization bypassed to prevent hanging.
+2026-06-27 19:32:11,384 | WARNING | [system] | System initialized with missing or partial environment credentials. Check your .env configuration.
+2026-06-27 19:32:58,621 | ERROR | [system] | Database read failure on user directory index: name '_db_orchestrator' is not defined
+2026-06-27 19:42:22,589 | ERROR | [system] | Failed to establish PostgreSQL Connection Pool: could not translate host name "disables_local_testing" to address: Name or service not known
+
+2026-06-27 19:42:22,724 | INFO | [system] | Running locally on Windows: Database initialization bypassed to prevent hanging.
+2026-06-27 19:42:22,726 | WARNING | [system] | System initialized with missing or partial environment credentials. Check your .env configuration.
+2026-06-27 19:42:36,818 | ERROR | [system] | Database read failure on user directory index: name '_db_orchestrator' is not defined
+2026-06-27 19:43:56,072 | ERROR | [system] | Failed to establish PostgreSQL Connection Pool: could not translate host name "disables_local_testing" to address: Name or service not known
+
+2026-06-27 19:43:56,196 | INFO | [system] | Running locally on Windows: Database initialization bypassed to prevent hanging.
+2026-06-27 19:43:56,196 | WARNING | [system] | System initialized with missing or partial environment credentials. Check your .env configuration.
+2026-06-27 19:44:30,692 | ERROR | [system] | Database read failure on user directory index: name '_db_orchestrator' is not defined

@@ -1,44 +1,33 @@
-# ==========================================
-# Python & Cache
-# ==========================================
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.pytest_cache/
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
 
-# ==========================================
-# Environments & Virtual Envs (Security)
-# ==========================================
-.env
-agent/.env
-venv/
-.venv/
-.env/
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
 
-# ==========================================
-# Logs & Database Runtime
-# ==========================================
-logs/
-*.log
-*.db
-
-# ==========================================
-# IDEs & OS System Files
-# ==========================================
-.vscode/
-.idea/
-.DS_Store
-
-# ==========================================
-# Java/Maven outputs
-# ==========================================
-**/target/
-**/*.class
-
-# ==========================================
-# IDEs and editors
-# ==========================================
-.idea/
+### IntelliJ IDEA ###
+.idea
+*.iws
 *.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
 .vscode/
