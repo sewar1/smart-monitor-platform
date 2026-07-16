@@ -1,10 +1,23 @@
 HELP.md
+# --- Java / Maven ---
 target/
+*.class
+*.jar
+*.war
+*.ear
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### STS ###
+# --- Node.js / React / Vite ---
+node_modules/
+dist/
+dist-ssr/
+.vite/
+.output/
+.eslintcache
+
+# --- STS / Spring ---
 .apt_generated
 .classpath
 .factorypath
@@ -13,11 +26,20 @@ target/
 .springBeans
 .sts4-cache
 
-### IntelliJ IDEA ###
-.idea
+# --- IDE / Editor ---
+.vscode/
+.idea/
 *.iws
 *.iml
 *.ipr
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
 
 ### NetBeans ###
 /nbproject/private/
@@ -29,5 +51,10 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
-.vscode/
+# --- OS / Logs / Misc ---
+.DS_Store
+*.log
+logs/
+screenshots/
+agent/.pytest_cache/
+agent/__pycache__/
