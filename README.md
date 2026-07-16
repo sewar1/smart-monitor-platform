@@ -6,9 +6,9 @@ A production-grade, distributed real-time infrastructure monitoring platform and
 
 ## Architectural Overview
 
-The platform features a decoupled microservices-ready architecture managed entirely via **Docker Compose**. Edge traffic is intercepted by an **Nginx Reverse Proxy & Edge Gateway**, which serves static runtime visual assets while securely routing high-frequency metrics streams and WebSockets protocols directly to a concurrent **Flask API Engine**. 
+The platform features a decoupled microservices-ready architecture managed entirely via **Docker Compose**. Edge traffic is intercepted by an **Nginx Reverse Proxy & Edge Gateway**, which serves static runtime visual assets while securely routing high-frequency metrics streams and WebSockets protocols directly to an enterprise-grade **Spring Boot REST API Engine**. 
 
-Persistence is driven by an enterprise **PostgreSQL 15** data warehouse utilizing high-performance connection pooling, composite time-series indexing, and automated data retention workers. Distributed multi-city telemetry agents hook directly into host operating systems, bypassing container isolation parameters (`pid: "host"`, `privileged: true`) to profile and mitigate host-level runtime freeze vectors.
+Persistence is driven by an enterprise **PostgreSQL 15** data warehouse utilizing high-performance connection pooling (HikariCP), composite time-series indexing, and automated data retention workers. Distributed multi-city telemetry agents hook directly into host operating systems, bypassing container isolation parameters (`pid: "host"`, `privileged: true`) to profile and mitigate host-level runtime freeze vectors.
 
 ---
 
@@ -16,10 +16,10 @@ Persistence is driven by an enterprise **PostgreSQL 15** data warehouse utilizin
 
 - **Containerization & Orchestration:** Docker, Docker Compose (Isolated Bridge Topology, Shared Host PID Context)
 - **Edge Routing & API Gateway:** Nginx (Static Asset Caching, Cross-Protocol Reverse Proxy, Port 80 Access Gate)
-- **Backend Core & Analytics Framework:** Python 3, Flask RESTful API Engine, Asynchronous Threading Workers
-- **Database Architecture:** PostgreSQL 15 (Thread-Safe Connection Pooling, Named Persistent Volumes)
-- **Security & IAM Infrastructure:** Stateless JWT Tokens (HS256 Signature), Constant-Time `bcrypt` Password Hashing rings, Immutability Guards
-- **WSGI Application Server:** Gunicorn (Production-grade worker process management)
+- **Backend Core & Analytics Framework:** Java 21, Spring Boot 3.x, Spring MVC, Asynchronous Task Executors
+- **Database Architecture:** PostgreSQL 15, Spring Data JPA / Hibernate (HikariCP Connection Pooling, Named Persistent Volumes)
+- **Security & IAM Infrastructure:** Stateless JWT Tokens (HS256 Signature via `jjwt`), BCrypt Password Encoder, Immutability Guards
+- **Application Server:** Embedded Production-grade Apache Tomcat Container
 - **Telemetry Hardware Daemon:** Standalone Python Daemon backed by cross-platform `psutil` kernel space extraction
 - **Target Environments:** Bare-Metal Windows Server Hosts (NSSM Daemonized), VMware Virtualized Clusters (Systemd isolated), Docker Container Sandboxes
 
@@ -44,11 +44,11 @@ Persistence is driven by an enterprise **PostgreSQL 15** data warehouse utilizin
 │                        DOCKER COMPOSE NETWORK MATRIX                   │
 │                                                                        │
 │   ┌──────────────────────────┐            ┌────────────────────────┐   │
-│   │ Flask Dashboard Container│            │  PostgreSQL 15 Cluster │   │
-│   │        (dashboard)       ├───────────►│          (db)          │   │
-│   │ - Gunicorn Worker Stack  │  Thread    │ - Min/Max Conn Pool    │   │
-│   │ - Anti-Freeze Analyser   │  Pooled    │ - BIGSERIAL Ledgers    │   │
-│   │ - Retention Thread Cron  │  Sockets   │ - Composite Timeline IX│   │
+│   │  Spring Boot Dashboard   │            │  PostgreSQL 15 Cluster │   │
+│   │       Container          ├───────────►│          (db)          │   │
+│   │ - Embedded Tomcat Stack  │  HikariCP  │ - Min/Max Conn Pool    │   │
+│   │ - Anti-Freeze Analyser   │  Thread    │ - BIGSERIAL Ledgers    │   │
+│   │ - Scheduled Purge Task   │  Sockets   │ - Composite Timeline IX│   │
 │   └──────────────────────────┘            └────────────────────────┘   │
 └──────────────────────▲─────────────────────────────────────────────────┘
                        │
@@ -58,61 +58,60 @@ Persistence is driven by an enterprise **PostgreSQL 15** data warehouse utilizin
 │                    DISTRIBUTED CROSS-PLATFORM AGENTS                   │
 │                                                                        │
 │  [Docker Target Node]    [Bare-Metal Windows Node]   [VMware Ubuntu]   │
-│    (Mannheim Container)      (Ludwigshafen NSSM)     (Heidelberg Server│
-│   - privileged: true         - Win32 API Wrapper      - systemd Daemon │
-│   - pid: "host" mapping      - LOCATION=.env tracking - Fail-Over Check│
+│    (Mannheim Container)      (Ludwigshafen NSSM)      (Heidelberg Server│
+│   - privileged: true         - Win32 API Wrapper       - systemd Daemon │
+│   - pid: "host" mapping      - LOCATION=.env tracking  - Fail-Over Check│
 └────────────────────────────────────────────────────────────────────────┘
 ```
 ---
 ## Project Structure
 ```bash
 smart-monitor-platform/
-│   .env                       # Global cluster database environment vectors
-│   .gitignore                 # Git audit exclusion configuration
-│   docker-compose.yml         # Container topology coordinator (PID shared, Ingestion-bound)
-│   nginx.conf                 # Edge reverse-proxy configuration & socket upgrade matrices
-│   README.md                  # Main high-level system documentation root (This File)
-│   requirements.txt           # Shared staging dependencies
+│   .env                        # Global cluster database environment vectors
+│   .gitignore                  # Git audit exclusion configuration
+│   docker-compose.yml          # Container topology coordinator (PID shared, Ingestion-bound)
+│   nginx.conf                  # Edge reverse-proxy configuration & socket upgrade matrices
+│   README.md                   # Main high-level system documentation root (This File)
 │
-├───.vscode                    # Local editor integration context
-├───agent                      # Autonomous distributed telemetry collector daemon
-│   │   agent.py               # Cross-platform sensor poll & JSONB process tree compiler
-│   │   Dockerfile             # Lightweight minimal layer agent cache builder
-│   │   README.md              # Local agent deployment runbook
-│   │   requirements.txt       # Core environment libraries (psutil, requests)
-│   │   test_agent.py          # Unified nomenclature unit validation suite
-│   └─── agent.env.example     # Reference guide for distributed server setups
+├───.vscode                     # Local editor integration context
+├───agent                       # Autonomous distributed telemetry collector daemon
+│   │   agent.py                # Cross-platform sensor poll & JSONB process tree compiler
+│   │   Dockerfile              # Lightweight minimal layer agent cache builder
+│   │   README.md               # Local agent deployment runbook
+│   │   requirements.txt        # Core environment libraries (psutil, requests)
+│   │   test_agent.py           # Unified nomenclature unit validation suite
+│   └─── agent.env.example      # Reference guide for distributed server setups
 │
-├───core                       # Enterprise logical framework & system utilities
-│       alerts.py              # Anomaly notification workflows (Telegram & SMTP)
-│       analyzer.py            # Resource health indexing & automated OOM Anti-Freeze Guard
-│       database.py            # Singleton pool manager & structural emulation routing
-│       logger.py              # Chronological auditing and tracing engine
-│       mailer.py              # SMTP email transmission handler
-│       metrics.py             # OS state data abstraction parser
-│       processes.py           # Deep task manager tracking metrics
-│       security.py            # Cryptographic RBAC middleware and JWT decoders
-│       __init__.py
-│
-├───dashboard                  # Central visual monitoring hub
-│   │   app.py                 # Core WSGI Flask server, heartbeats, IAM routes
-│   │   Dockerfile             # Production Gunicorn orchestration layer
-│   │   README.md              # Local visual layer deployment instructions
-│   │   requirements.txt       # Pinned backend application packages
-│   │   test_app.py            # Auth ring security regression maps
-│   │   __init__.py
-│   ├───logs                   # Persistent application transaction logs
-│   ├───static                 # Asynchronous telemetry themes & styles
-│   └───templates              # Dynamic HTML engine UI panels (index, login)
-│
-└───screenshots                # Verification captures of verified interfaces
+└───dashboard                   # Central visual monitoring hub (Spring Boot)
+    │   pom.xml                 # Maven project configuration & dependency tree
+    │   Dockerfile              # Multi-stage production JRE/JDK Docker builder
+    │   README.md               # Local Java visual layer deployment instructions
+    │
+    └───src
+        ├───main
+        │   ├───java/com/smartmonitor/platform
+        │   │   ├───config      # Spring Security, CORS, and HikariCP database pool configurations
+        │   │   ├───controller  # REST API Endpoints & Auth Gateways
+        │   │   ├───model       # JPA Entities (Metrics, Nodes, Users)
+        │   │   ├───repository  # Spring Data JPA Repository interfaces
+        │   │   ├───security    # JWT filter chain, token provider, and BCrypt mechanisms
+        │   │   ├───service     # Core business logic (Analyzer, Alerts, Mailer, Scheduler)
+        │   │   └───PlatformApplication.java # Spring Boot bootstrapper
+        │   │
+        │   └───resources
+        │       ├───static      # Asynchronous telemetry themes & dashboard frontend assets
+        │       ├───templates   # Thymeleaf template engine UI panels (index, login)
+        │       └───application.yml # Centralized Spring Boot profiles & configurations
+        │
+        └───test/java/com/smartmonitor/platform
+                └───PlatformApplicationTests.java # Context loading & security integration tests
 ```
 ---
 
 ## Installation & Automated Deployment
 
 
-Spin up the entire interconnected ecosystem (Reverse Proxy, API Gateway, and Relational Database Pools) with a single orchestration layer build command:
+Spin up the entire interconnected ecosystem (Reverse Proxy, Spring Boot Application, and Relational Database Pools) with a single orchestration layer build command:
 
 
 1. Clone repository
@@ -134,42 +133,43 @@ Open your browser and navigate to: http://localhost (Port 80 Gate).
 
 ##  Engineering Roadmap Achievements & Milestones
 
-[x] Sprint 1: Distributed Telemetry Ingestion Core & Multi-Node Tracking (Delivered)
+- [x] Sprint 1: Distributed Telemetry Ingestion Core & Multi-Node Tracking (Java Migration)
 
-  - Database Decentralization Matrix: Separated schemas from Python logic; migrated persistence initialization to native container scripts (init.sql) using BIGSERIAL keys, JSONB process map spaces, and composite indexes (node_id, timestamp DESC) for lightning-fast dashboard rendering.
+  - Spring Boot Migration: Fully refactored backend core from Python/Flask to Java 21 & Spring Boot 3.x, ensuring enterprise-grade scalability and type safety.
 
-  - Thread-Safe Connection Pooling: Refactored database.py to leverage PostgreSQL connection pooling wrappers (psycopg2.pool.SimpleConnectionPool), mitigating socket resource starvation across concurrent agents.
+  - Database Decentralization Matrix: Migrated persistence initialization to native container scripts (init.sql) using BIGSERIAL keys, JSONB process map spaces, and composite indexes for high-speed dashboard rendering.
 
-  - Cross-Platform Host Injection: Fabricated native multi-node deployment paths; distributed and stabilized agent daemons across bare-metal Windows Server hosts (via NSSM in Ludwigshafen), virtualized VMware Ubuntu instances (via systemd units in Heidelberg), and sandboxed Docker container isolations.
+  - Enterprise Connection Pooling: Integrated HikariCP natively within Spring Data JPA to prevent database socket starvation across concurrent distributed agents.
 
-  - Dynamic Environment Externalization: Cleansed agents and servers from hardcoded variables, leveraging runtime OS configurations (NODE_ID, NODE_LOCATION, CENTRAL_SERVER_URL).
+  - Cross-Platform Host Injection: Fabricated native multi-node deployment paths; distributed and stabilized agent daemons across bare-metal Windows Server hosts (via NSSM), virtualized VMware Ubuntu instances (via systemd), and sandboxed Docker container isolations.
 
-  - Automated Anti-Freeze Subsystem (OOM Killer Simulation): Engineered a priority-sorting resource optimization trigger in analyzer.py. When system resource limits cross critical safety boundaries (95.0%), the guard cross-checks a case-insensitive whitelist and programmatically issues SIGTERM/termination signals to the single heaviest non-critical offender, logging incident history transparently.
+  - Dynamic Environment Externalization: Standardized runtime configuration mapping through Spring's application.yml and global .env files.
 
-  - Asynchronous Data Retention Worker: Built a background daemon thread (daemon=True) running inside the backend environment to systematically wipe historical     time-series metric snapshots older than 24 hours every 12 hours, ensuring lean index sizes.
+  - Automated Anti-Freeze Subsystem (OOM Killer): Engineered a priority-sorting resource optimization service in Spring Boot. When system resource limits cross critical safety boundaries (95.0%), the guard programmatically triggers mitigation workflows, terminating the heaviest non-critical offender.
 
-  - Multi-Node State UI Switching: Overhauled JavaScript loops in index.html to track active_node variables, prevent canvas memory leaks via clean Chart.js     destruction, and dynamically pass node-scoped queries (/api/metrics?node_id=) to backend routers.
+  - Scheduled Data Retention Worker: Replaced ad-hoc daemon threads with Spring's @Scheduled annotation to systematically purge historical metrics older than 24 hours every 12 hours.
 
-  - Live Node Heartbeat Tracking: Established a 60-second threshold evaluation system. Missing agent transmissions automatically trigger status shifting, rendering     red badge warning metrics on the client interface immediately if an edge node fails.
+  - Multi-Node State UI Switching: Overhauled JavaScript loops to track active nodes, prevent       canvas memory leaks via clean Chart.js destruction, and dynamically pass node-scoped queries       (/api/metrics?nodeId=) to Spring RestControllers.
 
-  - Test-Driven Nomenclature Safeguard: Upgraded test_agent.py to validate unified payload structures against code regressions, shielding data ingestion parameters.
+  -Live Node Heartbeat Tracking: Established a 60-second threshold evaluation system. Missing agent   transmissions automatically trigger state shifting, rendering red warning badges on the UI.
+
+  -Test-Driven Nomenclature Safeguard: Upgraded test suites to validate payload structures against   code regressions, shielding data ingestion API endpoints.
 
 - [ ] Sprint 2: Granular Role-Based Access Control (RBAC) Expansion & Security Hardening
 
-  - Implement dynamic user configuration panels inside the dashboard restricted exclusively to the system root administration account.
+  - Implement dynamic user configuration panels inside the dashboard restricted exclusively to       the system root administration account.
 
-  - Secure API vectors with adaptive rate-limiting middleware to shield security rings from brute-force authentication vectors.
+  - Secure API vectors with adaptive rate-limiting middleware (using Bucket4j or Spring Cloud         Gateway) to shield security rings.
 
   - Enforce automated user activity logging ledgers to preserve compliance auditing records.
 
 - [ ] Sprint 3: Distributed Microservices Architecture Decomposition
 
-  - Decouple the monolithic receiver route out of the dashboard portal container.
+  - Decouple the monolithic receiver route out of the main dashboard Spring Boot container.
 
-  - Establish a dedicated, high-speed ingestion-service engineered exclusively for multi-agent write-heavy operations.
+  - Establish a dedicated, high-speed Java-based ingestion service engineered exclusively for         write-heavy multi-agent operations.
 
-  - Isolate the client user interface into a localized dashboard-service processing read-heavy analytical dashboard data streams.
-
+  - Isolate the client user interface into a localized dashboard service processing read-heavy       analytical dashboard data streams.
 - [ ] Sprint 4: CI/CD Pipeline Automation & Cloud Staging
 
   - Build automated workflows via GitHub Actions to enforce continuous checking, test execution, and isolated container registry uploads.
