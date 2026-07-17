@@ -10,6 +10,7 @@ RUN mvn clean package -DskipTests
 # phase 2: run the application
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+# copy the built jar file from the first phase to the second phase
+COPY target/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
