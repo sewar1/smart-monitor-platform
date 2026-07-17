@@ -14,9 +14,9 @@ Persistence is driven by an enterprise **PostgreSQL 15** data warehouse utilizin
 ## Project Architecture
 The platform is structured as a Monorepo with decoupled services:
 
-- backend/: Java Spring Boot API engine handling telemetry persistence, authentication, and analysis.
+- **backend/:** Java Spring Boot API engine handling telemetry persistence, authentication, and analysis.
 
-- frontend/: React/TypeScript dashboard providing real-time visualization.
+- **frontend/:** React/TypeScript dashboard providing real-time visualization.
 
 ---
 ## Tech Stack
