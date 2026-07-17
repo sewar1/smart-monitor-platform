@@ -53,7 +53,7 @@ build/
 
 # --- OS / Logs / Misc ---
 .DS_Store
-*.log
+*.logs
 logs/
 screenshots/
 agent/.pytest_cache/
