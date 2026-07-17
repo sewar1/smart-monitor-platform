@@ -11,7 +11,14 @@ The platform features a decoupled microservices-ready architecture managed entir
 Persistence is driven by an enterprise **PostgreSQL 15** data warehouse utilizing high-performance connection pooling (HikariCP), composite time-series indexing, and automated data retention workers. Distributed multi-city telemetry agents hook directly into host operating systems, bypassing container isolation parameters (`pid: "host"`, `privileged: true`) to profile and mitigate host-level runtime freeze vectors.
 
 ---
+## Project Architecture
+The platform is structured as a Monorepo with decoupled services:
 
+- backend/: Java Spring Boot API engine handling telemetry persistence, authentication, and analysis.
+
+- frontend/: React/TypeScript dashboard providing real-time visualization.
+
+---
 ## Tech Stack
 
 - **Containerization & Orchestration:** Docker, Docker Compose (Isolated Bridge Topology, Shared Host PID Context)
@@ -67,44 +74,15 @@ Persistence is driven by an enterprise **PostgreSQL 15** data warehouse utilizin
 ## Project Structure
 ```bash
 smart-monitor-platform/
-│   .env                        # Global cluster database environment vectors
-│   .gitignore                  # Git audit exclusion configuration
-│   docker-compose.yml          # Container topology coordinator (PID shared, Ingestion-bound)
-│   nginx.conf                  # Edge reverse-proxy configuration & socket upgrade matrices
-│   README.md                   # Main high-level system documentation root (This File)
-│
-├───.vscode                     # Local editor integration context
-├───agent                       # Autonomous distributed telemetry collector daemon
-│   │   agent.py                # Cross-platform sensor poll & JSONB process tree compiler
-│   │   Dockerfile              # Lightweight minimal layer agent cache builder
-│   │   README.md               # Local agent deployment runbook
-│   │   requirements.txt        # Core environment libraries (psutil, requests)
-│   │   test_agent.py           # Unified nomenclature unit validation suite
-│   └─── agent.env.example      # Reference guide for distributed server setups
-│
-└───dashboard                   # Central visual monitoring hub (Spring Boot)
-    │   pom.xml                 # Maven project configuration & dependency tree
-    │   Dockerfile              # Multi-stage production JRE/JDK Docker builder
-    │   README.md               # Local Java visual layer deployment instructions
-    │
-    └───src
-        ├───main
-        │   ├───java/com/smartmonitor/platform
-        │   │   ├───config      # Spring Security, CORS, and HikariCP database pool configurations
-        │   │   ├───controller  # REST API Endpoints & Auth Gateways
-        │   │   ├───model       # JPA Entities (Metrics, Nodes, Users)
-        │   │   ├───repository  # Spring Data JPA Repository interfaces
-        │   │   ├───security    # JWT filter chain, token provider, and BCrypt mechanisms
-        │   │   ├───service     # Core business logic (Analyzer, Alerts, Mailer, Scheduler)
-        │   │   └───PlatformApplication.java # Spring Boot bootstrapper
-        │   │
-        │   └───resources
-        │       ├───static      # Asynchronous telemetry themes & dashboard frontend assets
-        │       ├───templates   # Thymeleaf template engine UI panels (index, login)
-        │       └───application.yml # Centralized Spring Boot profiles & configurations
-        │
-        └───test/java/com/smartmonitor/platform
-                └───PlatformApplicationTests.java # Context loading & security integration tests
+├── backend/            # Java Spring Boot Core
+│   ├── src/            # Java source code
+│   └── pom.xml         # Maven configuration
+├── frontend/           # React/TypeScript UI
+│   ├── src/            # React source code
+│   ├── package.json    # Node.js dependencies
+│   └── tsconfig.json   # TypeScript configuration
+├── agent/              # Distributed telemetry daemon
+└── docker-compose.yml  # Orchestration configuration
 ```
 ---
 
@@ -119,15 +97,27 @@ Spin up the entire interconnected ecosystem (Reverse Proxy, Spring Boot Applicat
 git clone git@github.com:sewar1/smart-monitor-platform.git
 cd smart-monitor-platform
 ```
-2. Initialize Configurations
-Ensure your local environment variable frameworks (.env) are active in the root folder.
-Launch Local Cloud Stack
+2. Backend (Java)
+Navigate to the backend directory and start the service:
+``` bash
+cd backend
+mvn spring-boot:run
+```
+3. Frontend (React)
+Navigate to the frontend directory, install dependencies, and start the development server:
+``` bash
+cd frontend
+npm install
+npm run dev
+```
+4. Initialize Configurations
+To run the full stack (Database, Backend, and Frontend) in production-like containers:
 ``` bash
 docker-compose up --build
 ```
 This handles automated connection pool seeding, declarative schema provisioning via container-native scripts (init.sql), internal bridge setup, and edge routing mapping.
 
-3. Access Web Interface:
+5. Access Web Interface:
 Open your browser and navigate to: http://localhost (Port 80 Gate).
 
 
