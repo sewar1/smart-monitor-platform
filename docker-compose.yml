@@ -40,6 +40,8 @@ services:
       - db
     networks:
       - monitor_network
+    volumes:
+      - .:/app
 
   # ==============================================================================
   # Monitoring Agent: Local Docker-integrated telemetry collector
