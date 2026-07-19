@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.math.BigDecimal; 
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,24 +34,24 @@ public class SystemAnalyzerService {
         "gunicorn", "gunicorn: master", "gunicorn: worker"
     );
 
-    private final double cpuWeight;
-    private final double ramWeight;
-    private final double diskWeight;
+    private final BigDecimal cpuWeight;
+    private final BigDecimal ramWeight;
+    private final BigDecimal diskWeight;
 
     /**
      * Default constructor allocating the standard balanced weights matrix.
      */
     public SystemAnalyzerService() {
-        this(0.4, 0.4, 0.2);
+        this(new BigDecimal("0.4"), new BigDecimal("0.4"), new BigDecimal("0.2"));
     }
 
     /**
      * Parameterized constructor to dynamically allocate telemetry weights.
      * Weights must precisely sum up to 1.0 (100%).
      */
-    public SystemAnalyzerService(double cpuWeight, double ramWeight, double diskWeight) {
-        double totalWeight = cpuWeight + ramWeight + diskWeight;
-        if (Math.abs(totalWeight - 1.0) > 1e-9) {
+    public SystemAnalyzerService(BigDecimal cpuWeight, BigDecimal ramWeight, BigDecimal diskWeight) {
+        BigDecimal totalWeight = cpuWeight.add(ramWeight).add(diskWeight);
+        if (totalWeight.compareTo(BigDecimal.ONE) != 0) {
             throw new IllegalArgumentException("Telemetry weights allocation matrix must precisely sum up to 1.0");
         }
         this.cpuWeight = cpuWeight;
@@ -102,12 +104,14 @@ public class SystemAnalyzerService {
      * Evaluates current resource capacity. If thresholds breach 95%, non-critical process
      * lifecycles are targeted and safely terminated to prevent host lockups.
      */
-    public List<Map<String, Object>> executeAntiFreezeGuard(double currentCpu, double currentRam, String nodeId, String location) {
+    public List<Map<String, Object>> executeAntiFreezeGuard(BigDecimal currentCpu, BigDecimal currentRam, String nodeId, String location) {
         List<Map<String, Object>> mitigatedIncidents = new ArrayList<>();
         long selfPid = ProcessHandle.current().pid();
 
+        // Define the critical threshold for resource usage
+        BigDecimal threshold = new BigDecimal("95.0");
         // Trigger mitigation sequence if CPU or RAM breaches the safety margin of 95%
-        if (currentCpu >= 95.0 || currentRam >= 95.0) {
+        if (currentCpu.compareTo(threshold) >= 0 || currentRam.compareTo(threshold) >= 0) {
             log.warn("[TICKET 5 ANTI-FREEZE]: Resource emergency triggered on {}. CPU: {}%, RAM: {}%", nodeId, currentCpu, currentRam);
 
             // Extract top resource hogs (limit to top 10 candidates)
@@ -118,37 +122,32 @@ public class SystemAnalyzerService {
 
             // Sort consolidated offenders by aggregate footprint (CPU + Memory) descending
             allOffenders.sort((o1, o2) -> {
-                double total1 = (double) o1.get("cpu") + (double) o1.get("memory");
-                double total2 = (double) o2.get("cpu") + (double) o2.get("memory");
-                return Double.compare(total2, total1);
+                BigDecimal total1 = BigDecimal.valueOf((double) o1.get("cpu")).add(BigDecimal.valueOf((double) o1.get("memory")));
+                BigDecimal total2 = BigDecimal.valueOf((double) o2.get("cpu")).add(BigDecimal.valueOf((double) o2.get("memory")));
+                return total2.compareTo(total1);
             });
 
             for (Map<String, Object> offender : allOffenders) {
                 long pid = (long) offender.get("pid");
                 String name = ((String) offender.get("name")).toLowerCase();
 
-                // Guard: Ensure the application itself (or the JVM executing this code) is never targeted
-                if (pid == selfPid || name.contains("java") || name.contains("javaw") || name.contains("gunicorn")) {
-                    continue;
-                }
+                // to prevent accidental termination of the monitoring agent itself or critical system processes
+                if (pid == selfPid || name.contains("java") || name.contains("javaw") || name.contains("gunicorn")) continue;
+                if (CRITICAL_PROCESS_WHITELIST.stream().anyMatch(name::contains)) continue;
 
                 // Guard: Check against the critical processes whitelist
-                boolean isWhitelisted = CRITICAL_PROCESS_WHITELIST.stream().anyMatch(name::contains);
-                if (isWhitelisted) {
-                    continue;
-                }
+                // boolean isWhitelisted = CRITICAL_PROCESS_WHITELIST.stream().anyMatch(name::contains);
+                // if (isWhitelisted) {
+                //     continue;
+                // }
 
                 // Process Target Identified -> Initiate safe lifecycle termination
                 Optional<ProcessHandle> liveProcess = ProcessHandle.of(pid);
                 if (liveProcess.isPresent()) {
                     try {
-                        log.warn("[TICKET 5 ANTI-FREEZE]: Targeting rogue process '{}' (PID: {}) to clear capacity spikes.", name, pid);
-                        
-                        // Forcefully terminate the process
                         liveProcess.get().destroyForcibly();
-
-                        String alertMsg = String.format("Anti-Freeze Guard automatically terminated process '%s' (PID: %d) consuming CPU: %.1f%%, RAM: %.1f%% on node: %s",
-                                name, pid, (double) offender.get("cpu"), (double) offender.get("memory"), nodeId);
+                        String alertMsg = String.format("Anti-Freeze Guard terminated process '%s' (PID: %d) CPU: %s%%, RAM: %s%% on node: %s",
+                                name, pid, offender.get("cpu"), offender.get("memory"), nodeId);
 
                         Map<String, Object> incident = new HashMap<>();
                         incident.put("server", nodeId);
@@ -158,12 +157,12 @@ public class SystemAnalyzerService {
                         incident.put("timestamp", Instant.now().toString());
 
                         mitigatedIncidents.add(incident);
-                        log.info("[TICKET 5 SUCCESS]: {}", alertMsg);
+                        // log.info("[TICKET 5 SUCCESS]: {}", alertMsg);
                         
                         // Terminate only the single heaviest rogue process per cycle to prevent over-killing the system
                         break;
                     } catch (Exception pErr) {
-                        log.error("[TICKET 5 INTERRUPT]: Failed to intercept process {} (PID: {}): {}", name, pid, pErr.getMessage());
+                        log.error("Failed to intercept process {} (PID: {}): {}", name, pid, pErr.getMessage());
                     }
                 }
             }
@@ -175,22 +174,25 @@ public class SystemAnalyzerService {
      * Calculates the definitive infrastructure health index using a weighted balance algorithm.
      * Formula: Score = (100 - CPU)*W_cpu + (100 - RAM)*W_ram + (100 - Disk)*W_disk
      */
-    public double calculateWeightedHealthScore(double cpuUsage, double ramUsage, double diskUsage) {
-        double cpuFreeComponent = (100.0 - cpuUsage) * this.cpuWeight;
-        double ramFreeComponent = (100.0 - ramUsage) * this.ramWeight;
-        double diskFreeComponent = (100.0 - diskUsage) * this.diskWeight;
+    public BigDecimal calculateWeightedHealthScore(BigDecimal cpuUsage, BigDecimal ramUsage, BigDecimal diskUsage) {
+        BigDecimal hundred = new BigDecimal("100.0");
 
-        double aggregatedScore = cpuFreeComponent + ramFreeComponent + diskFreeComponent;
-        return Math.round(aggregatedScore * 10.0) / 10.0;
+        BigDecimal cpuFreeComponent = hundred.subtract(cpuUsage).multiply(this.cpuWeight);
+        BigDecimal ramFreeComponent = hundred.subtract(ramUsage).multiply(this.ramWeight);
+        BigDecimal diskFreeComponent = hundred.subtract(diskUsage).multiply(this.diskWeight);
+
+
+        return cpuFreeComponent.add(ramFreeComponent).add(diskFreeComponent)
+                .setScale(1, RoundingMode.HALF_UP);
     }
 
     /**
      * Categorizes system operation states based on deterministic thresholds.
      */
-    public String classifyHealthStatus(double healthScore) {
-        if (healthScore >= 80.0) {
+    public String classifyHealthStatus(BigDecimal healthScore) {
+        if (healthScore.compareTo(new BigDecimal("80.0")) >= 0) {
             return "Healthy";
-        } else if (healthScore >= 60.0) {
+        } else if (healthScore.compareTo(new BigDecimal("60.0")) >= 0) {
             return "Warning";
         }
         return "Critical";

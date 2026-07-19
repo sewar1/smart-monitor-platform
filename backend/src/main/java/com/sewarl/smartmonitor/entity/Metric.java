@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import java.time.OffsetDateTime;
+import java.math.BigDecimal; // to handle NUMERIC(5, 2) precision for CPU, RAM, Disk usage and health score
 
 /**
  * Node Hardware Telemetry Metrics Entity.
@@ -35,17 +36,17 @@ public class Metric {
 
     // Matching NUMERIC(5, 2) decimal limits for continuous usage calculations
     @Column(name = "cpu_usage", nullable = false, precision = 5, scale = 2)
-    private Double cpuUsage;
+    private BigDecimal cpuUsage; //transfer from float to BigDecimal for precision and to match NUMERIC(5, 2) in PostgreSQL
 
     @Column(name = "ram_usage", nullable = false, precision = 5, scale = 2)
-    private Double ramUsage;
+    private BigDecimal ramUsage; // transfer from float to BigDecimal for precision and to match NUMERIC(5, 2) in PostgreSQL
 
     @Column(name = "disk_usage", nullable = false, precision = 5, scale = 2)
-    private Double diskUsage;
+    private BigDecimal diskUsage; // transfer from float to BigDecimal for precision and to match NUMERIC(5, 2) in PostgreSQL
 
     // Calculated aggregated node health score, matching NUMERIC(5, 2) for percentage precision
     @Column(name = "health_score", nullable = false, precision = 5, scale = 2)
-    private Double healthScore = 100.0;
+    private BigDecimal healthScore = new BigDecimal("100.00"); // default to 100% health until metrics are ingested and calculated
 
     // Classified categorical health status (e.g., Healthy, Warning, Critical) for quick querying and UI rendering
     @Column(name = "status", nullable = false, length = 50)

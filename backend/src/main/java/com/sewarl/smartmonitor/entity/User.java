@@ -4,7 +4,13 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import java.time.OffsetDateTime;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Enterprise Security User Entity.
@@ -15,60 +21,59 @@ import java.time.OffsetDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    // Using Integer to match the PostgreSQL 'SERIAL' data type defined in init.sql
     private Integer id;
 
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
-    @Column(nullable = false, unique = true, length = 100) // Email field added for future multi-factor authentication and notification purposes
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    // Explicitly mapping to the 'password_hash' column defined in schema
     @Column(name = "password_hash", nullable = false, length = 255)
     private String password;
 
-    // Matches 'operator' as defined in the default schema value
     @Column(nullable = false, length = 20)
     private String role = "operator";
 
-    // Adding created_at tracking to align with the SQL schema structure
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
     private OffsetDateTime createdAt = OffsetDateTime.now();
 
-    public String getEmail() {
-        return this.email;
+    // --- UserDetails Implementation ---
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // to provide the user's role as a GrantedAuthority for Spring Security
+        // we assume the role is stored as "ADMIN" or "OPERATOR"
+        return List.of(new SimpleGrantedAuthority("ROLE_" + this.role.toUpperCase()));
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
     }
 
-    public String getUsername() {
-        return this.username;
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
     }
 
-    public String getPassword() {
-        return this.password;
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getRole() {
-        return this.role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
+    // --- Getters & Setters ---
+    // we can delete the explicit getters and setters if we use Lombok's @Data annotation, but they are kept here for clarity and potential customization
+    
+    public String getUsername() { return this.username; }
+    public String getPassword() { return this.password; }
 }

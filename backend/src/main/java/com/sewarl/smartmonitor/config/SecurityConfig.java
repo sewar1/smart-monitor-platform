@@ -2,6 +2,7 @@ package com.sewarl.smartmonitor.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -11,6 +12,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import com.sewarl.smartmonitor.repository.UserRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -19,7 +23,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
 
     // to inject the JWT filter into the security configuration
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter) {
+    public SecurityConfig(@Lazy JwtAuthenticationFilter jwtAuthFilter) { // @Lazy to avoid circular dependency issues during bean initialization. spring cant creat a before b , or b before a, so we use @Lazy to delay the injection until it's actually needed, preventing circular dependency errors.
         this.jwtAuthFilter = jwtAuthFilter;
     }
 
@@ -31,6 +35,13 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
+    }
+
+    // spring cant find the UserDetailsService bean automatically, so we define it explicitly here, to inject it into JwtAuthenticationFilter for user authentication and authorization
+    @Bean
+    public UserDetailsService userDetailsService(UserRepository userRepository) { // to provide a custom UserDetailsService implementation that retrieves user details from the database
+        return username -> userRepository.findByUsername(username)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
     @Bean

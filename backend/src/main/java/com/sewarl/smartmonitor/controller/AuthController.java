@@ -3,7 +3,7 @@ package com.sewarl.smartmonitor.controller;
 import com.sewarl.smartmonitor.entity.User;
 import com.sewarl.smartmonitor.security.LoginBruteForceProtector;
 import com.sewarl.smartmonitor.service.UserService;
-import com.sewarl.smartmonitor.service.TwoFactorAuthService; // this import is for future 2FA integration
+import com.sewarl.smartmonitor.service.TwoFactorAuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,6 +17,9 @@ import java.util.Optional;
 /**
  * Enterprise REST Controller for identity management, user registration, 
  * profile lookups, and secure brute-force resilient authentication.
+ * 
+ * This controller serves as the primary gateway for user identity verification.
+ * It integrates with LoginBruteForceProtector to mitigate automated credential stuffing attacks.
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -26,26 +29,33 @@ public class AuthController {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final LoginBruteForceProtector bruteForceProtector;
-    private final TwoFactorAuthService twoFactorAuthService; //this field is for future 2FA integration
+    private final TwoFactorAuthService twoFactorAuthService;
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
  
     /**
      * Explicit structural constructor injection. 
-     * Eliminates Lombok annotation processing dependencies to guarantee thread-safe initialization.
+     * Eliminates Lombok annotation processing dependencies to guarantee thread-safe initialization 
+     * and facilitate easier unit testing via mock injection.
      */
     public AuthController(UserService userService, 
                           PasswordEncoder passwordEncoder, 
                           LoginBruteForceProtector bruteForceProtector,
-                          TwoFactorAuthService twoFactorAuthService) { //  this constructor parameter is for future 2FA integration
+                          TwoFactorAuthService twoFactorAuthService) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.bruteForceProtector = bruteForceProtector;
-        this.twoFactorAuthService = twoFactorAuthService; // this constructor parameter is for future 2FA integration
+        this.twoFactorAuthService = twoFactorAuthService;
     }
 
     /**
      * Authenticates an identity sequence while routing through the dynamic brute-force mitigation gateway.
      * POST /api/auth/login
+     * 
+     * This method handles the core authentication logic:
+     * 1. Validates input existence.
+     * 2. Checks against brute-force lockout status.
+     * 3. Verifies credentials against the hashed database records.
+     * 4. Triggers 2FA workflow if authentication succeeds.
      */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
@@ -56,7 +66,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Username is required"));
         }
 
-        // 1. Pre-Auth Boundary Check: Assess if identity footprint is currently restricted
+        // 1. Pre-Auth Boundary Check: Assess if identity footprint is currently restricted by the security gate
         long remainingLockoutSeconds = bruteForceProtector.getRemainingLockoutTime(username);
         if (remainingLockoutSeconds > 0) {
             long minutesLeft = (remainingLockoutSeconds / 60) + 1;
@@ -67,36 +77,27 @@ public class AuthController {
         // 2. Locate the secure profile inside PostgreSQL
         Optional<User> userOpt = userService.findByUsername(username);
 
-        // 3. Cryptographic Signature Verification
+        // 3. Cryptographic Signature Verification using BCrypt
         if (userOpt.isPresent() && passwordEncoder.matches(password, userOpt.get().getPassword())) {
-            // Success State -> Immediately purge failure thresholds from cache
+            // Success State -> Immediately purge failure thresholds from the in-memory cache
             bruteForceProtector.resetAttempts(username);
 
-
             User authenticatedUser = userOpt.get();
-            String role = authenticatedUser.getEmail();
-            String adminEmail = userOpt.get().getEmail(); // Retrieve the administrator's email for 2FA dispatch
+            String adminEmail = authenticatedUser.getEmail(); 
 
+            // Initialize 2FA process if the account is configured for enhanced security
             if (adminEmail != null && !adminEmail.trim().isEmpty()) {
-                // Generate a time-bound 2FA token and send it to the administrator's email for verification
                 String token = twoFactorAuthService.generateVerificationToken();
-                
-                
-                // Send the token to the admin's email address (this is a placeholder; actual implementation may vary)
                 twoFactorAuthService.sendVerificationEmail(adminEmail, token);
-                
-                // Store the token in a secure cache or database to be matched during the 2FA verification step
-                // This is a placeholder; actual implementation may vary
+                log.info("2FA token generated and dispatched for user: {}", username);
             }
-            // ------------------------------------------------------------------------------------------
             
-            // TODO: Generate JWT Token or session footprint in the next security iteration phase
             return ResponseEntity.ok(Map.of(
                 "message", "Login successful", 
-                "role", userOpt.get().getRole()
+                "role", authenticatedUser.getRole()
             ));
         } else {
-            // Reactive Security Path -> Register failure trace vector to throttle future requests
+            // Reactive Security Path -> Register failure trace vector to throttle future requests for this identity
             bruteForceProtector.registerFailure(username);
             
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED) // HTTP Status 401: Unauthorized
@@ -105,28 +106,10 @@ public class AuthController {
     }
 
     /**
-     * Endpoint to simulate a login attempt for testing brute-force mitigation.
-     * GET /api/auth/login?username={username}
-     * This endpoint is primarily for testing and demonstration purposes. In production, use the POST /login endpoint with proper credentials.
-     */
-    @PostMapping("/login")
-    public String login(@RequestParam String username) {
-        // 1. Log the authentication attempt for auditing and monitoring purposes
-        log.info("Authentication sequence initiated for user: {}", username);
-        
-        try {
-            // specific treatment for 2FA token generation and dispatch
-            return "SUCCESS";
-        } catch (Exception e) {
-            // Log a warning or error (will be automatically written to system.log and alerts.log)
-            log.error("Authentication failed during token generation for user: {}", username, e);
-            throw e;
-        }
-    }
-
-    /**
      * Endpoint to check user registration profiles.
      * GET /api/auth/user/{username}
+     * 
+     * Useful for administrative lookups or initial identity verification during account setup.
      */
     @GetMapping("/user/{username}")
     public ResponseEntity<User> getUserProfile(@PathVariable String username) {

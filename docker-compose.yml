@@ -12,8 +12,8 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - ./backend/src/main/resources/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/main/resources/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql # Initialize the database with a custom SQL script for schema and data setup
+      - postgres_data:/var/lib/postgresql/data # Persist PostgreSQL data to a named volume for durability across container restarts
     restart: always
     networks:
       - monitor_network
@@ -23,8 +23,8 @@ services:
   # ==============================================================================
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: . # Set the build context to the root of the project , because .mvn and mvnw are located in the root directory, not in the backend directory. This allows the Docker build process to access these files for building the backend service.
+      dockerfile: backend/Dockerfile # because the Dockerfile is located in the backend directory, we specify its path relative to the build context. This ensures that Docker uses the correct Dockerfile for building the backend service.
     container_name: smart_monitor_backend
     restart: always
     ports:
@@ -40,8 +40,8 @@ services:
       - db
     networks:
       - monitor_network
-    volumes:
-      - .:/app
+    #volumes:
+    #  - .:/app # to enable live code updates during development in ubuntu, but not recommended for production due to performance and security concerns
 
   # ==============================================================================
   # Monitoring Agent: Local Docker-integrated telemetry collector

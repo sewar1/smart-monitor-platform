@@ -12,6 +12,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -47,13 +48,13 @@ public class AlertService {
     // --- Injecting infrastructure thresholds with safe fallbacks (Ticket 9 Nomenclature) ---
 
     @Value("${app.alerts.cpu-threshold:85.0}")
-    private double cpuThreshold;
+    private BigDecimal cpuThreshold;
 
     @Value("${app.alerts.ram-threshold:85.0}")
-    private double ramThreshold;
+    private BigDecimal ramThreshold;
 
     @Value("${app.alerts.disk-threshold:90.0}")
-    private double diskThreshold;
+    private BigDecimal diskThreshold;
 
 
     /**
@@ -65,21 +66,21 @@ public class AlertService {
         String location = metric.getLocation() != null ? metric.getLocation() : "Unknown";
 
         // 1. Evaluate CPU Usage
-        if (metric.getCpuUsage() > cpuThreshold) {
+        if (metric.getCpuUsage().compareTo(cpuThreshold) > 0) {
             String message = String.format("⚠️ [%s] (%s) - HIGH CPU USAGE: %.1f%% (Threshold: %.1f%%)",
                     nodeId, location, metric.getCpuUsage(), cpuThreshold);
             sendCriticalAlert(nodeId, "HIGH_CPU_USAGE", message);
         }
 
         // 2. Evaluate RAM Usage
-        if (metric.getRamUsage() > ramThreshold) {
+        if (metric.getRamUsage().compareTo(ramThreshold) > 0) {
             String message = String.format("⚠️ [%s] (%s) - HIGH RAM USAGE: %.1f%% (Threshold: %.1f%%)",
                     nodeId, location, metric.getRamUsage(), ramThreshold);
             sendCriticalAlert(nodeId, "HIGH_RAM_USAGE", message);
         }
 
         // 3. Evaluate Disk Usage
-        if (metric.getDiskUsage() > diskThreshold) {
+        if (metric.getDiskUsage().compareTo(diskThreshold) > 0) {
             String message = String.format("⚠️ [%s] (%s) - HIGH DISK USAGE: %.1f%% (Threshold: %.1f%%)",
                     nodeId, location, metric.getDiskUsage(), diskThreshold);
             sendCriticalAlert(nodeId, "HIGH_DISK_USAGE", message);

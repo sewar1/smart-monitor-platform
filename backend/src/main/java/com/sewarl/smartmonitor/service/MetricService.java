@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal; // to handle NUMERIC(5, 2) precision for CPU, RAM, Disk usage and health score
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +34,8 @@ public class MetricService {
 
     // Dynamic configuration limit for heartbeats (60 seconds threshold matching the Python Agent cycle)
     private static final long OFFLINE_THRESHOLD_SECONDS = 60;
+
+private static final BigDecimal EPSILON = new BigDecimal("0.001");
 
     /**
      * Standard Constructor injecting dependencies manually.
@@ -60,7 +63,7 @@ public class MetricService {
         heartbeatTracker.put(nodeId, metric.getTimestamp());
 
         // 2. Advanced System Analysis: Compute the precise aggregated health score and status
-        double healthScore = systemAnalyzerService.calculateWeightedHealthScore(
+        BigDecimal healthScore = systemAnalyzerService.calculateWeightedHealthScore(
                 metric.getCpuUsage(),
                 metric.getRamUsage(),
                 metric.getDiskUsage()
@@ -112,11 +115,11 @@ public class MetricService {
         Metric m2 = recentHistory.get(1);
 
         // Anti-Freeze Mathematical Logic with safe floating-point comparison
-        boolean isCpuFrozen = Math.abs(currentMetric.getCpuUsage() - m1.getCpuUsage()) < 0.001 
-                && Math.abs(m1.getCpuUsage() - m2.getCpuUsage()) < 0.001;
+        boolean isCpuFrozen = currentMetric.getCpuUsage().subtract(m1.getCpuUsage()).abs().compareTo(EPSILON) < 0 
+                && m1.getCpuUsage().subtract(m2.getCpuUsage()).abs().compareTo(EPSILON) < 0;
                 
-        boolean isRamFrozen = Math.abs(currentMetric.getRamUsage() - m1.getRamUsage()) < 0.001 
-                && Math.abs(m1.getRamUsage() - m2.getRamUsage()) < 0.001;
+        boolean isRamFrozen = currentMetric.getRamUsage().subtract(m1.getRamUsage()).abs().compareTo(EPSILON) < 0 
+                && m1.getRamUsage().subtract(m2.getRamUsage()).abs().compareTo(EPSILON) < 0;
 
         if (isCpuFrozen && isRamFrozen) {
             log.warn("CRITICAL ANOMALY: Anti-Freeze Guard triggered for Node ID: {}. System metrics have frozen completely!", nodeId);
@@ -139,11 +142,7 @@ public class MetricService {
         OffsetDateTime standardLimit = OffsetDateTime.now().minusSeconds(OFFLINE_THRESHOLD_SECONDS);
         
         heartbeatTracker.forEach((nodeId, lastHeartbeat) -> {
-            if (lastHeartbeat.isBefore(standardLimit)) {
-                statuses.put(nodeId, "Offline");
-            } else {
-                statuses.put(nodeId, "Online");
-            }
+            statuses.put(nodeId, lastHeartbeat.isBefore(standardLimit) ? "Offline" : "Online");
         });
 
         return statuses;

@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder; // Ticket 3 : this import is for future password hashing integration
 import org.springframework.stereotype.Service;
 
+
+
 import java.util.Optional;
 
 /**

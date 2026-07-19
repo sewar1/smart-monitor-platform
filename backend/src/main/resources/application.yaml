@@ -13,7 +13,7 @@ spring:
 
   datasource:
     # Si will search for environment variables from the system or your docker file, and if it doesn't find them, it will use the default values after the colons
-    url: jdbc:postgresql://${POSTGRES_HOST:192.168.37.128}:${POSTGRES_PORT:5433}/${POSTGRES_DB:monitor_db}
+    url: jdbc:postgresql://${POSTGRES_HOST:db}:5432/${POSTGRES_DB:monitor_db
     username: ${POSTGRES_USER:postgres_admin}
     password: ${POSTGRES_PASSWORD:secure_devops_pass}
     driver-class-name: org.postgresql.Driver
@@ -33,7 +33,7 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       # We're setting it to "none" for now because we haven't created the Entities yet, and to prevent Spring from checking the tables until we link them.
-      ddl-auto: validate # Change this value from update to validate to prevent table conflicts
+      ddl-auto: update # Change to "update" to automatically create/update tables based on Entities, or "validate" to only validate schema without making changes.
     show-sql: true
 
 # --- SMTP Mail Configuration for AlertService ---
@@ -41,7 +41,7 @@ spring:
     host: ${SMTP_HOST:smtp.gmail.com}
     port: ${SMTP_PORT:587}
     username: ${SMTP_USERNAME:your-email@gmail.com}
-    password: ${SMTP_PASSWORD:your-app-password}
+    password: ${POSTGRES_PASSWORD:secure_devops_pass}
     properties:
       mail:
         smtp:
