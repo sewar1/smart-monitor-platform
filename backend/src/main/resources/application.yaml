@@ -13,9 +13,9 @@ spring:
 
   datasource:
     # Si will search for environment variables from the system or your docker file, and if it doesn't find them, it will use the default values after the colons
-    url: jdbc:postgresql://${POSTGRES_HOST:db}:5432/${POSTGRES_DB:monitor_db
-    username: ${POSTGRES_USER:postgres_admin}
-    password: ${POSTGRES_PASSWORD:secure_devops_pass}
+    url: jdbc:postgresql://db:5432/monitor_db
+    username: postgres_admin
+    password: secure_devops_pass
     driver-class-name: org.postgresql.Driver
     
     # Cloning SimpleConnectionPool settings from Python, but using the popular HikariCP.
@@ -41,7 +41,7 @@ spring:
     host: ${SMTP_HOST:smtp.gmail.com}
     port: ${SMTP_PORT:587}
     username: ${SMTP_USERNAME:your-email@gmail.com}
-    password: ${POSTGRES_PASSWORD:secure_devops_pass}
+    password: secure_devops_pass
     properties:
       mail:
         smtp:

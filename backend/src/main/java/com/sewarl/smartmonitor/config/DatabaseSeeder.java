@@ -26,6 +26,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             admin.setUsername("admin");
             admin.setPassword("secure_admin_password_2026"); // automatically hashed by UserService
             admin.setRole("ADMIN");
+            admin.setEmail("admin@sewarl.com"); // Set a default email for the admin user
             
             userService.saveUser(admin);
             log.info("🎉 Default system administrator profile seeded successfully!");

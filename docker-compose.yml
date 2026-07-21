@@ -28,7 +28,7 @@ services:
     container_name: smart_monitor_backend
     restart: always
     ports:
-      - "5001:8080"
+      - "5001:8082" # Expose the backend service on port 5001 of the host machine, mapping it to port 8082 inside the container where the Spring Boot application runs.
     environment:
       - POSTGRES_HOST=db
       - POSTGRES_USER=postgres_admin
@@ -53,7 +53,7 @@ services:
     container_name: smart_monitor_agent_docker
     restart: always
     environment:
-      - CENTRAL_SERVER_URL=http://backend:8080/api/metrics/receiver
+      - CENTRAL_SERVER_URL=http://backend:8082/api/metrics/receiver
       - NODE_ID=Docker_Production_Container
       - NODE_LOCATION=Ludwigshafen
     depends_on:
@@ -73,7 +73,7 @@ services:
     container_name: smart_monitor_agent_heidelberg
     restart: always
     environment:
-      - CENTRAL_SERVER_URL=http://backend:8080/api/metrics/receiver
+      - CENTRAL_SERVER_URL=http://backend:8082/api/metrics/receiver
       - STREAM_INTERVAL_SECONDS=5
       - NODE_ID=VMware_Ubuntu
       - NODE_LOCATION=Heidelberg

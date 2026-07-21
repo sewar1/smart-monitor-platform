@@ -1,5 +1,7 @@
 package com.sewarl.smartmonitor.config;
 
+import java.util.Arrays;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -44,7 +46,7 @@ public class SecurityConfig {
             .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
-    @Bean
+@Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable()) // to stop CSRF attacks, since we are using JWTs for stateless authentication
@@ -52,11 +54,17 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 1. to allow unauthenticated access to login, WebSocket and telemetry ingestion endpoints
                 // ARCHITECTURAL NOTE (Telemetry Ingestion Bypass): 
-                // We explicitly permit '/api/metrics/**' here to allow distributed system monitoring agents (Python) 
-                // to push telemetry data without human JWT sessions. Security is not compromised; rather, it is 
-                // offloaded to a lightweight, high-performance X-Agent-Token validation pattern handled inside 
-                // the ingestion layer to prevent JWT overhead on high-frequency machine-to-machine (M2M) streams.
-                .requestMatchers("/api/auth/login", "/ws/**", "/api/telemetry/**").permitAll()
+                // We explicitly permit '/api/telemetry/**' AND '/api/metrics/receiver' here to allow distributed system 
+                // monitoring agents (Python) to push telemetry data without human JWT sessions. 
+                // Security is not compromised; rather, it is offloaded to a lightweight, high-performance X-Agent-Token 
+                // validation pattern handled inside the ingestion layer to prevent JWT overhead on high-frequency machine-to-machine (M2M) streams.
+                .requestMatchers(
+                    "/api/login", // to allow unauthenticated access to the Login.tsx endpoint for JWT acquisition , to match the AuthController login endpoint
+                    "/api/auth/login", 
+                    "/ws/**", 
+                    "/api/telemetry/**", 
+                    "/api/metrics/receiver" // <--- The path that was causing the 403 error has been added here, now the Spring Security configuration explicitly allows unauthenticated access to this endpoint.
+                ).permitAll()
                 
                 // 2. to restrict user management endpoints to ADMIN role only
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
@@ -68,5 +76,15 @@ public class SecurityConfig {
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("*")); // للسماح لـ Nginx/Frontend
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

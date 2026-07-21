@@ -7,17 +7,12 @@ import { MetricsGrid } from './components/MetricsGrid';
 import { TelemetryPanels } from './components/TelemetryPanels';
 import { OperatorDirectory } from './components/OperatorDirectory';
 
-// Explicit type-only imports to satisfy the strict 'verbatimModuleSyntax' rules
 import type { ServerNodeKey } from './components/ServerNodeSelector';
 import type { SystemProcess, IncidentLog } from './components/TelemetryPanels';
 import type { Operator } from './components/OperatorDirectory';
 
-// Register Chart.js modules safely in the React environment
 Chart.register(...registerables);
 
-// =========================================================================
-// 1. i18n TRANSLATION MATRIX DEFINITIONS (Preserving English & German)
-// =========================================================================
 const dashboardTranslations = {
   en: {
     navTitle: "SMART MONITOR PLATFORM",
@@ -101,14 +96,12 @@ interface NodeTelemetryHistory {
 }
 
 export const Dashboard: React.FC = () => {
-  // Check auth credentials immediately on component mount (Local Security Firewall Gate)
   useEffect(() => {
     if (!localStorage.getItem('monitor_jwt_token')) {
       window.location.href = '/login';
     }
   }, []);
 
-  // Helper function for secure authorization headers matching Backend spec
   const getAuthHeaders = (): Record<string, string> => {
     return {
       'Authorization': `Bearer ${localStorage.getItem('monitor_jwt_token')}`,
@@ -121,14 +114,10 @@ export const Dashboard: React.FC = () => {
     window.location.href = '/login';
   };
 
-  // =========================================================================
-  // 2. STATE CONFIGURATIONS
-  // =========================================================================
   const [activeTab, setActiveTab] = useState<'telemetry' | 'directory'>('telemetry');
   const [activeNode, setActiveNode] = useState<ServerNodeKey>('Docker_Production_Container');
   const [currentLang, setCurrentLang] = useState<'en' | 'de'>('en');
 
-  // Node telemetry stats
   const [cpuValue, setCpuValue] = useState<number>(0);
   const [ramValue, setRamValue] = useState<number>(0);
   const [diskValue, setDiskValue] = useState<number>(0);
@@ -136,24 +125,20 @@ export const Dashboard: React.FC = () => {
   const [healthStatusText, setHealthStatusText] = useState<string>("Analyzing Matrix");
   const [healthSeverity, setHealthSeverity] = useState<'healthy' | 'warning' | 'critical'>('healthy');
   
-  // Incidents & Logs
   const [activeIncidents, setActiveIncidents] = useState<IncidentLog[]>([]);
   const [archivedIncidents, setArchivedIncidents] = useState<IncidentLog[]>([]);
   const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
   const [alertTimestamp, setAlertTimestamp] = useState<string>("00:00:00");
 
-  // Thread and Page profiling tables
   const [cpuProcesses, setCpuProcesses] = useState<SystemProcess[]>([]);
   const [ramProcesses, setRamProcesses] = useState<SystemProcess[]>([]);
 
-  // Directory operators and modal behaviors
   const [operators, setOperators] = useState<Operator[]>([]);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
   const [modalTargetRole, setModalTargetRole] = useState<'Admin' | 'DevSecOps' | 'Operator'>('Operator');
   const [activeActionType, setActiveActionType] = useState<'UPDATE_ROLE' | 'REVOKE_ACCESS' | null>(null);
 
-  // Persistence trace matrices for the 3-line chart stream
   const maxChartPoints = 30;
   const nodeHistoryRef = useRef<Record<ServerNodeKey, NodeTelemetryHistory>>({
     Docker_Production_Container: { labels: [], cpu: [], ram: [], disk: [] },
@@ -166,9 +151,6 @@ export const Dashboard: React.FC = () => {
 
   const t = dashboardTranslations[currentLang];
 
-  // =========================================================================
-  // 3. CHART.JS LIFE CYCLE MANAGEMENT
-  // =========================================================================
   const initializeWaveformChart = () => {
     if (!canvasRef.current) return;
     const history = nodeHistoryRef.current[activeNode];
@@ -190,9 +172,9 @@ export const Dashboard: React.FC = () => {
       data: {
         labels: history.labels,
         datasets: [
-          { label: "CPU Matrix %", borderColor: "#ef4444", backgroundColor: "rgba(239, 68, 68, 0.04)", data: history.cpu, tension: 0.25, fill: true, pointRadius: 0 },
-          { label: "RAM Allocation %", borderColor: "#3b82f6", backgroundColor: "rgba(59, 130, 246, 0.04)", data: history.ram, tension: 0.25, fill: true, pointRadius: 0 },
-          { label: "Block Disk Storage %", borderColor: "#10b981", backgroundColor: "rgba(16, 185, 129, 0.04)", data: history.disk, tension: 0.25, fill: true, pointRadius: 0 }
+          { label: "CPU Matrix %", borderColor: "#ef4444", backgroundColor: "rgba(239, 68, 68, 0.08)", data: history.cpu, tension: 0.3, fill: true, pointRadius: 0 },
+          { label: "RAM Allocation %", borderColor: "#3b82f6", backgroundColor: "rgba(59, 130, 246, 0.08)", data: history.ram, tension: 0.3, fill: true, pointRadius: 0 },
+          { label: "Block Disk Storage %", borderColor: "#10b981", backgroundColor: "rgba(16, 185, 129, 0.08)", data: history.disk, tension: 0.3, fill: true, pointRadius: 0 }
         ]
       },
       options: {
@@ -201,23 +183,19 @@ export const Dashboard: React.FC = () => {
         animation: false,
         plugins: { legend: { labels: { color: '#94a3b8', font: { weight: 600 } } } },
         scales: {
-          x: { grid: { color: 'rgba(255,255,255,0.01)' }, ticks: { color: '#64748b' } },
-          y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.01)' }, ticks: { color: '#64748b' } }
+          x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#64748b' } },
+          y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#64748b' } }
         }
       }
     });
   };
 
-  // Re-draw chart on canvas mounts or node changes
   useEffect(() => {
     if (activeTab === 'telemetry') {
       initializeWaveformChart();
     }
   }, [activeNode, activeTab]);
 
-  // =========================================================================
-  // 4. API INGESTION LOOP (TELEMETRY PIPELINE)
-  // =========================================================================
   const fetchNodeTelemetry = async () => {
     if (activeTab !== 'telemetry') return;
 
@@ -236,7 +214,6 @@ export const Dashboard: React.FC = () => {
       let data = await response.json();
       const nodesArray = data.nodes || data;
 
-      // Fallback Mock Engine in case database has clean traces
       if (!nodesArray || nodesArray.length === 0 || !nodesArray[0].cpu_usage) {
         let baseCpu = activeNode === "Windows_Host" ? 25 : (activeNode === "VMware_Ubuntu" ? 65 : 45);
         let baseRam = activeNode === "Windows_Host" ? 40 : (activeNode === "VMware_Ubuntu" ? 75 : 60);
@@ -254,10 +231,7 @@ export const Dashboard: React.FC = () => {
 
         data = {
           nodes: [mockNode],
-          health: {
-            score: Math.floor(85 + (Math.random() * 15)),
-            status: "Healthy"
-          }
+          health: { score: Math.floor(85 + (Math.random() * 15)), status: "Healthy" }
         };
       }
 
@@ -266,7 +240,6 @@ export const Dashboard: React.FC = () => {
       setRamValue(Number(node.ram_usage.toFixed(1)));
       setDiskValue(Number(node.disk_usage.toFixed(1)));
 
-      // Health Matrix score determination
       const derivedScore = data.health ? data.health.score : Number((100 - (node.cpu_usage + node.ram_usage) / 2).toFixed(0));
       const statusText = data.health ? data.health.status : (derivedScore > 50 ? "Healthy" : "Critical");
       setHealthScore(derivedScore);
@@ -276,7 +249,6 @@ export const Dashboard: React.FC = () => {
       else if (statusText === "Critical") setHealthSeverity("critical");
       else setHealthSeverity("healthy");
 
-      // Set Incidents banner display state
       const activeAlerts = data.alerts || [];
       setIsAlertVisible(activeAlerts.length > 0);
       if (activeAlerts.length > 0) {
@@ -286,7 +258,6 @@ export const Dashboard: React.FC = () => {
         setActiveIncidents([]);
       }
 
-      // Map ranking process arrays
       if (node.top_processes && node.top_processes.length > 0) {
         setCpuProcesses(node.top_processes.map((p: any, idx: number) => ({
           id: p.pid || idx,
@@ -303,7 +274,6 @@ export const Dashboard: React.FC = () => {
         setRamProcesses([]);
       }
 
-      // Feed historical memory trace buffers
       const time = node.last_seen ? node.last_seen.split(" ")[1] : new Date().toLocaleTimeString();
       const history = nodeHistoryRef.current[activeNode];
       history.labels.push(time);
@@ -321,7 +291,6 @@ export const Dashboard: React.FC = () => {
       if (chartInstanceRef.current) {
         chartInstanceRef.current.update('none');
       }
-
     } catch (error) {
       console.error("Telemetry ingest interface crash:", error);
     }
@@ -355,9 +324,6 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  // =========================================================================
-  // 5. CORPORATE DIRECTORY PIPELINE CONTROLLERS (RBAC MATRIX)
-  // =========================================================================
   const fetchUserDirectory = async () => {
     if (activeTab !== 'directory') return;
 
@@ -373,13 +339,12 @@ export const Dashboard: React.FC = () => {
       }
 
       const data = await response.json();
-      
       if (data.users && data.users.length > 0) {
         setOperators(data.users.map((user: any) => ({
           id: user.id,
           identityString: user.username,
           role: user.role || 'Operator',
-          status: 'Active' // Mapping fallback state for layout
+          status: 'Active'
         })));
       } else {
         setOperators([]);
@@ -389,7 +354,6 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  // Automated scheduling loop setups
   useEffect(() => {
     fetchNodeTelemetry();
     fetchAlertHistory();
@@ -409,9 +373,6 @@ export const Dashboard: React.FC = () => {
     }
   }, [activeTab]);
 
-  // =========================================================================
-  // 6. ADMINISTRATIVE HANDLERS (RBAC INTERFACES & MODALS)
-  // =========================================================================
   const handleOpenModal = (operator: Operator, actionType: 'role' | 'suspend') => {
     setSelectedOperator(operator);
     setModalTargetRole(operator.role);
@@ -455,7 +416,6 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  // Node display string formatting
   const getNodeDisplayLabel = () => {
     if (activeNode === "Docker_Production_Container") return "NODE: Docker Node (Ludwigshafen)";
     if (activeNode === "Windows_Host") return "NODE: Windows Host (Mannheim)";
@@ -469,116 +429,126 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#070a13] text-[#f8fafc] font-sans overflow-x-hidden pb-12">
-      {/* 1. Navbar Portal Container */}
-      <Navbar
-        activeTab={activeTab}
-        onTabChange={(tab) => setActiveTab(tab)}
-        currentLang={currentLang}
-        onToggleLanguage={() => setCurrentLang(currentLang === 'en' ? 'de' : 'en')}
-        onLogout={executeSecureLogout}
-        translations={{
-          navTitle: t.navTitle,
-          tabTelemetry: t.tabTelemetry,
-          tabDirectory: t.tabDirectory,
-          langBtn: t.langBtn,
-        }}
-      />
-
-      <div className="container-fluid px-8 py-6">
-        
-        {/* 2. Server Node Switcher */}
-        <ServerNodeSelector
-          activeNode={activeNode}
-          onNodeChange={(node) => {
-            setActiveNode(node);
-            initializeWaveformChart();
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased pb-16 selection:bg-cyan-500 selection:text-white">
+      {/* Navbar Container */}
+      <div className="border-b border-slate-800 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50">
+        <Navbar
+          activeTab={activeTab}
+          onTabChange={(tab) => setActiveTab(tab)}
+          currentLang={currentLang}
+          onToggleLanguage={() => setCurrentLang(currentLang === 'en' ? 'de' : 'en')}
+          onLogout={executeSecureLogout}
+          translations={{
+            navTitle: t.navTitle,
+            tabTelemetry: t.tabTelemetry,
+            tabDirectory: t.tabDirectory,
+            langBtn: t.langBtn,
           }}
-          nodeDisplayLabel={getNodeDisplayLabel()}
-          heartbeatState={getHeartbeatState()}
         />
+      </div>
 
-        {/* 3. Incident Alert Banner */}
+      {/* Main Dashboard Layout Container */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+        
+        {/* Server Node Switcher */}
+        <div className="bg-slate-900/50 border border-slate-800/80 rounded-xl p-4 shadow-lg backdrop-blur-sm">
+          <ServerNodeSelector
+            activeNode={activeNode}
+            onNodeChange={(node) => {
+              setActiveNode(node);
+              initializeWaveformChart();
+            }}
+            nodeDisplayLabel={getNodeDisplayLabel()}
+            heartbeatState={getHeartbeatState()}
+          />
+        </div>
+
+        {/* Incident Alert Banner */}
         <AlertBanner
           isVisible={isAlertVisible}
           alertText={t.bannerAlert}
           timestamp={alertTimestamp}
         />
 
-        {/* 4. Tab Routing Conditional Panes */}
+        {/* Tab Routing Conditional Panes */}
         {activeTab === 'telemetry' ? (
-          <>
+          <div className="space-y-6">
             {/* Real-time Hardware Metrics Grid */}
-            <MetricsGrid
-              cpuValue={cpuValue}
-              ramValue={ramValue}
-              diskValue={diskValue}
-              healthScore={healthScore}
-              healthStatusText={healthStatusText}
-              healthStatusSeverity={healthSeverity}
-              translations={{
-                lblCpu: t.lblCpu,
-                lblRam: t.lblRam,
-                lblDisk: t.lblDisk,
-                lblMatrix: t.lblMatrix,
-              }}
-            />
+            <div className="bg-slate-900/40 border border-slate-800/60 rounded-xl p-6 shadow-xl backdrop-blur-md">
+              <MetricsGrid
+                cpuValue={cpuValue}
+                ramValue={ramValue}
+                diskValue={diskValue}
+                healthScore={healthScore}
+                healthStatusText={healthStatusText}
+                healthStatusSeverity={healthSeverity}
+                translations={{
+                  lblCpu: t.lblCpu,
+                  lblRam: t.lblRam,
+                  lblDisk: t.lblDisk,
+                  lblMatrix: t.lblMatrix,
+                }}
+              />
+            </div>
 
             {/* Consoles, Process tables, and Chart wave analyzer */}
-            <TelemetryPanels
-              isVisible={activeTab === 'telemetry'}
-              activeIncidents={activeIncidents}
-              archivedIncidents={archivedIncidents}
-              cpuProcesses={cpuProcesses}
-              ramProcesses={ramProcesses}
-              canvasRef={canvasRef}
-              translations={{
-                hdrIncidents: t.hdrIncidents,
-                hdrCpuThreads: t.hdrCpuThreads,
-                hdrRamPages: t.hdrRamPages,
-                hdrLedger: t.hdrLedger,
-                hdrChart: t.hdrChart,
-                thCpuDesc: t.thCpuDesc,
-                thCpuLoad: t.thCpuLoad,
-                thRamDesc: t.thRamDesc,
-                thRamBase: t.thRamBase,
-                lblOperationalNormal: t.lblOperationalNormal,
-                lblWaitingHistory: t.lblWaitingHistory,
-              }}
-            />
-          </>
+            <div className="bg-slate-900/40 border border-slate-800/60 rounded-xl p-6 shadow-xl backdrop-blur-md">
+              <TelemetryPanels
+                isVisible={activeTab === 'telemetry'}
+                activeIncidents={activeIncidents}
+                archivedIncidents={archivedIncidents}
+                cpuProcesses={cpuProcesses}
+                ramProcesses={ramProcesses}
+                canvasRef={canvasRef}
+                translations={{
+                  hdrIncidents: t.hdrIncidents,
+                  hdrCpuThreads: t.hdrCpuThreads,
+                  hdrRamPages: t.hdrRamPages,
+                  hdrLedger: t.hdrLedger,
+                  hdrChart: t.hdrChart,
+                  thCpuDesc: t.thCpuDesc,
+                  thCpuLoad: t.thCpuLoad,
+                  thRamDesc: t.thRamDesc,
+                  thRamBase: t.thRamBase,
+                  lblOperationalNormal: t.lblOperationalNormal,
+                  lblWaitingHistory: t.lblWaitingHistory,
+                }}
+              />
+            </div>
+          </div>
         ) : (
-          /* 5. Operator Control Directory & Role modifier */
-          <OperatorDirectory
-            isVisible={activeTab === 'directory'}
-            operators={operators}
-            translations={{
-              hdrDirectoryTitle: t.hdrDirectoryTitle,
-              lblTotalUsers: t.lblTotalUsers,
-              thDirId: t.thDirId,
-              thDirIdentity: t.thDirIdentity,
-              thDirRole: t.thDirRole,
-              thDirStatus: t.thDirStatus,
-              thDirActions: t.thDirActions,
-              btnActionModify: t.btnActionModify,
-              btnActionSuspend: t.btnActionSuspend,
-              modalActionTitle: t.modalActionTitle,
-              modalActionBody: t.modalActionBody,
-              modalRoleSelectLabel: t.modalRoleSelectLabel,
-              btnModalCancel: t.btnModalCancel,
-              btnModalConfirm: t.btnModalConfirm,
-            }}
-            isModalOpen={isModalOpen}
-            selectedOperator={selectedOperator}
-            modalTargetRole={modalTargetRole}
-            onOpenModal={handleOpenModal}
-            onCloseModal={handleCloseModal}
-            onTargetRoleChange={(role) => setModalTargetRole(role)}
-            onExecuteAction={handleExecuteAction}
-          />
+          /* Operator Control Directory & Role modifier */
+          <div className="bg-slate-900/40 border border-slate-800/60 rounded-xl p-6 shadow-xl backdrop-blur-md">
+            <OperatorDirectory
+              isVisible={activeTab === 'directory'}
+              operators={operators}
+              translations={{
+                hdrDirectoryTitle: t.hdrDirectoryTitle,
+                lblTotalUsers: t.lblTotalUsers,
+                thDirId: t.thDirId,
+                thDirIdentity: t.thDirIdentity,
+                thDirRole: t.thDirRole,
+                thDirStatus: t.thDirStatus,
+                thDirActions: t.thDirActions,
+                btnActionModify: t.btnActionModify,
+                btnActionSuspend: t.btnActionSuspend,
+                modalActionTitle: t.modalActionTitle,
+                modalActionBody: t.modalActionBody,
+                modalRoleSelectLabel: t.modalRoleSelectLabel,
+                btnModalCancel: t.btnModalCancel,
+                btnModalConfirm: t.btnModalConfirm,
+              }}
+              isModalOpen={isModalOpen}
+              selectedOperator={selectedOperator}
+              modalTargetRole={modalTargetRole}
+              onOpenModal={handleOpenModal}
+              onCloseModal={handleCloseModal}
+              onTargetRoleChange={(role) => setModalTargetRole(role)}
+              onExecuteAction={handleExecuteAction}
+            />
+          </div>
         )}
-
-      </div>
+      </main>
     </div>
   );
 };
