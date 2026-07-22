@@ -30,6 +30,12 @@ Smart Monitor Platform is an enterprise-grade, distributed infrastructure monito
 🎥 System Live Demonstration
 A comprehensive end-to-end demonstration showcasing authentication, real-time node switching, multi-language support (English/German), and dashboard telemetry:
 
+<p align="center">
+  <video width="100%" controls>
+    <source src="./Demo/Demo.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+</p>
 
 
 
