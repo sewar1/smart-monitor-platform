@@ -1,16 +1,41 @@
 # Smart Monitor Platform
 
-A production-grade, distributed real-time infrastructure monitoring platform and reactive mitigation engine engineered for high-availability cloud environments. The platform features cross-platform host telemetry extraction, containerized orchestration with host-kernel process injection, stateless cryptographic authentication, and automated anti-freeze guard resilience.
+Polyglot Distributed Infrastructure Telemetry & Autonomous Self-Healing Management System
+
+Engineered for high-availability cloud environments to meet rigorous German enterprise software architecture standards (Production-Grade).
+
+---
+# Executive Overview
+Smart Monitor Platform is an enterprise-grade, distributed infrastructure monitoring and automated incident-mitigation ecosystem. Built with a decoupled Polyglot Architecture, it unifies low-level telemetry collection, centralized reactive Java backend processing, advanced OS process-level self-healing, multi-channel alerting pipelines, and a high-performance React dashboard.
 
 ---
 
-## Architectural Overview
-
-The platform features a decoupled microservices-ready architecture managed entirely via **Docker Compose**. Edge traffic is intercepted by an **Nginx Reverse Proxy & Edge Gateway**, which serves static runtime visual assets while securely routing high-frequency metrics streams and WebSockets protocols directly to an enterprise-grade **Spring Boot REST API Engine**. 
-
-Persistence is driven by an enterprise **PostgreSQL 15** data warehouse utilizing high-performance connection pooling (HikariCP), composite time-series indexing, and automated data retention workers. Distributed multi-city telemetry agents hook directly into host operating systems, bypassing container isolation parameters (`pid: "host"`, `privileged: true`) to profile and mitigate host-level runtime freeze vectors.
+## Key Architectural Features & Subsystems
+1. **Autonomous Anti-Freeze & OOM Mitigation (SystemAnalyzerService)**
+   - OS-Level Process Intervention: Continuously monitors host resource capacity. If CPU or RAM breaches 95.0%, the backend dynamically queries the operating system process table (ps on Unix, tasklist on Windows).
+   - Safe Termination Guards: Identifies rogue resource hogs and executes safe process termination (destroyForcibly()) while strictly respecting a Critical Process Whitelist (systemd, postgres, docker, java, nginx, etc.) to prevent host lockups or service crashes.
+   - Variance Freeze Detection: Evaluates historical metric windows using floating-point precision (EPSILON) to catch deadlocks where system metrics freeze completely across consecutive cycles.
+2. **Multi-Channel Alerting & Notification Pipeline (AlertService)**
+   - Centralized Threshold Evaluation: Compares real-time telemetry against dynamic configuration limits (application.yaml).
+   - Multi-Channel Dispatch: Automatically logs incidents locally and broadcasts critical warnings externally via SMTP HTML Emails (JavaMailSender) and Telegram Bot REST APIs (RestTemplate).
+3. **Enterprise Security & Identity Management (UserService & TwoFactorAuthService)**
+   - Stateless Authentication: Secure JWT-based architecture (jjwt) with Brute-Force protection filters.
+   - CSPRNG 2FA Subsystem: Cryptographically secure 6-digit verification token generation using Java's SecureRandom, paired with responsive HTML email templates and local container console fallbacks.
+4. **Heartbeat Tracking & Health Scoring (MetricService)**
+   - Cluster Connectivity: Thread-safe in-memory caching (ConcurrentHashMap) tracking absolute heartbeat timestamps with a 60-second offline threshold margin.
+   - Weighted Health Index: Calculates system health scores via a multi-criteria weighted matrix ($\text{CPU 40\%}, \text{RAM 40\%}, \text{Disk 20\%}$) with automated 12-hour database retention cleanup schedulers.
 
 ---
+
+🎥 System Live Demonstration
+A comprehensive end-to-end demonstration showcasing authentication, real-time node switching, multi-language support (English/German), and dashboard telemetry:
+
+
+
+
+
+---
+
 ## Project Architecture
 The platform is structured as a Monorepo with decoupled services:
 
@@ -21,14 +46,12 @@ The platform is structured as a Monorepo with decoupled services:
 ---
 ## Tech Stack
 
-- **Containerization & Orchestration:** Docker, Docker Compose (Isolated Bridge Topology, Shared Host PID Context)
-- **Edge Routing & API Gateway:** Nginx (Static Asset Caching, Cross-Protocol Reverse Proxy, Port 80 Access Gate)
-- **Backend Core & Analytics Framework:** Java 21, Spring Boot 3.x, Spring MVC, Asynchronous Task Executors
-- **Database Architecture:** PostgreSQL 15, Spring Data JPA / Hibernate (HikariCP Connection Pooling, Named Persistent Volumes)
-- **Security & IAM Infrastructure:** Stateless JWT Tokens (HS256 Signature via `jjwt`), BCrypt Password Encoder, Immutability Guards
-- **Application Server:** Embedded Production-grade Apache Tomcat Container
-- **Telemetry Hardware Daemon:** Standalone Python Daemon backed by cross-platform `psutil` kernel space extraction
-- **Target Environments:** Bare-Metal Windows Server Hosts (NSSM Daemonized), VMware Virtualized Clusters (Systemd isolated), Docker Container Sandboxes
+- **Infrastructure & Security** Docker, Docker Compose, Nginx (Reverse Proxy & Edge Gateway), Stateless JWT (HS256), BCrypt, CSPRNG 2FA
+- **Edge Agent** Standalone Python Daemon backed by cross-platform psutil kernel space extraction
+- **Backend Core & Analytics** Java 21, Spring Boot 3.x, Spring MVC, Spring Data JPA, Hibernate, Maven
+- **Database Architecture:** PostgreSQL 15, HikariCP Connection Pooling, Composite Time-Series Indexing
+- **Frontend UI** React 19, TypeScript, Tailwind CSS, Bootstrap Icons, Vite
+
 
 ---
 
@@ -50,22 +73,22 @@ The platform is structured as a Monorepo with decoupled services:
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        DOCKER COMPOSE NETWORK MATRIX                   │
 │                                                                        │
-│   ┌──────────────────────────┐            ┌────────────────────────┐   │
-│   │  Spring Boot Dashboard   │            │  PostgreSQL 15 Cluster │   │
-│   │       Container          ├───────────►│          (db)          │   │
-│   │ - Embedded Tomcat Stack  │  HikariCP  │ - Min/Max Conn Pool    │   │
-│   │ - Anti-Freeze Analyser   │  Thread    │ - BIGSERIAL Ledgers    │   │
-│   │ - Scheduled Purge Task   │  Sockets   │ - Composite Timeline IX│   │
-│   └──────────────────────────┘            └────────────────────────┘   │
+│    ┌──────────────────────────┐            ┌────────────────────────┐  │
+│    │  Spring Boot Dashboard   │            │ PostgreSQL 15 Cluster  │  │
+│    │      Container           ├───────────►│          (db)          │  │
+│    │ - Embedded Tomcat Stack  │  HikariCP  │ - Min/Max Conn Pool    │  │
+│    │ - Anti-Freeze Analyser   │  Thread    │ - BIGSERIAL Ledgers    │  │
+│    │ - Scheduled Purge Task   │  Sockets   │ - Composite Timeline IX│  │
+│    └──────────────────────────┘            └────────────────────────┘  │
 └──────────────────────▲─────────────────────────────────────────────────┘
                        │
                        │ Concurrent Secure Keep-Alive Telemetry Payload Push
                        │
-┌──────────────────────┴─────────────────────────────────────────────────┐
-│                    DISTRIBUTED CROSS-PLATFORM AGENTS                   │
+┌──────────────────────┴─────────────────────────────────────────────────┘
+│                        DISTRIBUTED CROSS-PLATFORM AGENTS               │
 │                                                                        │
-│  [Docker Target Node]    [Bare-Metal Windows Node]   [VMware Ubuntu]   │
-│    (Mannheim Container)      (Ludwigshafen NSSM)      (Heidelberg Server│
+│   [Docker Target Node]     [Bare-Metal Windows Node]   [VMware Ubuntu] │
+│    (Mannheim Container)      (Ludwigshafen NSSM)       (Heidelberg Server)
 │   - privileged: true         - Win32 API Wrapper       - systemd Daemon │
 │   - pid: "host" mapping      - LOCATION=.env tracking  - Fail-Over Check│
 └────────────────────────────────────────────────────────────────────────┘
@@ -74,15 +97,20 @@ The platform is structured as a Monorepo with decoupled services:
 ## Project Structure
 ```bash
 smart-monitor-platform/
-├── backend/            # Java Spring Boot Core
-│   ├── src/            # Java source code
-│   └── pom.xml         # Maven configuration
-├── frontend/           # React/TypeScript UI
-│   ├── src/            # React source code
-│   ├── package.json    # Node.js dependencies
-│   └── tsconfig.json   # TypeScript configuration
-├── agent/              # Distributed telemetry daemon
-└── docker-compose.yml  # Orchestration configuration
+├── agent/                 # Python Telemetry Agent (Collects CPU, RAM, Disk & heartbeats)
+├── backend/               # Java Spring Boot Central Gateway & Enterprise Security Engine
+│   └── src/main/java/com/sewarl/smartmonitor/
+│       ├── config/        # Security, JWT filters, and Database initializers
+│       ├── controller/    # REST Endpoints (Metrics, Auth, Alerts management)
+│       ├── entity/        # Relational PostgreSQL Entities (User, Metric, MetricAlert)
+│       ├── repository/    # Spring Data JPA Data Access Layer
+│       ├── security/      # Brute-force protection & threat mitigation guards
+│       └── service/       # Core Business Logic (Anti-freeze, OOM mitigation, 2FA, Alerting)
+├── frontend/              # React 19 + TypeScript + Tailwind CSS Enterprise Dashboard
+│   └── src/pages/         # Modular architecture for Login (with i18n) & Real-time Dashboard
+├── docker-compose.yml     # Multi-container orchestration (PostgreSQL, Backend, Frontend, Agent)
+├── nginx.conf             # Reverse Proxy & Load Balancer configuration
+└── README.md              # Project Documentation & Live Demo
 ```
 ---
 
@@ -115,55 +143,6 @@ To run the full stack (Database, Backend, and Frontend) in production-like conta
 ``` bash
 docker-compose up --build
 ```
-This handles automated connection pool seeding, declarative schema provisioning via container-native scripts (init.sql), internal bridge setup, and edge routing mapping.
 
 5. Access Web Interface:
 Open your browser and navigate to: http://localhost (Port 80 Gate).
-
-
-##  Engineering Roadmap Achievements & Milestones
-
-- [x] Sprint 1: Distributed Telemetry Ingestion Core & Multi-Node Tracking (Java Migration)
-
-  - Spring Boot Migration: Fully refactored backend core from Python/Flask to Java 21 & Spring Boot 3.x, ensuring enterprise-grade scalability and type safety.
-
-  - Database Decentralization Matrix: Migrated persistence initialization to native container scripts (init.sql) using BIGSERIAL keys, JSONB process map spaces, and composite indexes for high-speed dashboard rendering.
-
-  - Enterprise Connection Pooling: Integrated HikariCP natively within Spring Data JPA to prevent database socket starvation across concurrent distributed agents.
-
-  - Cross-Platform Host Injection: Fabricated native multi-node deployment paths; distributed and stabilized agent daemons across bare-metal Windows Server hosts (via NSSM), virtualized VMware Ubuntu instances (via systemd), and sandboxed Docker container isolations.
-
-  - Dynamic Environment Externalization: Standardized runtime configuration mapping through Spring's application.yml and global .env files.
-
-  - Automated Anti-Freeze Subsystem (OOM Killer): Engineered a priority-sorting resource optimization service in Spring Boot. When system resource limits cross critical safety boundaries (95.0%), the guard programmatically triggers mitigation workflows, terminating the heaviest non-critical offender.
-
-  - Scheduled Data Retention Worker: Replaced ad-hoc daemon threads with Spring's @Scheduled annotation to systematically purge historical metrics older than 24 hours every 12 hours.
-
-  - Multi-Node State UI Switching: Overhauled JavaScript loops to track active nodes, prevent       canvas memory leaks via clean Chart.js destruction, and dynamically pass node-scoped queries       (/api/metrics?nodeId=) to Spring RestControllers.
-
-  - Live Node Heartbeat Tracking: Established a 60-second threshold evaluation system. Missing agent   transmissions automatically trigger state shifting, rendering red warning badges on the UI.
-
-  - Test-Driven Nomenclature Safeguard: Upgraded test suites to validate payload structures against   code regressions, shielding data ingestion API endpoints.
-
-- [ ] Sprint 2: Granular Role-Based Access Control (RBAC) Expansion & Security Hardening
-
-  - Implement dynamic user configuration panels inside the dashboard restricted exclusively to       the system root administration account.
-
-  - Secure API vectors with adaptive rate-limiting middleware (using Bucket4j or Spring Cloud         Gateway) to shield security rings.
-
-  - Enforce automated user activity logging ledgers to preserve compliance auditing records.
-
-- [ ] Sprint 3: Distributed Microservices Architecture Decomposition
-
-  - Decouple the monolithic receiver route out of the main dashboard Spring Boot container.
-
-  - Establish a dedicated, high-speed Java-based ingestion service engineered exclusively for         write-heavy multi-agent operations.
-
-  - Isolate the client user interface into a localized dashboard service processing read-heavy       analytical dashboard data streams.
-- [ ] Sprint 4: CI/CD Pipeline Automation & Cloud Staging
-
-  - Build automated workflows via GitHub Actions to enforce continuous checking, test execution, and isolated container registry uploads.
-
-## Summary
-
-This project demonstrates a complete DevOps lifecycle from development to containerized orchestration and bare-metal production deployment on an enterprise virtualized Linux server.
