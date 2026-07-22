@@ -31,7 +31,7 @@ Smart Monitor Platform is an enterprise-grade, distributed infrastructure monito
 A comprehensive end-to-end demonstration showcasing authentication, real-time node switching, multi-language support (English/German), and dashboard telemetry:
 
 <p align="center">
-  <a href="https://github.com/sewarl/smart-monitor-platform/blob/main/Demo/Demo.mp4" target="_blank">
+  <a href="https://www.linkedin.com/posts/sewar-kafa-3a7b9a373_java-springboot-react-ugcPost-7485757674039611392-e3yW/?utm_source=share&utm_medium=member_desktop&rcm=ACoAAFyL0q8BdUttuP_gZvkY56aEuuFYP8UEDnU">
     🎬 <b>Click here to watch the System Live Demonstration Video</b>
   </a>
 </p>
