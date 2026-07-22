@@ -17,8 +17,9 @@ export const Login: React.FC = () => {
   const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isLockedOut] = useState<boolean>(false);
-  const [globalError] = useState<string | null>(null);
+  const [isLockedOut, setIsLockedOut] = useState<boolean>(false);
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [shouldShake, setShouldShake] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const t = translations[currentLang];
@@ -30,6 +31,7 @@ export const Login: React.FC = () => {
     isLockedOut
   );
 
+  // تم تصحيح استدعاء الـ Hook هنا بإزالة setGlowColor غير الموجودة
   const { glowColor } = useLoginEffects(
     username,
     password,
@@ -42,16 +44,43 @@ export const Login: React.FC = () => {
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLockedOut || !isFormValid) return;
+
+    setGlobalError(null);
     setIsLoading(true);
-    localStorage.setItem('monitor_jwt_token', 'mock_token_for_testing');
-    setTimeout(() => {
-      window.location.href = '/dashboard';
-    }, 600);
+
+    try {
+      const response = await fetch('/api/auth/login', { // edit: Adjusted the API endpoint to match the backend route in SecurityConfig.java & authenticationController.java
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.token) {
+        localStorage.setItem('monitor_jwt_token', data.token);
+        window.location.href = '/dashboard';
+      } else {
+        setShouldShake(true);
+        setTimeout(() => setShouldShake(false), 400);
+
+        setGlobalError(data.error || (currentLang === 'en' ? 'Authentication Failed' : 'Authentifizierung fehlgeschlagen'));
+
+        if (response.status === 423) {
+          setIsLockedOut(true);
+        }
+      }
+    } catch (error) {
+      setGlobalError(currentLang === 'en' ? 'Core network infrastructure fault.' : 'Verbindungsfehler zum Server infrastructure.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <LoginLayout>
-      <LoginCard glowColor={glowColor} shouldShake={false}>
+      <LoginCard glowColor={glowColor} shouldShake={shouldShake}>
         <div>
           <div className="flex justify-end mb-6">
             <LangSwitcher currentLang={currentLang} onToggle={toggleLanguage} />

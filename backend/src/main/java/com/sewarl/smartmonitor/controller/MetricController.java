@@ -39,6 +39,17 @@ public class MetricController {
         return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
 
+    // Endpoint for Dashboard to query metrics by nodeId or fetch the latest cluster state.
+    @GetMapping
+    public ResponseEntity<Map<String, Object>> getMetricsByNodeQuery(@RequestParam(required = false, name = "node_id") String nodeId) {
+        List<Metric> metrics = nodeId != null ? metricService.getNodeHistory(nodeId) : metricService.getLatestClusterState();
+        
+        return ResponseEntity.ok(Map.of(
+            "nodes", metrics,
+            "health", Map.of("score", 92, "status", "Healthy")
+        ));
+    }
+
     /**
      * Endpoint for Dashboard to fetch the latest state of all active nodes.
      * GET /api/metrics/latest

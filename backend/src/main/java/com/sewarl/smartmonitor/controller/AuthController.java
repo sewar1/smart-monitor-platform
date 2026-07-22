@@ -1,5 +1,6 @@
 package com.sewarl.smartmonitor.controller;
 
+import com.sewarl.smartmonitor.config.JwtService;
 import com.sewarl.smartmonitor.entity.User;
 import com.sewarl.smartmonitor.security.LoginBruteForceProtector;
 import com.sewarl.smartmonitor.service.UserService;
@@ -30,6 +31,7 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final LoginBruteForceProtector bruteForceProtector;
     private final TwoFactorAuthService twoFactorAuthService;
+    private final JwtService jwtService;
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
  
     /**
@@ -40,11 +42,13 @@ public class AuthController {
     public AuthController(UserService userService, 
                           PasswordEncoder passwordEncoder, 
                           LoginBruteForceProtector bruteForceProtector,
-                          TwoFactorAuthService twoFactorAuthService) {
+                          TwoFactorAuthService twoFactorAuthService,
+                          JwtService jwtService) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.bruteForceProtector = bruteForceProtector;
         this.twoFactorAuthService = twoFactorAuthService;
+        this.jwtService = jwtService;
     }
 
     /**
@@ -87,14 +91,18 @@ public class AuthController {
 
             // Initialize 2FA process if the account is configured for enhanced security
             if (adminEmail != null && !adminEmail.trim().isEmpty()) {
-                String token = twoFactorAuthService.generateVerificationToken();
-                twoFactorAuthService.sendVerificationEmail(adminEmail, token);
+                String otpToken = twoFactorAuthService.generateVerificationToken();
+                twoFactorAuthService.sendVerificationEmail(adminEmail, otpToken);
                 log.info("2FA token generated and dispatched for user: {}", username);
             }
+
+            // Generate JWT Token so the frontend can store it and access the dashboard
+            String jwtToken = jwtService.generateToken(authenticatedUser);
             
             return ResponseEntity.ok(Map.of(
                 "message", "Login successful", 
-                "role", authenticatedUser.getRole()
+                "role", authenticatedUser.getRole(),
+                "token", jwtToken // JWT token for frontend session management
             ));
         } else {
             // Reactive Security Path -> Register failure trace vector to throttle future requests for this identity

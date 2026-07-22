@@ -103,8 +103,9 @@ export const Dashboard: React.FC = () => {
   }, []);
 
   const getAuthHeaders = (): Record<string, string> => {
+    const token = localStorage.getItem('monitor_jwt_token'); // Retrieve the JWT token from localStorage
     return {
-      'Authorization': `Bearer ${localStorage.getItem('monitor_jwt_token')}`,
+      'Authorization': `Bearer ${token ? token.trim() : ''}`, // Ensure the token is trimmed to avoid any leading/trailing whitespace
       'Content-Type': 'application/json'
     };
   };
@@ -338,9 +339,15 @@ export const Dashboard: React.FC = () => {
         return;
       }
 
+      if (!response.ok) throw new Error("Failed to fetch user directory");
+
       const data = await response.json();
-      if (data.users && data.users.length > 0) {
-        setOperators(data.users.map((user: any) => ({
+
+      // Handle the case where the response is not an array but an object with a 'users' property
+      const usersList = Array.isArray(data) ? data : (data.users || []);
+
+      if (usersList.length > 0) {
+        setOperators(usersList.map((user: any) => ({
           id: user.id,
           identityString: user.username,
           role: user.role || 'Operator',

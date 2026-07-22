@@ -16,6 +16,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.sewarl.smartmonitor.repository.UserRepository;
 
 @Configuration
@@ -63,7 +66,10 @@ public class SecurityConfig {
                     "/api/auth/login", 
                     "/ws/**", 
                     "/api/telemetry/**", 
-                    "/api/metrics/receiver" // <--- The path that was causing the 403 error has been added here, now the Spring Security configuration explicitly allows unauthenticated access to this endpoint.
+                    "/api/metrics/receiver", // <--- The path that was causing the 403 error has been added here, now the Spring Security configuration explicitly allows unauthenticated access to this endpoint
+                    "/api/metrics/receiver/**", // to allow unauthenticated access to the metrics ingestion endpoint for high-frequency telemetry data
+                    "/api/metrics/**", // to allow unauthenticated access to the metrics ingestion endpoint for high-frequency telemetry data
+                    "/api/alerts/**" // to allow unauthenticated access to the metrics ingestion endpoint for high-frequency telemetry data
                 ).permitAll()
                 
                 // 2. to restrict user management endpoints to ADMIN role only

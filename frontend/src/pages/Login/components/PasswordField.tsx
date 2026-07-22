@@ -40,10 +40,10 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
           type="button"
           id="password-toggle-btn"
           onClick={onToggleShow}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer p-1"
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-white transition-colors cursor-pointer p-1"
           aria-label="Toggle password visibility"
         >
-          <i id="toggle-icon" className={`bi ${showPassword ? 'bi-eye' : 'bi-eye-slash'}`}></i>
+          <i id="toggle-icon" className={`bi ${showPassword ? 'bi-eye' : 'bi-eye-slash'} text-lg text-slate-300 hover:text-cyan-400`}></i>
         </button>
       </div>
       <ValidationMessage status={validation.status} message={validation.message} />
