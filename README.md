@@ -32,7 +32,7 @@ A comprehensive end-to-end demonstration showcasing authentication, real-time no
 bash```
 <p align="center">
   <video width="100%" controls>
-    <source src="./Demo/Demo.mp4" type="video/mp4">
+    <source src="ffmpeg -i ./Demo/Demo.mp4 -vcodec libx264 -crf 28 ./Demo/Demo_compressed.mp4">
     Your browser does not support the video tag.
   </video>
 </p>
