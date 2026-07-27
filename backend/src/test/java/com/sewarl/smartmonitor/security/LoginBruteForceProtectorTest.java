@@ -1,4 +1,4 @@
-package main.java.com.sewarl.smartmonitor.security;
+package com.sewarl.smartmonitor.security;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

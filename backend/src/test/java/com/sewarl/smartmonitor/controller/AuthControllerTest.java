@@ -1,4 +1,4 @@
-package main.java.com.sewarl.smartmonitor.controller;
+package com.sewarl.smartmonitor.controller;
 
 import com.sewarl.smartmonitor.config.JwtService;
 import com.sewarl.smartmonitor.security.LoginBruteForceProtector;
