@@ -24,6 +24,9 @@ Smart Monitor Platform is an enterprise-grade, distributed infrastructure monito
 4. **Heartbeat Tracking & Health Scoring (MetricService)**
    - Cluster Connectivity: Thread-safe in-memory caching (ConcurrentHashMap) tracking absolute heartbeat timestamps with a 60-second offline threshold margin.
    - Weighted Health Index: Calculates system health scores via a multi-criteria weighted matrix ($\text{CPU 40\%}, \text{RAM 40\%}, \text{Disk 20\%}$) with automated 12-hour database retention cleanup schedulers.
+5. **Automated Testing & CI/CD Pipeline (`backend-ci.yml`)**
+   - Unit Testing Suite: Comprehensive JUnit 5 and Mockito test architecture ensuring high code quality and security resilience.
+   - GitHub Actions Integration: Automated build, compile, and test pipeline triggered on every push and pull request to maintain production readiness.
 
 ---
 
@@ -43,7 +46,7 @@ A comprehensive end-to-end demonstration showcasing authentication, real-time no
 ## Project Architecture
 The platform is structured as a Monorepo with decoupled services:
 
-- **backend/:** Java Spring Boot API engine handling telemetry persistence, authentication, and analysis.
+- **backend/:** Java Spring Boot API engine handling telemetry persistence, authentication, business logic, and unit tests.
 
 - **frontend/:** React/TypeScript dashboard providing real-time visualization.
 
@@ -53,6 +56,7 @@ The platform is structured as a Monorepo with decoupled services:
 - **Infrastructure & Security** Docker, Docker Compose, Nginx (Reverse Proxy & Edge Gateway), Stateless JWT (HS256), BCrypt, CSPRNG 2FA
 - **Edge Agent** Standalone Python Daemon backed by cross-platform psutil kernel space extraction
 - **Backend Core & Analytics** Java 21, Spring Boot 3.x, Spring MVC, Spring Data JPA, Hibernate, Maven
+- **CI/CD Automation** GitHub Actions Pipeline (`backend-ci.yml`)
 - **Database Architecture:** PostgreSQL 15, HikariCP Connection Pooling, Composite Time-Series Indexing
 - **Frontend UI** React 19, TypeScript, Tailwind CSS, Bootstrap Icons, Vite
 
@@ -101,24 +105,31 @@ The platform is structured as a Monorepo with decoupled services:
 ## Project Structure
 ```bash
 smart-monitor-platform/
-├── agent/                 # Python Telemetry Agent (Collects CPU, RAM, Disk & heartbeats)
-├── backend/               # Java Spring Boot Central Gateway & Enterprise Security Engine
-│   └── src/main/java/com/sewarl/smartmonitor/
-│       ├── config/        # Security, JWT filters, and Database initializers
-│       ├── controller/    # REST Endpoints (Metrics, Auth, Alerts management)
-│       ├── entity/        # Relational PostgreSQL Entities (User, Metric, MetricAlert)
-│       ├── repository/    # Spring Data JPA Data Access Layer
-│       ├── security/      # Brute-force protection & threat mitigation guards
-│       └── service/       # Core Business Logic (Anti-freeze, OOM mitigation, 2FA, Alerting)
-├── frontend/              # React 19 + TypeScript + Tailwind CSS Enterprise Dashboard
-│   └── src/pages/         # Modular architecture for Login (with i18n) & Real-time Dashboard
-├── docker-compose.yml     # Multi-container orchestration (PostgreSQL, Backend, Frontend, Agent)
-├── nginx.conf             # Reverse Proxy & Load Balancer configuration
-└── README.md              # Project Documentation & Live Demo
+├── .github/
+│   └── workflows/
+│       └── backend-ci.yml   # Automated GitHub Actions CI/CD pipeline
+├── agent/                   # Python Telemetry Agent (Collects CPU, RAM, Disk & heartbeats)
+├── backend/                 # Java Spring Boot Central Gateway & Enterprise Security Engine
+│   ├── src/main/java/com/sewarl/smartmonitor/
+│   │   ├── config/          # Security, JWT filters, and Database initializers
+│   │   ├── controller/      # REST Endpoints (Metrics, Auth, Alerts management)
+│   │   ├── entity/          # Relational PostgreSQL Entities (User, Metric, MetricAlert)
+│   │   ├── repository/      # Spring Data JPA Data Access Layer
+│   │   ├── security/        # Brute-force protection & threat mitigation guards
+│   │   └── service/         # Core Business Logic (Anti-freeze, OOM mitigation, 2FA, Alerting)
+│   └── src/test/java/com/sewarl/smartmonitor/
+│       ├── controller/      # AuthControllerTest.java
+│       ├── security/        # LoginBruteForceProtectorTest.java
+│       └── service/         # UserServiceTest, TwoFactorAuthServiceTest, MetricServiceTest
+├── frontend/                # React 19 + TypeScript + Tailwind CSS Enterprise Dashboard
+│   └── src/pages/           # Modular architecture for Login (with i18n) & Real-time Dashboard
+├── docker-compose.yml       # Multi-container orchestration (PostgreSQL, Backend, Frontend, Agent)
+├── nginx.conf               # Reverse Proxy & Load Balancer configuration
+└── README.md                # Project Documentation & Live Demo
 ```
 ---
 
-## Installation & Automated Deployment
+## Installation & Automated Deployment & Testing
 
 
 Spin up the entire interconnected ecosystem (Reverse Proxy, Spring Boot Application, and Relational Database Pools) with a single orchestration layer build command:
@@ -129,10 +140,11 @@ Spin up the entire interconnected ecosystem (Reverse Proxy, Spring Boot Applicat
 git clone git@github.com:sewar1/smart-monitor-platform.git
 cd smart-monitor-platform
 ```
-2. Backend (Java)
-Navigate to the backend directory and start the service:
+2. Backend (Java) & Running Unit Tests
+Navigate to the backend directory and run tests via Maven:
 ``` bash
 cd backend
+mvn test
 mvn spring-boot:run
 ```
 3. Frontend (React)
