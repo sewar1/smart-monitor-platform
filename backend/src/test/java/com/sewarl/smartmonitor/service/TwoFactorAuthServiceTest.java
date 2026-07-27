@@ -1,4 +1,4 @@
-package main.java.com.sewarl.smartmonitor.service;
+package com.sewarl.smartmonitor.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

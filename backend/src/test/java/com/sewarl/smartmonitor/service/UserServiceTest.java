@@ -1,4 +1,4 @@
-package main.java.com.sewarl.smartmonitor.service;
+package com.sewarl.smartmonitor.service;
 
 import com.sewarl.smartmonitor.entity.User;
 import com.sewarl.smartmonitor.repository.UserRepository;
