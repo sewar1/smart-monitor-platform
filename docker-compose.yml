@@ -6,9 +6,9 @@ services:
     image: postgres:15-alpine
     container_name: smart_monitor_db
     environment:
-      POSTGRES_USER: postgres_admin
-      POSTGRES_PASSWORD: secure_devops_pass
-      POSTGRES_DB: monitor_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5433:5432"
     volumes:
@@ -17,6 +17,11 @@ services:
     restart: always
     networks:
       - monitor_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   # ==============================================================================
   # Backend Service: Spring Boot REST API Engine
@@ -31,13 +36,14 @@ services:
       - "5001:8082" # Expose the backend service on port 5001 of the host machine, mapping it to port 8082 inside the container where the Spring Boot application runs.
     environment:
       - POSTGRES_HOST=db
-      - POSTGRES_USER=postgres_admin
-      - POSTGRES_PASSWORD=secure_devops_pass
-      - POSTGRES_DB=monitor_db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_PORT=5432
-      - JWT_SECRET_KEY=super_secure_telemetry_secret_key_2026
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - monitor_network
     #volumes:

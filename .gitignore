@@ -58,3 +58,6 @@ logs/
 screenshots/
 agent/.pytest_cache/
 agent/__pycache__/
+
+# --- Environment Variables ---
+.env

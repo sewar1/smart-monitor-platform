@@ -118,6 +118,36 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+
+			<!-- ==================================================================
+			     JaCoCo: generates test coverage reports.
+			     Added to fix the CI pipeline's "jacoco:report" step, which was
+			     previously failing because this plugin was never declared here —
+			     without it, no coverage agent is attached during `mvn test`,
+			     so there is no execution data (jacoco.exec) to report on.
+			     ================================================================== -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.12</version>
+				<executions>
+					<!-- Attaches the coverage agent to the JVM before tests run -->
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<!-- Generates the HTML/XML report right after tests finish -->
+					<execution>
+						<id>report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 

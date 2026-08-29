@@ -61,12 +61,16 @@ jobs:
         # not with a confusing "Permission denied" three steps later.
         run: chmod +x backend/mvnw
 
-      - name: Run unit tests
+      # CHANGED: jacoco-maven-plugin is now declared in backend/pom.xml with its
+      # "prepare-agent" and "report" goals bound directly to the Maven `test`
+      # phase. That means `mvn test` alone now attaches the coverage agent AND
+      # writes the HTML/XML report as part of the same run.
+      # The old, separate "./mvnw jacoco:report" step has been removed: it was
+      # redundant (duplicating work already done here) and was the original
+      # root cause of the "exit code 2" failure, since the plugin wasn't
+      # declared in pom.xml yet at that point.
+      - name: Run unit tests & generate coverage report
         run: ./mvnw test
-        working-directory: ./backend
-
-      - name: Generate JaCoCo coverage report
-        run: ./mvnw jacoco:report
         working-directory: ./backend
 
       - name: Upload coverage report artifact
@@ -142,6 +146,11 @@ jobs:
           cache: 'pip'
           cache-dependency-path: agent/requirements.txt
 
+      # CHANGED: `pytest` was missing from agent/requirements.txt, which is
+      # why this job previously failed with "pytest: command not found"
+      # (exit code 127). requirements.txt has been fixed separately —
+      # this step itself did not need to change, it now simply installs
+      # a complete dependency list.
       - name: Install dependencies
         run: pip install -r requirements.txt
         working-directory: ./agent
