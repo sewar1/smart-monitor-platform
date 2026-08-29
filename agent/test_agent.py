@@ -1,6 +1,6 @@
 import pytest
 import json
-from agent.agent import collect_system_metrics
+from agent import collect_system_metrics
 
 def test_collect_system_metrics_contains_all_keys():
     """
