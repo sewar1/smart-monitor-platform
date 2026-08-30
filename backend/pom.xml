@@ -99,6 +99,20 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- ==================================================================
+		     H2 in-memory database: required for tests only.
+		     Test configuration (see propertySourceProperties referencing
+		     spring.datasource.driver-class-name=org.h2.Driver) expects this
+		     driver on the classpath. Without it, Spring can't build a
+		     DataSource bean, and the whole ApplicationContext fails to load
+		     for any @SpringBootTest — including SmartmonitorApplicationTests.
+		     ================================================================== -->
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
+
 		<dependency>
         	<groupId>org.projectlombok</groupId>
         	<artifactId>lombok</artifactId>
