@@ -55,22 +55,22 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Grant execute permission for Maven wrapper
-        # Fixed: no longer swallows real chmod failures with `|| true`.
-        # If this genuinely fails, we want the pipeline to fail loudly here,
-        # not with a confusing "Permission denied" three steps later.
-        run: chmod +x backend/mvnw
+      # REMOVED: "Grant execute permission for Maven wrapper" (chmod +x backend/mvnw)
+      # is no longer needed here. Neither Maven step below still invokes the
+      # wrapper script — both now use the plain `mvn` binary that's
+      # pre-installed on GitHub-hosted ubuntu-latest runners, which sidesteps
+      # the wrapper's broken .mvn/wrapper/maven-wrapper.properties lookup
+      # entirely (see the comment on the test step below for the root cause).
 
-      # CHANGED: jacoco-maven-plugin is now declared in backend/pom.xml with its
-      # "prepare-agent" and "report" goals bound directly to the Maven `test`
-      # phase. That means `mvn test` alone now attaches the coverage agent AND
-      # writes the HTML/XML report as part of the same run.
-      # The old, separate "./mvnw jacoco:report" step has been removed: it was
-      # redundant (duplicating work already done here) and was the original
-      # root cause of the "exit code 2" failure, since the plugin wasn't
-      # declared in pom.xml yet at that point.
+      # CHANGED: Switched from `./mvnw` (Maven Wrapper) to the plain `mvn`
+      # command, which is pre-installed on GitHub-hosted ubuntu-latest runners.
+      # Root cause of the previous failure: backend/mvnw expects a sibling
+      # `.mvn/wrapper/maven-wrapper.properties` file next to itself (i.e.
+      # backend/.mvn/wrapper/...), but that folder actually lives at the repo
+      # root instead — a structural mismatch in the repository, not a CI bug.
+      # Using the runner's built-in Maven sidesteps that entirely.
       - name: Run unit tests & generate coverage report
-        run: ./mvnw test
+        run: mvn test
         working-directory: ./backend
 
       - name: Upload coverage report artifact
@@ -84,7 +84,10 @@ jobs:
         # Flags known CVEs in third-party libraries (e.g. jjwt, Spring Security).
         # continue-on-error keeps this informational for now; flip to `false`
         # once the baseline is clean, so new critical CVEs actually fail the build.
-        run: ./mvnw org.owasp:dependency-check-maven:check
+        # CHANGED: same fix as the test step above — use the runner's
+        # pre-installed `mvn` instead of the broken `./mvnw` wrapper, since
+        # `.mvn/wrapper/maven-wrapper.properties` doesn't live inside backend/.
+        run: mvn org.owasp:dependency-check-maven:check
         working-directory: ./backend
         continue-on-error: true
 
