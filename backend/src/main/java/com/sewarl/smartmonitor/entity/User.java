@@ -1,5 +1,6 @@
 package com.sewarl.smartmonitor.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,7 +15,8 @@ import java.util.List;
 
 /**
  * Enterprise Security User Entity.
- * Maps securely to the 'users' table in PostgreSQL.
+ * Maps securely to the 'users' table in PostgreSQL and implements UserDetails
+ * for seamless native integration with Spring Security.
  */
 @Entity
 @Table(name = "users")
@@ -37,7 +39,7 @@ public class User implements UserDetails {
     private String password;
 
     @Column(nullable = false, length = 20)
-    private String role = "operator";
+    private String role = "operator"; // Standardized default role for new users; can be elevated to 'admin' or 'superadmin' via secure admin workflows
 
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
     private OffsetDateTime createdAt = OffsetDateTime.now();
@@ -46,9 +48,8 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // to provide the user's role as a GrantedAuthority for Spring Security
-        // we assume the role is stored as "ADMIN" or "OPERATOR"
-        return List.of(new SimpleGrantedAuthority("ROLE_" + this.role.toUpperCase()));
+        // Dynamically maps the stored role to Spring Security's expected "ROLE_" prefixed authority structure
+        return List.of(new SimpleGrantedAuthority("ROLE_" + (this.role != null ? this.role.toUpperCase() : "OPERATOR")));
     }
 
     @Override
@@ -58,6 +59,8 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
+        // Architectural note: Currently defaults to true. 
+        // Can be integrated with LoginBruteForceProtector state mapping if global Spring Security authentication manager is used directly.
         return true;
     }
 
