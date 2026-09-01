@@ -65,3 +65,6 @@ agent/__pycache__/
 # SSL Certificates (Local or Production)
 ssl/
 nginx/ssl/
+
+# Diagnostics and runtime reports
+diagnostics/
